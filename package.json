@@ -1,0 +1,27 @@
+{
+  "name": "rgaaudit-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Outil local d'aide à l'audit d'accessibilité web selon le RGAA 4.1",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --names server,web --prefix-colors blue,green \"npm run dev --workspace=packages/server\" \"npm run dev --workspace=packages/web\"",
+    "build": "npm run build --workspace=packages/web",
+    "start": "npm run start --workspace=packages/server",
+    "test": "npm test --workspaces --if-present",
+    "test:e2e": "npx playwright test --config=e2e/playwright.config.ts",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "MIT"
+}
