@@ -1,0 +1,22 @@
+{
+  "name": "@rgaaudit/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Moteur d'audit RGAA 4.1 — crawl, analyse axe-core, mapping, rapport",
+  "main": "index.ts",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage"
+  },
+  "dependencies": {
+    "playwright": "^1.42.0",
+    "axe-core": "^4.9.1",
+    "@axe-core/playwright": "^4.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "vitest": "^3.0.5"
+  }
+}

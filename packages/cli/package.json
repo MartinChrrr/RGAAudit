@@ -1,0 +1,22 @@
+{
+  "name": "rgaaudit",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CLI pour lancer un audit RGAA 4.1 — npx rgaaudit",
+  "bin": {
+    "rgaaudit": "./index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@rgaaudit/core": "*",
+    "@rgaaudit/server": "*",
+    "tsx": "^4.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "vitest": "^3.0.5"
+  }
+}
