@@ -11,9 +11,10 @@
     "test:coverage": "vitest run --config vitest.config.ts --coverage"
   },
   "dependencies": {
-    "playwright": "^1.42.0",
+    "@axe-core/playwright": "^4.9.1",
     "axe-core": "^4.9.1",
-    "@axe-core/playwright": "^4.9.1"
+    "fast-xml-parser": "^5.4.1",
+    "playwright": "^1.42.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
