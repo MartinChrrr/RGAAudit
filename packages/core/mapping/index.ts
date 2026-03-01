@@ -15,8 +15,18 @@ export interface RgaaCriterion {
   limits: string;
 }
 
+export interface UncoveredTheme {
+  id: string;
+  name: string;
+  manualChecklist: string[];
+}
+
 export interface RgaaMapping {
   version: string;
+  totalCriteria: number;
+  coveredThemes: string[];
+  uncoveredThemes: UncoveredTheme[];
+  overlayScripts: string[];
   criteria: RgaaCriterion[];
 }
 

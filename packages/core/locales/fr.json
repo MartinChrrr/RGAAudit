@@ -1,0 +1,44 @@
+{
+  "report": {
+    "title": "Rapport d'audit d'accessibilité RGAA 4.1",
+    "generatedBy": "RGAAudit",
+    "generatedAt": "Généré le",
+    "auditedUrl": "URL auditée",
+    "pagesAudited": "Pages auditées",
+    "limitBanner": "Ce rapport ne couvre que {covered} critères RGAA sur {total}. Les {remaining} critères restants nécessitent un audit manuel complet par un expert accessibilité.",
+    "themesCovered": "Thématiques couvertes",
+    "themesNotCovered": "Thématiques non couvertes (audit manuel requis)",
+    "summary": "Synthèse",
+    "criteriaTotal": "Critères évalués",
+    "criteriaViolation": "Non conformes",
+    "criteriaPass": "Conformes",
+    "criteriaManual": "À vérifier manuellement",
+    "criteriaIncomplete": "Incomplets",
+    "topIssues": "Principaux problèmes détectés",
+    "topIssuePages": "{count} page(s) concernée(s)",
+    "overlaysDetected": "Surcouche d'accessibilité détectée",
+    "overlaysWarning": "Une surcouche d'accessibilité a été détectée sur ce site. Ces outils ne remplacent pas une mise en conformité native et peuvent interférer avec les technologies d'assistance.",
+    "noOverlays": "Aucune surcouche d'accessibilité détectée"
+  },
+  "status": {
+    "violation": "Non conforme",
+    "pass": "Conforme",
+    "manual": "Vérification manuelle requise",
+    "incomplete": "Résultat incomplet"
+  },
+  "themes": {
+    "1": "Images",
+    "2": "Cadres",
+    "3": "Couleurs",
+    "4": "Multimédia",
+    "5": "Tableaux",
+    "6": "Liens",
+    "7": "Scripts",
+    "8": "Éléments obligatoires",
+    "9": "Structuration de l'information",
+    "10": "Présentation de l'information",
+    "11": "Formulaires",
+    "12": "Navigation",
+    "13": "Consultation"
+  }
+}

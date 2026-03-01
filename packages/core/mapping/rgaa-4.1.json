@@ -1,5 +1,65 @@
 {
   "version": "4.1",
+  "totalCriteria": 106,
+  "coveredThemes": ["Images", "Liens", "Éléments obligatoires", "Structuration de l'information"],
+  "uncoveredThemes": [
+    {
+      "id": "2",
+      "name": "Cadres",
+      "manualChecklist": ["Vérifier que chaque cadre (iframe) a un attribut title pertinent"]
+    },
+    {
+      "id": "3",
+      "name": "Couleurs",
+      "manualChecklist": ["Vérifier les contrastes de couleurs (ratio 4.5:1 pour le texte normal)", "Vérifier que l'information n'est pas véhiculée uniquement par la couleur"]
+    },
+    {
+      "id": "4",
+      "name": "Multimédia",
+      "manualChecklist": ["Vérifier la présence de sous-titres pour les vidéos", "Vérifier la présence d'une audiodescription si nécessaire", "Vérifier que les médias temporels sont contrôlables"]
+    },
+    {
+      "id": "5",
+      "name": "Tableaux",
+      "manualChecklist": ["Vérifier que chaque tableau de données a un résumé pertinent", "Vérifier que les en-têtes de lignes et colonnes sont correctement balisés"]
+    },
+    {
+      "id": "7",
+      "name": "Scripts",
+      "manualChecklist": ["Vérifier que les scripts sont compatibles avec les technologies d'assistance", "Vérifier que les changements de contexte sont signalés"]
+    },
+    {
+      "id": "10",
+      "name": "Présentation de l'information",
+      "manualChecklist": ["Vérifier que le contenu est lisible sans CSS", "Vérifier que le zoom à 200% ne provoque pas de perte d'information"]
+    },
+    {
+      "id": "11",
+      "name": "Formulaires",
+      "manualChecklist": ["Vérifier que chaque champ a une étiquette visible et liée", "Vérifier que les erreurs de saisie sont explicites", "Vérifier que les champs obligatoires sont signalés"]
+    },
+    {
+      "id": "12",
+      "name": "Navigation",
+      "manualChecklist": ["Vérifier la présence de deux systèmes de navigation minimum", "Vérifier la cohérence de la navigation entre les pages", "Vérifier l'ordre de tabulation"]
+    },
+    {
+      "id": "13",
+      "name": "Consultation",
+      "manualChecklist": ["Vérifier que les documents en téléchargement sont accessibles", "Vérifier l'absence de piège au clavier", "Vérifier que les limites de temps sont contrôlables"]
+    }
+  ],
+  "overlayScripts": [
+    "accessibe",
+    "userway",
+    "audioeye",
+    "equalweb",
+    "texthelp",
+    "facil-iti",
+    "reciteme",
+    "truely-accessible",
+    "accessibee"
+  ],
   "criteria": [
     {
       "rgaa": {
