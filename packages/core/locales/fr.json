@@ -1,4 +1,60 @@
 {
+  "app": {
+    "title": "RGAAudit",
+    "subtitle": "Audit d'accessibilité RGAA 4.1"
+  },
+  "home": {
+    "heading": "Auditer l'accessibilité de votre site",
+    "description": "Entrez l'URL de votre site pour découvrir ses pages via le sitemap et lancer un audit automatisé RGAA 4.1.",
+    "urlLabel": "URL du site",
+    "urlPlaceholder": "https://exemple.fr",
+    "urlError": "L'URL doit commencer par http:// ou https://",
+    "analyzeButton": "Analyser",
+    "analyzing": "Analyse en cours…",
+    "sitemapNotFound": "Aucun sitemap trouvé pour ce site.",
+    "continueWithoutSitemap": "Continuer sans sitemap",
+    "crawlError": "Erreur lors de l'analyse : {error}"
+  },
+  "pageSelection": {
+    "heading": "Sélection des pages",
+    "selectAll": "Tout sélectionner",
+    "deselectAll": "Tout désélectionner",
+    "addUrlLabel": "Ajouter une URL",
+    "addUrlPlaceholder": "https://exemple.fr/page",
+    "addButton": "Ajouter",
+    "selectedCount": "{count} page(s) sélectionnée(s)",
+    "tooManyPages": "Maximum 50 pages par audit. Veuillez en désélectionner.",
+    "startAudit": "Lancer l'audit",
+    "noPages": "Aucune page à auditer"
+  },
+  "auditProgress": {
+    "heading": "Audit en cours",
+    "elapsed": "Temps écoulé : {time}",
+    "progress": "{completed} / {total} page(s)",
+    "statusPending": "En attente",
+    "statusRunning": "En cours d'analyse",
+    "statusDone": "Terminé",
+    "statusError": "Erreur",
+    "cancelButton": "Annuler l'audit",
+    "viewResults": "Voir les résultats",
+    "auditComplete": "Audit terminé",
+    "connectionError": "Connexion au serveur perdue"
+  },
+  "results": {
+    "heading": "Résultats de l'audit",
+    "loading": "Chargement du rapport…",
+    "error": "Impossible de charger le rapport.",
+    "pagesAudited": "{count} page(s) auditée(s)",
+    "topIssues": "Top 5 des problèmes",
+    "overlaysDetected": "Surcouche d'accessibilité détectée",
+    "criteriaSection": "Critères par thématique",
+    "uncoveredThemes": "Thématiques non couvertes",
+    "tabImages": "Images",
+    "tabLinks": "Liens",
+    "tabHeadings": "Titres",
+    "comingSoon": "Annexes détaillées disponibles à l'étape 9",
+    "backHome": "Nouvel audit"
+  },
   "report": {
     "title": "Rapport d'audit d'accessibilité RGAA 4.1",
     "generatedBy": "RGAAudit",
