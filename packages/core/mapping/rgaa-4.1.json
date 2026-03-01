@@ -1,0 +1,203 @@
+{
+  "version": "4.1",
+  "criteria": [
+    {
+      "rgaa": {
+        "id": "1.1",
+        "title": "Chaque image porteuse d'information a-t-elle une alternative textuelle ?",
+        "theme": "Images"
+      },
+      "wcag": ["1.1.1"],
+      "axeRules": ["image-alt"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "ALT_ABSENT",
+        "ALT_GENERIC",
+        "ALT_TOO_LONG",
+        "IMG_IN_LINK_ALT_EMPTY",
+        "ROLE_PRESENTATION_SUSPICIOUS"
+      ],
+      "heuristicPatterns": {
+        "genericLabels": [
+          "image",
+          "photo",
+          "img",
+          "picture",
+          "illustration",
+          "icone",
+          "icône",
+          "icon",
+          "logo",
+          "bannière",
+          "banner",
+          "vignette",
+          "thumbnail",
+          "capture",
+          "screenshot",
+          "graphique",
+          "graphic",
+          "figure"
+        ],
+        "genericFilePatterns": [
+          "^DSC[_-]?\\d+",
+          "^IMG[_-]?\\d+",
+          "^image\\d*\\.",
+          "^photo\\d*\\.",
+          "^pic\\d*\\.",
+          "^capture\\d*\\.",
+          "^screenshot\\d*\\.",
+          "^sans[_-]?titre",
+          "^untitled"
+        ]
+      },
+      "altMaxLength": 80,
+      "limits": "Ne détecte pas les images CSS (background-image) ni les alternatives longues via aria-describedby."
+    },
+    {
+      "rgaa": {
+        "id": "1.2",
+        "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d'assistance ?",
+        "theme": "Images"
+      },
+      "wcag": ["1.1.1"],
+      "axeRules": ["image-alt", "presentation-role-conflict"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "ROLE_PRESENTATION_SUSPICIOUS"
+      ],
+      "heuristicPatterns": {},
+      "limits": "Ne peut pas distinguer automatiquement une image décorative d'une image porteuse d'information."
+    },
+    {
+      "rgaa": {
+        "id": "6.1",
+        "title": "Chaque lien est-il explicite ?",
+        "theme": "Liens"
+      },
+      "wcag": ["2.4.4", "2.4.9"],
+      "axeRules": ["link-name"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "EMPTY_LABEL",
+        "GENERIC_LABEL",
+        "NEW_WINDOW_NO_WARNING",
+        "DUPLICATE_LABEL"
+      ],
+      "heuristicPatterns": {
+        "genericLabels": [
+          "lire la suite",
+          "en savoir plus",
+          "cliquez ici",
+          "cliquer ici",
+          "ici",
+          "plus",
+          "lien",
+          "link",
+          "voir",
+          "voir plus",
+          "détails",
+          "plus de détails",
+          "plus d'infos",
+          "plus d'informations",
+          "en savoir davantage",
+          "suite",
+          "continuer",
+          "accéder",
+          "télécharger",
+          "download",
+          "ouvrir",
+          "suivant",
+          "précédent",
+          "read more",
+          "learn more",
+          "click here",
+          "more",
+          "here"
+        ]
+      },
+      "limits": "Ne détecte pas les liens dont le contexte rend l'intitulé explicite (paragraphe, liste, tableau)."
+    },
+    {
+      "rgaa": {
+        "id": "6.2",
+        "title": "Dans chaque page web, chaque lien a-t-il un intitulé ?",
+        "theme": "Liens"
+      },
+      "wcag": ["4.1.2", "2.4.4"],
+      "axeRules": ["link-name"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "EMPTY_LABEL"
+      ],
+      "heuristicPatterns": {},
+      "limits": ""
+    },
+    {
+      "rgaa": {
+        "id": "8.5",
+        "title": "Chaque page web a-t-elle un titre de page ?",
+        "theme": "Éléments obligatoires"
+      },
+      "wcag": ["2.4.2"],
+      "axeRules": ["document-title"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "TITLE_ABSENT"
+      ],
+      "heuristicPatterns": {},
+      "limits": ""
+    },
+    {
+      "rgaa": {
+        "id": "8.6",
+        "title": "Dans chaque page web, le titre de page est-il pertinent ?",
+        "theme": "Éléments obligatoires"
+      },
+      "wcag": ["2.4.2"],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [
+        "TITLE_GENERIC"
+      ],
+      "heuristicPatterns": {
+        "genericTitles": [
+          "accueil",
+          "home",
+          "bienvenue",
+          "welcome",
+          "page",
+          "page d'accueil",
+          "page web",
+          "titre",
+          "titre de la page",
+          "sans titre",
+          "untitled",
+          "nouvelle page",
+          "new page",
+          "document",
+          "mon site",
+          "site web",
+          "website"
+        ]
+      },
+      "limits": "Un titre peut être techniquement présent mais non pertinent — détection heuristique uniquement."
+    },
+    {
+      "rgaa": {
+        "id": "9.1",
+        "title": "Dans chaque page web, l'information est-elle structurée par l'utilisation appropriée de titres ?",
+        "theme": "Structuration de l'information"
+      },
+      "wcag": ["1.3.1", "2.4.6"],
+      "axeRules": ["heading-order", "page-has-heading-one", "empty-heading"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "NO_H1",
+        "MULTIPLE_H1",
+        "LEVEL_SKIP"
+      ],
+      "heuristicPatterns": {},
+      "limits": "Ne détecte pas les titres visuellement styléss mais non balisés <hN>."
+    }
+  ]
+}

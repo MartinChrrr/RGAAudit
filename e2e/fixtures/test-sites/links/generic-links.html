@@ -7,9 +7,19 @@
 <body>
   <h1>Liens génériques</h1>
   <p><a href="/page1">lire la suite</a></p>
-  <p><a href="/page2">lire la suite</a></p>
-  <p><a href="/page3">lire la suite</a></p>
+  <p><a href="/page2">en savoir plus</a></p>
+  <p><a href="/page3">cliquez ici</a></p>
   <p><a href="/page4">lire la suite</a></p>
   <p><a href="/page5">lire la suite</a></p>
+  <!-- Lien explicite (pas générique) -->
+  <p><a href="/page6">Consulter le rapport d'accessibilité 2024</a></p>
+  <!-- Test priorité aria-labelledby > aria-label > texte visible -->
+  <p id="label-ref">Description référencée</p>
+  <p><a href="/page7" aria-labelledby="label-ref">Texte visible ignoré</a></p>
+  <p><a href="/page8" aria-label="Label aria prioritaire">Texte visible ignoré aussi</a></p>
+  <!-- Lien avec image enfant comme label -->
+  <p><a href="/page9"><img src="icon.png" alt="Accueil"></a></p>
+  <!-- Lien avec title comme fallback -->
+  <p><a href="/page10" title="Titre du lien"></a></p>
 </body>
 </html>
