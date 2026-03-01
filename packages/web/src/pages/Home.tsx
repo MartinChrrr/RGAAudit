@@ -56,6 +56,10 @@ export default function Home() {
     navigate('/selection', { state: { urls: [], siteUrl: url } });
   }
 
+  function handleManualEntry() {
+    navigate('/selection', { state: { urls: [], siteUrl: '' } });
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-lg">
@@ -74,25 +78,32 @@ export default function Home() {
             <label htmlFor="url-input" className="block text-sm font-medium text-gray-700 mb-1">
               {t('home.urlLabel')}
             </label>
-            <div className="flex gap-3">
-              <input
-                id="url-input"
-                type="url"
-                value={url}
-                onChange={(e) => { setUrl(e.target.value); setError(''); setSitemapNotFound(false); }}
-                placeholder={t('home.urlPlaceholder')}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                disabled={loading}
-                aria-describedby={error ? 'url-error' : undefined}
-                aria-invalid={error ? 'true' : undefined}
-              />
+            <input
+              id="url-input"
+              type="url"
+              value={url}
+              onChange={(e) => { setUrl(e.target.value); setError(''); setSitemapNotFound(false); }}
+              placeholder={t('home.urlPlaceholder')}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              disabled={loading}
+              aria-describedby={error ? 'url-error' : undefined}
+              aria-invalid={error ? 'true' : undefined}
+            />
+
+            {error && (
+              <p id="url-error" role="alert" className="mt-2 text-sm text-red-600">
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-3 mt-4">
               <button
                 type="submit"
                 disabled={loading || !url}
-                className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" role="status" aria-label={t('home.analyzing')} />
                     {t('home.analyzing')}
                   </span>
@@ -100,13 +111,14 @@ export default function Home() {
                   t('home.analyzeButton')
                 )}
               </button>
+              <button
+                type="button"
+                onClick={handleManualEntry}
+                className="flex-1 rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+              >
+                {t('home.manualEntry')}
+              </button>
             </div>
-
-            {error && (
-              <p id="url-error" role="alert" className="mt-2 text-sm text-red-600">
-                {error}
-              </p>
-            )}
           </form>
 
           {sitemapNotFound && (

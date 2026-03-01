@@ -39,7 +39,7 @@ describe('Home', () => {
 
     const input = screen.getByLabelText(/url du site/i);
     await user.type(input, 'https://example.com');
-    await user.click(screen.getByRole('button', { name: /analyser/i }));
+    await user.click(screen.getByRole('button', { name: /rechercher les pages/i }));
 
     await waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledWith('/api/crawl', expect.objectContaining({
@@ -61,7 +61,7 @@ describe('Home', () => {
 
     const input = screen.getByLabelText(/url du site/i);
     await user.type(input, 'not-a-url');
-    await user.click(screen.getByRole('button', { name: /analyser/i }));
+    await user.click(screen.getByRole('button', { name: /rechercher les pages/i }));
 
     expect(screen.getByRole('alert')).toHaveTextContent(/http:\/\/ ou https:\/\//);
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe('Home', () => {
 
     const input = screen.getByLabelText(/url du site/i);
     await user.type(input, 'https://example.com');
-    await user.click(screen.getByRole('button', { name: /analyser/i }));
+    await user.click(screen.getByRole('button', { name: /rechercher les pages/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/aucun sitemap/i)).toBeInTheDocument();

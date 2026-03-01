@@ -9,8 +9,9 @@
     "urlLabel": "URL du site",
     "urlPlaceholder": "https://exemple.fr",
     "urlError": "L'URL doit commencer par http:// ou https://",
-    "analyzeButton": "Analyser",
-    "analyzing": "Analyse en cours…",
+    "analyzeButton": "Rechercher les pages du site",
+    "analyzing": "Recherche en cours…",
+    "manualEntry": "Entrer les URLs manuellement",
     "sitemapNotFound": "Aucun sitemap trouvé pour ce site.",
     "continueWithoutSitemap": "Continuer sans sitemap",
     "crawlError": "Erreur lors de l'analyse : {error}"
