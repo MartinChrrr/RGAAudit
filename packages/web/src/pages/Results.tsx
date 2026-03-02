@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { t } from '../locales';
+import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
+import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
+import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
 
 interface ReportData {
   metadata: {
@@ -34,6 +37,23 @@ interface ReportData {
   uncoveredThemes: Array<{
     name: string;
     manualChecklist: string[];
+  }>;
+  allCollected?: Array<{
+    url: string;
+    collectedData: {
+      images: ImageItem[];
+      links: LinkItem[];
+      headings: {
+        documentTitle: string;
+        headings: Array<{
+          level: number;
+          text: string;
+          selector: string;
+          flags: Array<string | { flag: string; skipFrom: number; skipTo: number }>;
+        }>;
+        flags: string[];
+      };
+    } | null;
   }>;
 }
 
@@ -93,6 +113,20 @@ export default function Results() {
   }
 
   const topIssues = (report.summary.topIssues ?? []).slice(0, 5);
+
+  // Flatten collected data for annexes
+  const allImages: ImageItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.images ?? []).map((img) => ({ ...img, pageUrl: entry.url })),
+  );
+  const allLinks: LinkItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.links ?? []).map((link) => ({ ...link, pageUrl: entry.url })),
+  );
+  const allHeadings: HeadingTreeData[] = (report.allCollected ?? [])
+    .filter((entry) => entry.collectedData?.headings)
+    .map((entry) => ({
+      url: entry.url,
+      ...entry.collectedData!.headings,
+    }));
 
   return (
     <main className="min-h-screen bg-gray-50 py-8 px-4">
@@ -205,7 +239,7 @@ export default function Results() {
           </section>
         )}
 
-        {/* Annexes tabs (placeholder for step 9) */}
+        {/* Annexes tabs */}
         <section className="mb-8">
           <div className="flex border-b border-gray-200 mb-4">
             {(['images', 'links', 'headings'] as const).map((tab) => (
@@ -225,8 +259,16 @@ export default function Results() {
               </button>
             ))}
           </div>
-          <div role="tabpanel" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center text-sm text-gray-500">
-            {t('results.comingSoon')}
+          <div role="tabpanel" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {activeTab === 'images' && (
+              <AnnexeImages images={allImages} sessionId={sessionId!} />
+            )}
+            {activeTab === 'links' && (
+              <AnnexeLiens links={allLinks} sessionId={sessionId!} />
+            )}
+            {activeTab === 'headings' && (
+              <AnnexeTitres headingData={allHeadings} sessionId={sessionId!} />
+            )}
           </div>
         </section>
 

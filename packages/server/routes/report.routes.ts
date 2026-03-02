@@ -49,7 +49,7 @@ reportRouter.get('/api/report/:sessionId', async (req: Request, res: Response) =
     version: '0.1.0',
   }, allCollected);
 
-  res.json(report);
+  res.json({ ...report, allCollected });
 });
 
 // GET /api/report/:sessionId/html
