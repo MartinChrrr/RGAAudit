@@ -64,6 +64,7 @@ export default function Results() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'images' | 'links' | 'headings'>('images');
   const [uncoveredOpen, setUncoveredOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -112,6 +113,28 @@ export default function Results() {
     byTheme.get(themeId)!.push(c);
   }
 
+  const handlePdfDownload = async () => {
+    if (!sessionId || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const res = await fetch(`/api/report/${sessionId}/pdf`);
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-rgaa-${sessionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // Download failed silently — user can retry
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const topIssues = (report.summary.topIssues ?? []).slice(0, 5);
 
   // Flatten collected data for annexes
@@ -140,7 +163,32 @@ export default function Results() {
           {report.limitBanner}
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('results.heading')}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">{t('results.heading')}</h1>
+          <button
+            type="button"
+            onClick={handlePdfDownload}
+            disabled={pdfLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="pdf-download-btn"
+          >
+            {pdfLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {t('pdf.generating')}
+              </>
+            ) : (
+              t('pdf.downloadButton')
+            )}
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-500 mb-4" role="note" data-testid="pdf-a11y-warning">
+          {t('pdf.a11yWarning')}
+        </p>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">

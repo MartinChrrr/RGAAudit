@@ -121,4 +121,34 @@ describe('Results', () => {
       expect(screen.getByRole('tab', { name: /titres/i })).toBeInTheDocument();
     });
   });
+
+  it('affiche le bouton de téléchargement PDF', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockReport),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => {
+      const pdfBtn = screen.getByTestId('pdf-download-btn');
+      expect(pdfBtn).toBeInTheDocument();
+      expect(pdfBtn).toHaveTextContent(/télécharger.*pdf/i);
+    });
+  });
+
+  it('affiche l\'avertissement d\'accessibilité PDF', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockReport),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => {
+      const warning = screen.getByTestId('pdf-a11y-warning');
+      expect(warning).toBeInTheDocument();
+      expect(warning).toHaveTextContent(/pdf.*pas balisé/i);
+    });
+  });
 });

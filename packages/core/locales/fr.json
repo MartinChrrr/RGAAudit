@@ -127,6 +127,12 @@
     "TITLE_GENERIC": "Titre de page générique",
     "LEVEL_SKIP": "Saut de niveau de titre"
   },
+  "pdf": {
+    "downloadButton": "Télécharger le rapport PDF",
+    "generating": "Génération du PDF en cours…",
+    "a11yWarning": "Ce PDF n'est pas balisé pour l'accessibilité. Utilisez le rapport HTML pour une consultation accessible.",
+    "filename": "rapport-rgaa"
+  },
   "report": {
     "title": "Rapport d'audit d'accessibilité RGAA 4.1",
     "generatedBy": "RGAAudit",

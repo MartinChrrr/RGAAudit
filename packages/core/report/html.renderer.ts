@@ -43,7 +43,7 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-interface RenderOptions {
+export interface RenderOptions {
   report: Report;
   allCollected?: Array<{ url: string; collectedData: CollectedData | null }>;
 }
@@ -166,7 +166,17 @@ export function renderReportHtml({ report, allCollected }: RenderOptions): strin
   <style>
     @media print {
       .no-print { display: none !important; }
-      body { font-size: 12px; }
+      body { font-size: 12px; color: #000; background: #fff; }
+      main { max-width: 100%; padding: 0; }
+      .shadow-sm { box-shadow: none; }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
+      section { page-break-before: auto; }
+      h2 { page-break-after: avoid; }
+      h3 { page-break-after: avoid; }
+      a { color: #000; text-decoration: underline; }
+      input, button, select { display: none !important; }
     }
   </style>
 </head>

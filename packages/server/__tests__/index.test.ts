@@ -16,6 +16,8 @@ const {
   mockBuildReport,
   mockReadFile,
   mockRenderReportHtml,
+  mockGeneratePDF,
+  mockGetPdfPathIfExists,
 } = vi.hoisted(() => ({
   mockParseSitemap: vi.fn(),
   mockAuditPages: vi.fn(),
@@ -24,6 +26,8 @@ const {
   mockBuildReport: vi.fn(),
   mockReadFile: vi.fn(),
   mockRenderReportHtml: vi.fn(),
+  mockGeneratePDF: vi.fn(),
+  mockGetPdfPathIfExists: vi.fn(),
 }));
 
 vi.mock('@rgaaudit/core/crawler/sitemap.parser', () => ({
@@ -42,6 +46,11 @@ vi.mock('@rgaaudit/core/mapping/mapper', () => ({
 
 vi.mock('@rgaaudit/core/report/html.renderer', () => ({
   renderReportHtml: mockRenderReportHtml,
+}));
+
+vi.mock('@rgaaudit/core/report/pdf.generator', () => ({
+  generatePDF: mockGeneratePDF,
+  getPdfPathIfExists: mockGetPdfPathIfExists,
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -324,5 +333,106 @@ describe('GET /api/report/:sessionId/html', () => {
 
     expect(res.status).toBe(404);
     expect(res.body.error).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/report/:sessionId/pdf
+// ---------------------------------------------------------------------------
+
+describe('GET /api/report/:sessionId/pdf', () => {
+  const mockSession = {
+    sessionId: 'pdf-test-session',
+    startedAt: '2026-03-01T00:00:00Z',
+    totalPages: 1,
+    completedPages: ['https://example.com'],
+    pendingPages: [],
+    results: {
+      'https://example.com': {
+        url: 'https://example.com',
+        auditedAt: '2026-03-01T00:00:01Z',
+        axeResults: { violations: [], passes: [], incomplete: [] },
+        collectedData: {
+          images: [],
+          links: [],
+          headings: { documentTitle: 'Test', headings: [], flags: [] },
+        },
+        error: null,
+      },
+    },
+  };
+
+  it('retourne un PDF avec les bons headers', async () => {
+    mockReadFile.mockImplementation((path: string) => {
+      if (typeof path === 'string' && path.endsWith('.pdf')) {
+        return Promise.resolve(Buffer.from('%PDF-1.4 content'));
+      }
+      return Promise.resolve(JSON.stringify(mockSession));
+    });
+
+    mockGetPdfPathIfExists.mockResolvedValue(null);
+
+    mockMapPageResults.mockReturnValue({
+      url: 'https://example.com',
+      criteria: [],
+    });
+
+    mockAggregateResults.mockReturnValue({
+      totalCriteria: 0,
+      violations: 0,
+      passes: 0,
+      manual: 0,
+      criteria: [],
+      topIssues: [],
+    });
+
+    mockBuildReport.mockReturnValue({
+      metadata: {
+        url: 'https://example.com',
+        date: '2026-03-01',
+        pagesAudited: 1,
+        coveredThemes: [],
+        totalRgaaCriteria: 106,
+        coveredCriteria: 0,
+      },
+      limitBanner: 'Test',
+      summary: { totalCriteria: 0, violations: 0, passes: 0, manual: 0, criteria: [] },
+      uncoveredThemes: [],
+    });
+
+    mockGeneratePDF.mockResolvedValue({ filePath: '/tmp/test-rapport.pdf' });
+
+    const res = await request(app).get('/api/report/pdf-test-session/pdf');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('application/pdf');
+    expect(res.headers['content-disposition']).toContain('attachment');
+    expect(res.headers['content-disposition']).toContain('rapport-rgaa-pdf-test-session.pdf');
+  });
+
+  it('retourne 404 si session introuvable', async () => {
+    mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+    const res = await request(app).get('/api/report/inexistant/pdf');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('retourne le PDF existant sans le régénérer', async () => {
+    mockReadFile.mockImplementation((path: string) => {
+      if (typeof path === 'string' && path.endsWith('.pdf')) {
+        return Promise.resolve(Buffer.from('%PDF-1.4 cached'));
+      }
+      return Promise.resolve(JSON.stringify(mockSession));
+    });
+
+    mockGetPdfPathIfExists.mockResolvedValue('/tmp/existing-rapport.pdf');
+
+    const res = await request(app).get('/api/report/pdf-test-session/pdf');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('application/pdf');
+    expect(mockGeneratePDF).not.toHaveBeenCalled();
   });
 });
