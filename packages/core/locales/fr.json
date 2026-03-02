@@ -146,7 +146,23 @@
     "topIssuePages": "{count} page(s) concernée(s)",
     "overlaysDetected": "Surcouche d'accessibilité détectée",
     "overlaysWarning": "Une surcouche d'accessibilité a été détectée sur ce site. Ces outils ne remplacent pas une mise en conformité native et peuvent interférer avec les technologies d'assistance.",
-    "noOverlays": "Aucune surcouche d'accessibilité détectée"
+    "noOverlays": "Aucune surcouche d'accessibilité détectée",
+    "htmlCriteriaDetail": "Détail par critère",
+    "htmlAnnexeImages": "Annexe — Images",
+    "htmlAnnexeLinks": "Annexe — Liens",
+    "htmlAnnexeHeadings": "Annexe — Titres",
+    "htmlColId": "ID",
+    "htmlColCriterion": "Critère",
+    "htmlColStatus": "Statut",
+    "htmlColPages": "Pages",
+    "htmlManualChecklist": "Points de contrôle manuel",
+    "htmlFooter": "Rapport généré par RGAAudit — outil open-source d'aide à l'audit RGAA 4.1"
+  },
+  "cli": {
+    "starting": "RGAAudit démarré → {url}",
+    "portBusy": "Port {port} occupé, utilisation du port {actual}",
+    "stopping": "Arrêt de RGAAudit…",
+    "openBrowser": "Ouvrez votre navigateur sur {url}"
   },
   "status": {
     "violation": "Non conforme",

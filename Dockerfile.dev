@@ -1,7 +1,18 @@
-FROM mcr.microsoft.com/playwright:v1.42.0-jammy
+FROM mcr.microsoft.com/playwright:v1.58.2-jammy
 WORKDIR /app
-COPY package*.json packages/*/package*.json ./
+
+# Copy root package files first
+COPY package.json package-lock.json ./
+
+# Copy each workspace's package.json
+COPY packages/core/package.json packages/core/
+COPY packages/server/package.json packages/server/
+COPY packages/web/package.json packages/web/
+COPY packages/cli/package.json packages/cli/
+
 RUN npm install
+
 COPY . .
+
 EXPOSE 3000 3001
 CMD ["npm", "run", "dev"]

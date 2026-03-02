@@ -7,6 +7,7 @@ import {
   aggregateResults,
   buildReport,
 } from '@rgaaudit/core/mapping/mapper';
+import { renderReportHtml } from '@rgaaudit/core/report/html.renderer';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
 
 export const reportRouter = Router();
@@ -80,55 +81,7 @@ reportRouter.get('/api/report/:sessionId/html', async (req: Request, res: Respon
     version: '0.1.0',
   }, allCollected);
 
-  // Generate minimal valid HTML report
-  const html = renderReportHtml(report);
+  const html = renderReportHtml({ report, allCollected });
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
 });
-
-function renderReportHtml(report: ReturnType<typeof buildReport>): string {
-  const { metadata, limitBanner, summary, uncoveredThemes } = report;
-
-  const criteriaRows = summary.criteria
-    .map((c) => {
-      const statusLabel = c.status === 'violation' ? 'Non conforme'
-        : c.status === 'pass' ? 'Conforme'
-        : c.status === 'manual' ? 'Manuel'
-        : 'Incomplet';
-      return `<tr><td>${c.rgaaId}</td><td>${c.title}</td><td>${statusLabel}</td></tr>`;
-    })
-    .join('\n');
-
-  const uncoveredRows = uncoveredThemes
-    .map((t) => `<li><strong>${t.name}</strong><ul>${t.manualChecklist.map((c) => `<li>${c}</li>`).join('')}</ul></li>`)
-    .join('\n');
-
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>${metadata.url} — Rapport RGAA</title>
-</head>
-<body>
-  <h1>Rapport d'audit RGAA 4.1</h1>
-  <p><strong>URL :</strong> ${metadata.url}</p>
-  <p><strong>Date :</strong> ${metadata.date}</p>
-  <p><strong>Pages :</strong> ${metadata.pagesAudited}</p>
-  <p>${limitBanner}</p>
-  <h2>Synthèse</h2>
-  <ul>
-    <li>Critères évalués : ${summary.totalCriteria}</li>
-    <li>Non conformes : ${summary.violations}</li>
-    <li>Conformes : ${summary.passes}</li>
-    <li>Manuels : ${summary.manual}</li>
-  </ul>
-  <h2>Détail par critère</h2>
-  <table border="1">
-    <thead><tr><th>ID</th><th>Critère</th><th>Statut</th></tr></thead>
-    <tbody>${criteriaRows}</tbody>
-  </table>
-  <h2>Thématiques non couvertes</h2>
-  <ul>${uncoveredRows}</ul>
-</body>
-</html>`;
-}

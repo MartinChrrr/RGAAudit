@@ -15,6 +15,7 @@ const {
   mockAggregateResults,
   mockBuildReport,
   mockReadFile,
+  mockRenderReportHtml,
 } = vi.hoisted(() => ({
   mockParseSitemap: vi.fn(),
   mockAuditPages: vi.fn(),
@@ -22,6 +23,7 @@ const {
   mockAggregateResults: vi.fn(),
   mockBuildReport: vi.fn(),
   mockReadFile: vi.fn(),
+  mockRenderReportHtml: vi.fn(),
 }));
 
 vi.mock('@rgaaudit/core/crawler/sitemap.parser', () => ({
@@ -36,6 +38,10 @@ vi.mock('@rgaaudit/core/mapping/mapper', () => ({
   mapPageResults: mockMapPageResults,
   aggregateResults: mockAggregateResults,
   buildReport: mockBuildReport,
+}));
+
+vi.mock('@rgaaudit/core/report/html.renderer', () => ({
+  renderReportHtml: mockRenderReportHtml,
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -296,6 +302,10 @@ describe('GET /api/report/:sessionId/html', () => {
         { name: 'Tableaux', manualChecklist: ['Vérifier les tableaux de données'] },
       ],
     });
+
+    mockRenderReportHtml.mockReturnValue(
+      '<!DOCTYPE html><html lang="fr"><body><h1>Rapport</h1><p>Tableaux</p></body></html>',
+    );
 
     const res = await request(app).get('/api/report/html-test-session/html');
 
