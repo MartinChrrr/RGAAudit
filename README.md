@@ -43,6 +43,24 @@ Le navigateur s'ouvre automatiquement sur `http://localhost:3000`.
 - Génère un rapport HTML interactif avec annexes (images, liens, titres)
 - Permet à l'auditeur humain de prendre ses décisions dans les annexes
 
+## Couverture RGAA
+
+RGAAudit couvre actuellement **11 critères** sur les 106 du RGAA 4.1, répartis sur **5 thématiques** :
+
+| Thématique | Critères | Détail |
+|---|---|---|
+| Images | 1.1, 1.2 | Alternative textuelle (présence, pertinence, décoration) |
+| Couleurs | 3.2, 3.3 | Contrastes texte/fond (ratio 4.5:1 et 3:1 composants UI) |
+| Liens | 6.1, 6.2 | Liens explicites, intitulés vides/génériques/dupliqués, nouvelle fenêtre |
+| Éléments obligatoires | 8.5, 8.6 | Titre de page (présence et pertinence) |
+| Structuration | 9.1 | Hiérarchie des titres (sauts de niveau, h1 absent/multiple) |
+
+Les **8 thématiques restantes** (Cadres, Multimédia, Tableaux, Scripts, Présentation, Formulaires, Navigation, Consultation) génèrent une checklist manuelle dans le rapport.
+
+L'outil utilise deux moteurs d'analyse complémentaires :
+- **axe-core** — détection automatisée des violations WCAG via Playwright
+- **Heuristiques custom** — analyse Playwright complémentaire pour les patterns qu'axe-core ne couvre pas (liens factices, éléments interactifs simulés, etc.)
+
 ## Ce que l'outil ne fait PAS
 
 - Il ne remplace pas un auditeur humain
