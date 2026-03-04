@@ -182,6 +182,25 @@
     "manual": "Vérification manuelle requise",
     "incomplete": "Résultat incomplet"
   },
+  "heuristics": {
+    "confidence": {
+      "certain": "Certain — non conforme",
+      "likely": "Probable — à vérifier",
+      "possible": "Possible — vérification manuelle"
+    },
+    "icons": {
+      "certain": "❌",
+      "likely": "⚠️",
+      "possible": "ℹ️"
+    },
+    "labels": {
+      "heuristicFindings": "Détections heuristiques",
+      "evidence": "Preuve",
+      "context": "Contexte",
+      "heuristicId": "Heuristique",
+      "noFindings": "Aucune détection heuristique"
+    }
+  },
   "themes": {
     "1": "Images",
     "2": "Cadres",

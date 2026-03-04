@@ -14,6 +14,7 @@ const fsMock = vi.hoisted(() => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
   writeFile: vi.fn().mockResolvedValue(undefined),
   rename: vi.fn().mockResolvedValue(undefined),
+  readdir: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('node:fs/promises', () => fsMock);

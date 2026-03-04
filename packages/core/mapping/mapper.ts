@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { EngineResult, AxeViolation, AxeIncomplete } from '../engines/engine.interface';
 import type { AnalyzeResult } from '../engines';
 import type { CollectedData } from '../analyzer/data-collector';
+import type { HeuristicResult, HeuristicFinding } from '../analyzer/heuristics/heuristic.interface';
 import type { RgaaCriterion, RgaaMapping } from './index';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,6 +16,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export type CriterionStatus = 'violation' | 'pass' | 'manual' | 'incomplete';
 
+export interface MappedHeuristicFinding extends HeuristicFinding {
+  heuristicId: string;
+}
+
 export interface MappedCriterion {
   rgaaId: string;
   title: string;
@@ -23,6 +28,7 @@ export interface MappedCriterion {
   violations: AxeViolation[];
   incompletes: AxeIncomplete[];
   elements: Array<{ selector: string; flags: string[] }>;
+  heuristicFindings: MappedHeuristicFinding[];
   notes: string;
   manualChecks: string[];
 }
@@ -135,12 +141,49 @@ export function mapPageResults(
   axeResults: AnalyzeResult | null,
   collectedData: CollectedData | null,
   url: string,
+  heuristicResults?: HeuristicResult[],
 ): MappedPage {
   const mapping = loadMapping();
   const criteria: MappedCriterion[] = [];
 
+  // Index heuristic findings by RGAA criterion
+  const heuristicByCriterion = new Map<string, MappedHeuristicFinding[]>();
+  if (heuristicResults) {
+    for (const result of heuristicResults) {
+      for (const finding of result.findings) {
+        for (const criterionId of result.rgaaCriteria) {
+          if (!heuristicByCriterion.has(criterionId)) {
+            heuristicByCriterion.set(criterionId, []);
+          }
+          heuristicByCriterion.get(criterionId)!.push({
+            ...finding,
+            heuristicId: result.heuristicId,
+          });
+        }
+      }
+    }
+  }
+
   for (const criterion of mapping.criteria) {
     const mapped = mapCriterion(criterion, axeResults, collectedData);
+    const findings = heuristicByCriterion.get(criterion.rgaa.id) ?? [];
+    mapped.heuristicFindings = findings;
+
+    // Merge heuristic confidence into criterion status
+    if (findings.length > 0) {
+      const hasCertain = findings.some((f) => f.confidence === 'certain');
+      const hasLikely = findings.some((f) => f.confidence === 'likely');
+      const hasPossible = findings.some((f) => f.confidence === 'possible');
+
+      if (hasCertain && mapped.status !== 'violation') {
+        mapped.status = 'violation';
+      } else if (hasLikely && !hasCertain && mapped.status === 'pass') {
+        mapped.status = 'incomplete';
+      } else if (hasPossible && !hasCertain && !hasLikely && mapped.status === 'pass') {
+        mapped.status = 'manual';
+      }
+    }
+
     criteria.push(mapped);
   }
 
@@ -152,7 +195,7 @@ function mapCriterion(
   axeResults: AnalyzeResult | null,
   collectedData: CollectedData | null,
 ): MappedCriterion {
-  const base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements'> = {
+  const base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements' | 'heuristicFindings'> = {
     rgaaId: criterion.rgaa.id,
     title: criterion.rgaa.title,
     theme: criterion.rgaa.theme,
@@ -163,13 +206,13 @@ function mapCriterion(
   // MANUAL_ONLY — always manual regardless of axeResults
   if (criterion.evaluationStrategy === 'MANUAL_ONLY') {
     const elements = extractElements(criterion, collectedData);
-    return { ...base, status: 'manual', violations: [], incompletes: [], elements };
+    return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
   }
 
   // If no axe results (error page), return manual
   if (!axeResults || axeResults.error) {
     const elements = extractElements(criterion, collectedData);
-    return { ...base, status: 'manual', violations: [], incompletes: [], elements };
+    return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
   }
 
   const engineResult = axeResults as EngineResult;
@@ -184,14 +227,14 @@ function mapCriterion(
   }
 
   // Unknown strategy — fallback to manual
-  return { ...base, status: 'manual', violations: [], incompletes: [], elements };
+  return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
 }
 
 function mapAnyViolation(
   criterion: RgaaCriterion,
   result: EngineResult,
   elements: Array<{ selector: string; flags: string[] }>,
-  base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements'>,
+  base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements' | 'heuristicFindings'>,
 ): MappedCriterion {
   const violations = result.violations.filter((v) => criterion.axeRules.includes(v.rule));
   const incompletes = result.incomplete.filter((i) => criterion.axeRules.includes(i.rule));
@@ -205,20 +248,20 @@ function mapAnyViolation(
     status = 'pass';
   }
 
-  return { ...base, status, violations, incompletes, elements };
+  return { ...base, status, violations, incompletes, elements, heuristicFindings: [] };
 }
 
 function mapAllPass(
   criterion: RgaaCriterion,
   result: EngineResult,
   elements: Array<{ selector: string; flags: string[] }>,
-  base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements'>,
+  base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements' | 'heuristicFindings'>,
 ): MappedCriterion {
   const violations = result.violations.filter((v) => criterion.axeRules.includes(v.rule));
   const incompletes = result.incomplete.filter((i) => criterion.axeRules.includes(i.rule));
 
   if (violations.length > 0) {
-    return { ...base, status: 'violation', violations, incompletes, elements };
+    return { ...base, status: 'violation', violations, incompletes, elements, heuristicFindings: [] };
   }
 
   // ALL_PASS: pass only if ALL rules are in passes
@@ -226,10 +269,10 @@ function mapAllPass(
   const allPass = criterion.axeRules.every((rule) => passedRules.has(rule));
 
   if (allPass) {
-    return { ...base, status: 'pass', violations: [], incompletes, elements };
+    return { ...base, status: 'pass', violations: [], incompletes, elements, heuristicFindings: [] };
   }
 
-  return { ...base, status: 'incomplete', violations: [], incompletes, elements };
+  return { ...base, status: 'incomplete', violations: [], incompletes, elements, heuristicFindings: [] };
 }
 
 function extractElements(

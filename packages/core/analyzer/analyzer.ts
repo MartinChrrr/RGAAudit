@@ -8,6 +8,8 @@ import { getEngine } from '../engines';
 import type { AnalyzeResult } from '../engines';
 import { collectAll } from './data-collector';
 import type { CollectedData } from './data-collector';
+import { runAllHeuristics } from './heuristics/runner';
+import type { HeuristicResult } from './heuristics/heuristic.interface';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,6 +20,7 @@ export interface PageResult {
   auditedAt: string;
   axeResults: AnalyzeResult | null;
   collectedData: CollectedData | null;
+  heuristicResults: HeuristicResult[];
   error: string | null;
 }
 
@@ -47,6 +50,7 @@ export interface SessionState {
 export interface AuditPagesOptions {
   maxConcurrent?: number;
   sessionId: string;
+  disableRules?: string[];
   onPageComplete?: (url: string, result: PageResult) => void;
 }
 
@@ -88,17 +92,18 @@ export async function auditPage(
   page: Page,
   url: string,
   _sessionId: string,
-  options?: { timeout?: number },
+  options?: { timeout?: number; disableRules?: string[] },
 ): Promise<PageResult> {
   const timeout = options?.timeout ?? 30_000;
 
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout });
 
-    const engine = getEngine();
-    const [axeResults, collectedData] = await Promise.all([
+    const engine = getEngine({ disableRules: options?.disableRules });
+    const [axeResults, collectedData, heuristicResults] = await Promise.all([
       engine.analyze(page),
       collectAll(page),
+      runAllHeuristics(page),
     ]);
 
     return {
@@ -106,6 +111,7 @@ export async function auditPage(
       auditedAt: new Date().toISOString(),
       axeResults,
       collectedData,
+      heuristicResults,
       error: null,
     };
   } catch (err) {
@@ -115,6 +121,7 @@ export async function auditPage(
       auditedAt: new Date().toISOString(),
       axeResults: null,
       collectedData: null,
+      heuristicResults: [],
       error: message,
     };
   }
@@ -176,7 +183,9 @@ export async function* auditPages(
 
         const page = await ctx.newPage();
         try {
-          const result = await auditPage(page, url, options.sessionId);
+          const result = await auditPage(page, url, options.sessionId, {
+            disableRules: options.disableRules,
+          });
 
           state.pendingPages = state.pendingPages.filter((u) => u !== url);
           state.completedPages.push(url);
