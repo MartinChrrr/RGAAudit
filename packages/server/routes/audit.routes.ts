@@ -17,7 +17,7 @@ const completedAudits = new Map<string, ProgressEvent>();
 auditRouter.post('/api/audit/start', (req: Request, res: Response) => {
   const { urls, options } = req.body as {
     urls?: string[];
-    options?: { maxConcurrent?: number };
+    options?: { maxConcurrent?: number; disableContrasts?: boolean };
   };
 
   if (!Array.isArray(urls) || urls.length === 0) {
@@ -37,9 +37,14 @@ auditRouter.post('/api/audit/start', (req: Request, res: Response) => {
   // Launch audit in background — do NOT await
   void (async () => {
     try {
+      const disableRules = options?.disableContrasts
+        ? ['color-contrast', 'color-contrast-enhanced']
+        : undefined;
+
       const gen = auditPages(urls, {
         sessionId,
         maxConcurrent: options?.maxConcurrent,
+        disableRules,
       });
 
       for await (const event of gen) {

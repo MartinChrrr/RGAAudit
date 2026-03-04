@@ -16,6 +16,7 @@ export default function PageSelection() {
   const [selected, setSelected] = useState<Set<string>>(new Set(state?.urls ?? []));
   const [manualUrl, setManualUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [includeContrasts, setIncludeContrasts] = useState(true);
 
   const MAX_PAGES = 50;
 
@@ -56,7 +57,10 @@ export default function PageSelection() {
       const res = await fetch('/api/audit/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: selectedUrls }),
+        body: JSON.stringify({
+          urls: selectedUrls,
+          ...(includeContrasts ? {} : { options: { disableContrasts: true } }),
+        }),
       });
 
       if (!res.ok) return;
@@ -142,6 +146,24 @@ export default function PageSelection() {
               {t('pageSelection.addButton')}
             </button>
           </form>
+        </div>
+
+        {/* Contrast toggle */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <label className="flex items-center gap-3 cursor-pointer" data-testid="contrast-toggle">
+            <input
+              type="checkbox"
+              checked={includeContrasts}
+              onChange={(e) => setIncludeContrasts(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {t('pageSelection.contrastToggleLabel')}
+            </span>
+          </label>
+          <p className="mt-2 text-xs text-gray-500 ml-7">
+            {t('pageSelection.contrastToggleWarning')}
+          </p>
         </div>
 
         {/* Action */}

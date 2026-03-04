@@ -19,25 +19,48 @@ function flattenTarget(target: NodeResult['target']): string[] {
   );
 }
 
+function extractCheckData(node: NodeResult): Record<string, unknown> | undefined {
+  // axe-core puts detailed data (e.g. contrast ratios) inside CheckResult
+  // objects in node.any / node.all / node.none arrays.
+  const checks = [...(node.any ?? []), ...(node.all ?? []), ...(node.none ?? [])];
+  for (const check of checks) {
+    if (check.data && typeof check.data === 'object') {
+      return check.data as Record<string, unknown>;
+    }
+  }
+  return undefined;
+}
+
 function mapElements(nodes: NodeResult[]): AxeElement[] {
-  return nodes.map((node) => ({
-    html: node.html,
-    target: flattenTarget(node.target),
-    ...(node.failureSummary ? { failureSummary: node.failureSummary } : {}),
-  }));
+  return nodes.map((node) => {
+    const checkData = extractCheckData(node);
+    return {
+      html: node.html,
+      target: flattenTarget(node.target),
+      ...(node.failureSummary ? { failureSummary: node.failureSummary } : {}),
+      ...(checkData ? { data: checkData } : {}),
+    };
+  });
 }
 
 export class AxeCoreAdapter implements AuditEngine {
   private readonly timeout: number;
+  private readonly disableRules: string[];
 
   constructor(config?: EngineConfig) {
     this.timeout = config?.timeout ?? DEFAULT_TIMEOUT;
+    this.disableRules = config?.disableRules ?? [];
   }
 
   async analyze(page: Page): Promise<AnalyzeResult> {
     try {
+      let builder = new AxeBuilder({ page });
+      if (this.disableRules.length > 0) {
+        builder = builder.disableRules(this.disableRules);
+      }
+
       const axeResults = await Promise.race([
-        new AxeBuilder({ page }).analyze(),
+        builder.analyze(),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('axe-core timeout')), this.timeout)
         ),

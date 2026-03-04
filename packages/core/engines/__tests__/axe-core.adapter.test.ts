@@ -192,4 +192,49 @@ describe('AxeCoreAdapter', () => {
       expect(imageAlt).toBeUndefined();
     });
   });
+
+  it('détecte le contraste insuffisant via color-contrast', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/contrast/low-contrast.html`, async (page) => {
+      const result = await adapter.analyze(page);
+
+      expect(result.error).toBeUndefined();
+      const { violations } = result as EngineResult;
+      const colorContrast = violations.find((v) => v.rule === 'color-contrast');
+
+      expect(colorContrast).toBeDefined();
+      expect(colorContrast!.elements.length).toBeGreaterThanOrEqual(1);
+
+      // Verify data propagation (contrastRatio from axe-core)
+      const firstEl = colorContrast!.elements[0];
+      expect(firstEl.data).toBeDefined();
+      expect(firstEl.data!.contrastRatio).toBeDefined();
+    });
+  });
+
+  it('aucune violation contraste sur page avec bon contraste', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/contrast/good-contrast.html`, async (page) => {
+      const result = await adapter.analyze(page);
+
+      expect(result.error).toBeUndefined();
+      const { violations } = result as EngineResult;
+      const colorContrast = violations.find((v) => v.rule === 'color-contrast');
+      expect(colorContrast).toBeUndefined();
+    });
+  });
+
+  it('disableRules exclut color-contrast du scan', async () => {
+    const adapter = new AxeCoreAdapter({
+      disableRules: ['color-contrast', 'color-contrast-enhanced'],
+    });
+    await withPage(`${baseUrl}/contrast/low-contrast.html`, async (page) => {
+      const result = await adapter.analyze(page);
+
+      expect(result.error).toBeUndefined();
+      const { violations } = result as EngineResult;
+      const colorContrast = violations.find((v) => v.rule === 'color-contrast');
+      expect(colorContrast).toBeUndefined();
+    });
+  });
 });

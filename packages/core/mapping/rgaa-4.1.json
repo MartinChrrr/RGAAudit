@@ -1,7 +1,7 @@
 {
   "version": "4.1",
   "totalCriteria": 106,
-  "coveredThemes": ["Images", "Liens", "Éléments obligatoires", "Structuration de l'information"],
+  "coveredThemes": ["Images", "Couleurs", "Liens", "Éléments obligatoires", "Structuration de l'information"],
   "uncoveredThemes": [
     {
       "id": "2",
@@ -11,7 +11,7 @@
     {
       "id": "3",
       "name": "Couleurs",
-      "manualChecklist": ["Vérifier les contrastes de couleurs (ratio 4.5:1 pour le texte normal)", "Vérifier que l'information n'est pas véhiculée uniquement par la couleur"]
+      "manualChecklist": ["Vérifier que l'information n'est pas véhiculée uniquement par la couleur"]
     },
     {
       "id": "4",
@@ -127,6 +127,32 @@
       ],
       "heuristicPatterns": {},
       "limits": "Ne peut pas distinguer automatiquement une image décorative d'une image porteuse d'information."
+    },
+    {
+      "rgaa": {
+        "id": "3.2",
+        "title": "Dans chaque page web, le contraste entre la couleur du texte et la couleur de son arrière-plan est-il suffisamment élevé (hors cas particuliers) ?",
+        "theme": "Couleurs"
+      },
+      "wcag": ["1.4.3"],
+      "axeRules": ["color-contrast"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "axe-core calcule les contrastes CSS computed. Textes en image et SVG complexes non vérifiés automatiquement."
+    },
+    {
+      "rgaa": {
+        "id": "3.3",
+        "title": "Dans chaque page web, les couleurs utilisées dans les composants d'interface ou les éléments graphiques porteurs d'informations sont-elles suffisamment contrastées (hors cas particuliers) ?",
+        "theme": "Couleurs"
+      },
+      "wcag": ["1.4.11"],
+      "axeRules": ["color-contrast-enhanced"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "axe-core calcule les contrastes CSS computed. Textes en image et SVG complexes non vérifiés automatiquement."
     },
     {
       "rgaa": {

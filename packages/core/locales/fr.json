@@ -26,7 +26,9 @@
     "selectedCount": "{count} page(s) sélectionnée(s)",
     "tooManyPages": "Maximum 50 pages par audit. Veuillez en désélectionner.",
     "startAudit": "Lancer l'audit",
-    "noPages": "Aucune page à auditer"
+    "noPages": "Aucune page à auditer",
+    "contrastToggleLabel": "Inclure vérification des contrastes",
+    "contrastToggleWarning": "Cette option ralentit l'audit (~+30s par page)"
   },
   "auditProgress": {
     "heading": "Audit en cours",
@@ -162,7 +164,11 @@
     "htmlColStatus": "Statut",
     "htmlColPages": "Pages",
     "htmlManualChecklist": "Points de contrôle manuel",
-    "htmlFooter": "Rapport généré par RGAAudit — outil open-source d'aide à l'audit RGAA 4.1"
+    "htmlFooter": "Rapport généré par RGAAudit — outil open-source d'aide à l'audit RGAA 4.1",
+    "contrastDetail": "Détail des contrastes",
+    "contrastSelector": "Sélecteur CSS",
+    "contrastRatio": "Ratio calculé",
+    "contrastRequired": "Ratio requis"
   },
   "cli": {
     "starting": "RGAAudit démarré → {url}",

@@ -151,4 +151,35 @@ describe('Results', () => {
       expect(warning).toHaveTextContent(/pdf.*pas balisé/i);
     });
   });
+
+  it('affiche les violations de contraste avec ratios', async () => {
+    const reportWithContrast = {
+      ...mockReport,
+      contrastViolations: [
+        {
+          pageUrl: 'https://example.com/',
+          rgaaId: '3.2',
+          selector: 'p.low-contrast',
+          contrastRatio: '2.5:1',
+          expectedContrastRatio: '4.5:1',
+          fgColor: '#aaaaaa',
+          bgColor: '#ffffff',
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(reportWithContrast),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => {
+      const section = screen.getByTestId('contrast-violations');
+      expect(section).toBeInTheDocument();
+      expect(section).toHaveTextContent('2.5:1');
+      expect(section).toHaveTextContent('4.5:1');
+    });
+  });
 });

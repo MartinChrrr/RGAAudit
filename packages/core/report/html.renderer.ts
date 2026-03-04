@@ -43,12 +43,23 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+export interface ContrastViolationItem {
+  pageUrl: string;
+  rgaaId: string;
+  selector: string;
+  contrastRatio: string;
+  expectedContrastRatio: string;
+  fgColor: string;
+  bgColor: string;
+}
+
 export interface RenderOptions {
   report: Report;
   allCollected?: Array<{ url: string; collectedData: CollectedData | null }>;
+  contrastViolations?: ContrastViolationItem[];
 }
 
-export function renderReportHtml({ report, allCollected }: RenderOptions): string {
+export function renderReportHtml({ report, allCollected, contrastViolations }: RenderOptions): string {
   const { metadata, limitBanner, summary, uncoveredThemes } = report;
 
   const statusLabel = (status: string): string => t(`status.${status}`);
@@ -226,6 +237,8 @@ export function renderReportHtml({ report, allCollected }: RenderOptions): strin
 
     ${uncoveredSection}
 
+    ${buildContrastSection(contrastViolations ?? [])}
+
     <!-- Footer -->
     <footer class="text-center text-xs text-gray-400 mt-12 py-4 border-t border-gray-200">
       ${escapeHtml(t('report.htmlFooter'))}
@@ -236,6 +249,38 @@ export function renderReportHtml({ report, allCollected }: RenderOptions): strin
   <script id="rgaaudit-data" type="application/json">${annexeDataJson}</script>
 </body>
 </html>`;
+}
+
+function buildContrastSection(violations: ContrastViolationItem[]): string {
+  if (violations.length === 0) return '';
+
+  const rows = violations.map((v) => `
+    <tr>
+      <td class="px-3 py-2 font-mono text-xs text-gray-500">${escapeHtml(v.rgaaId)}</td>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(v.selector)}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(v.contrastRatio)}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(v.expectedContrastRatio)}</td>
+      <td class="px-3 py-2 text-xs text-gray-500 break-all">${escapeHtml(v.pageUrl)}</td>
+    </tr>`).join('');
+
+  return `
+    <section class="mb-8" data-testid="contrast-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.contrastDetail'))}</h2>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-3 py-2">${escapeHtml(t('report.htmlColId'))}</th>
+              <th class="px-3 py-2">${escapeHtml(t('report.contrastSelector'))}</th>
+              <th class="px-3 py-2">${escapeHtml(t('report.contrastRatio'))}</th>
+              <th class="px-3 py-2">${escapeHtml(t('report.contrastRequired'))}</th>
+              <th class="px-3 py-2">Page</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
 }
 
 /** Reset locale cache — for testing only */

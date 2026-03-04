@@ -5,6 +5,16 @@ import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
 import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
 
+interface ContrastViolationItem {
+  pageUrl: string;
+  rgaaId: string;
+  selector: string;
+  contrastRatio: string;
+  expectedContrastRatio: string;
+  fgColor: string;
+  bgColor: string;
+}
+
 interface ReportData {
   metadata: {
     url: string;
@@ -38,6 +48,7 @@ interface ReportData {
     name: string;
     manualChecklist: string[];
   }>;
+  contrastViolations?: ContrastViolationItem[];
   allCollected?: Array<{
     url: string;
     collectedData: {
@@ -256,6 +267,35 @@ export default function Results() {
             ))}
           </div>
         </section>
+
+        {/* Contrast violations detail */}
+        {(report.contrastViolations ?? []).length > 0 && (
+          <section className="mb-8" data-testid="contrast-violations">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('report.contrastDetail')}</h2>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-3 py-2">ID</th>
+                    <th className="px-3 py-2">{t('report.contrastSelector')}</th>
+                    <th className="px-3 py-2">{t('report.contrastRatio')}</th>
+                    <th className="px-3 py-2">{t('report.contrastRequired')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {report.contrastViolations!.map((v, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{v.rgaaId}</td>
+                      <td className="px-3 py-2 text-xs text-gray-700 break-all">{v.selector}</td>
+                      <td className="px-3 py-2 text-xs text-gray-700">{v.contrastRatio}</td>
+                      <td className="px-3 py-2 text-xs text-gray-700">{v.expectedContrastRatio}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* Uncovered themes */}
         {report.uncoveredThemes.length > 0 && (

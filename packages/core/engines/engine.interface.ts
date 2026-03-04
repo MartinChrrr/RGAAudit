@@ -4,6 +4,7 @@ export interface AxeElement {
   html: string;
   target: string[];
   failureSummary?: string;
+  data?: Record<string, unknown>;
 }
 
 export interface AxeViolation {
@@ -45,6 +46,7 @@ export type AnalyzeResult = EngineResult | EngineError;
 
 export interface EngineConfig {
   timeout?: number;
+  disableRules?: string[];
 }
 
 export interface AuditEngine {

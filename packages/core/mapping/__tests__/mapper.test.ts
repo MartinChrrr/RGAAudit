@@ -52,6 +52,7 @@ describe('loadMapping', () => {
     expect(mapping.criteria.length).toBeGreaterThan(0);
     expect(mapping.totalCriteria).toBe(106);
     expect(mapping.coveredThemes).toContain('Images');
+    expect(mapping.coveredThemes).toContain('Couleurs');
   });
 });
 
@@ -122,6 +123,47 @@ describe('mapPageResults — ANY_VIOLATION', () => {
     expect(criterion11).toBeDefined();
     expect(criterion11!.status).toBe('pass');
     expect(criterion11!.violations).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mapPageResults — contraste (3.2)
+// ---------------------------------------------------------------------------
+
+describe('mapPageResults — contraste', () => {
+  it('violation color-contrast → critère 3.2 en violation avec data', () => {
+    const axeResults = makeAxeResult({
+      violations: [
+        {
+          rule: 'color-contrast',
+          impact: 'serious',
+          description: 'Elements must meet minimum color contrast ratio thresholds',
+          helpUrl: 'https://dequeuniversity.com/rules/axe/4.9/color-contrast',
+          elements: [
+            {
+              html: '<p style="color:#aaa">Low contrast</p>',
+              target: ['p'],
+              data: {
+                fgColor: '#aaaaaa',
+                bgColor: '#ffffff',
+                contrastRatio: 2.32,
+                expectedContrastRatio: '4.5:1',
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const collected = makeCollectedData();
+
+    const result = mapPageResults(axeResults, collected, 'http://example.com');
+    const criterion32 = result.criteria.find((c) => c.rgaaId === '3.2');
+
+    expect(criterion32).toBeDefined();
+    expect(criterion32!.status).toBe('violation');
+    expect(criterion32!.violations.length).toBe(1);
+    expect(criterion32!.violations[0].elements[0].data).toBeDefined();
+    expect(criterion32!.violations[0].elements[0].data!.contrastRatio).toBe(2.32);
   });
 });
 
@@ -396,10 +438,10 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(7);
+    expect(report.metadata.coveredCriteria).toBe(9);
 
     // limitBanner comes from locale, not hardcoded
-    expect(report.limitBanner).toContain('7');
+    expect(report.limitBanner).toContain('9');
     expect(report.limitBanner).toContain('106');
     expect(report.limitBanner).not.toBe('');
 

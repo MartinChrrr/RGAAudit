@@ -38,21 +38,22 @@ function renderPageSelection() {
 }
 
 describe('PageSelection', () => {
-  it('"Tout sélectionner" coche toutes les checkboxes', async () => {
+  it('"Tout sélectionner" coche toutes les checkboxes URL', async () => {
     const user = userEvent.setup();
     renderPageSelection();
 
     // Deselect all first to ensure a clean state
     await user.click(screen.getByRole('button', { name: /tout désélectionner/i }));
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    for (const cb of checkboxes) {
+    // Get URL checkboxes (those with aria-label matching URLs)
+    const urlCheckboxes = screen.getAllByRole('checkbox', { name: /^https?:\/\// });
+    for (const cb of urlCheckboxes) {
       expect(cb).not.toBeChecked();
     }
 
     await user.click(screen.getByRole('button', { name: /tout sélectionner/i }));
 
-    for (const cb of screen.getAllByRole('checkbox')) {
+    for (const cb of screen.getAllByRole('checkbox', { name: /^https?:\/\// })) {
       expect(cb).toBeChecked();
     }
   });
@@ -83,5 +84,38 @@ describe('PageSelection', () => {
     await user.click(screen.getByRole('button', { name: /ajouter/i }));
 
     expect(screen.getByText('https://example.com/contact')).toBeInTheDocument();
+  });
+
+  it('affiche le toggle contraste coché par défaut', () => {
+    renderPageSelection();
+
+    const toggle = screen.getByTestId('contrast-toggle');
+    expect(toggle).toBeInTheDocument();
+
+    const checkbox = toggle.querySelector('input[type="checkbox"]');
+    expect(checkbox).toBeChecked();
+  });
+
+  it('envoie disableContrasts quand le toggle est décoché', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ sessionId: 'test-123' }),
+    } as Response);
+
+    renderPageSelection();
+
+    // Uncheck the contrast toggle
+    const toggle = screen.getByTestId('contrast-toggle');
+    const checkbox = toggle.querySelector('input[type="checkbox"]')!;
+    await user.click(checkbox);
+
+    // Launch audit
+    await user.click(screen.getByRole('button', { name: /lancer l'audit/i }));
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/audit/start', expect.objectContaining({
+      method: 'POST',
+      body: expect.stringContaining('disableContrasts'),
+    }));
   });
 });

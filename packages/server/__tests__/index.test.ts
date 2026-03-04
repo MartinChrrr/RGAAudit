@@ -204,6 +204,29 @@ describe('POST /api/audit/start', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();
   });
+
+  it('passe disableRules quand disableContrasts est vrai', async () => {
+    mockAuditPages.mockReturnValue(
+      (async function* () {
+        // Empty generator
+      })(),
+    );
+
+    const res = await request(app)
+      .post('/api/audit/start')
+      .send({
+        urls: ['https://example.com'],
+        options: { disableContrasts: true },
+      });
+
+    expect(res.status).toBe(202);
+    expect(mockAuditPages).toHaveBeenCalledWith(
+      ['https://example.com'],
+      expect.objectContaining({
+        disableRules: ['color-contrast', 'color-contrast-enhanced'],
+      }),
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
