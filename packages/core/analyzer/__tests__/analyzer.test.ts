@@ -102,6 +102,7 @@ describe('saveSessionState', () => {
           auditedAt: '2026-03-01T00:01:00Z',
           axeResults: null,
           collectedData: null,
+          heuristicResults: [],
           error: null,
         },
       },
