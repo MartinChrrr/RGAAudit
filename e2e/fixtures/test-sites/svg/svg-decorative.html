@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — SVG décoratif</title>
+</head>
+<body>
+  <h1>Page de test SVG décoratifs</h1>
+
+  <!-- DOIT être détecté — SVG_DECORATIVE_NOT_HIDDEN "likely" (petit SVG sans aria-hidden) -->
+  <svg width="16" height="16" id="svg-small-no-hidden">
+    <path d="M8 0l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>
+  </svg>
+
+  <!-- NE DOIT PAS être détecté — aria-hidden="true" -->
+  <svg width="16" height="16" aria-hidden="true" id="svg-aria-hidden">
+    <path d="M8 0l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>
+  </svg>
+
+  <!-- NE DOIT PAS être détecté — role="presentation" -->
+  <svg width="16" height="16" role="presentation" id="svg-presentation">
+    <path d="M8 0l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>
+  </svg>
+
+  <!-- DOIT être détecté — classe contenant "icon" -->
+  <svg width="48" height="48" class="menu-icon" id="svg-icon-class">
+    <rect width="48" height="4" y="10"/><rect width="48" height="4" y="22"/><rect width="48" height="4" y="34"/>
+  </svg>
+
+  <!-- NE DOIT PAS être détecté — grand SVG (>32x32) sans classe déco -->
+  <svg width="200" height="200" id="svg-large">
+    <circle cx="100" cy="100" r="80" fill="blue"/>
+  </svg>
+</body>
+</html>

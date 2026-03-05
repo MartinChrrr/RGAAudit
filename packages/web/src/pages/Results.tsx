@@ -4,6 +4,7 @@ import { t } from '../locales';
 import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
 import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
+import AnnexeHeuristiques, { type HeuristicFindingItem } from '../components/annexes/AnnexeHeuristiques';
 
 interface ContrastViolationItem {
   pageUrl: string;
@@ -49,6 +50,7 @@ interface ReportData {
     manualChecklist: string[];
   }>;
   contrastViolations?: ContrastViolationItem[];
+  heuristicFindings?: HeuristicFindingItem[];
   allCollected?: Array<{
     url: string;
     collectedData: {
@@ -73,7 +75,7 @@ export default function Results() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'images' | 'links' | 'headings'>('images');
+  const [activeTab, setActiveTab] = useState<'images' | 'links' | 'headings' | 'heuristics'>('images');
   const [uncoveredOpen, setUncoveredOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -330,7 +332,7 @@ export default function Results() {
         {/* Annexes tabs */}
         <section className="mb-8">
           <div className="flex border-b border-gray-200 mb-4">
-            {(['images', 'links', 'headings'] as const).map((tab) => (
+            {(['images', 'links', 'headings', 'heuristics'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -343,7 +345,9 @@ export default function Results() {
                 aria-selected={activeTab === tab}
                 role="tab"
               >
-                {t(`results.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
+                {tab === 'heuristics'
+                  ? `\uD83D\uDD0D ${t('results.tabHeuristics')}`
+                  : t(`results.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
               </button>
             ))}
           </div>
@@ -356,6 +360,9 @@ export default function Results() {
             )}
             {activeTab === 'headings' && (
               <AnnexeTitres headingData={allHeadings} sessionId={sessionId!} />
+            )}
+            {activeTab === 'heuristics' && (
+              <AnnexeHeuristiques findings={report.heuristicFindings ?? []} sessionId={sessionId!} />
             )}
           </div>
         </section>

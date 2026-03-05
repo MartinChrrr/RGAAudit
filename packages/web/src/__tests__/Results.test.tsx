@@ -107,7 +107,7 @@ describe('Results', () => {
     });
   });
 
-  it('affiche les 3 onglets annexes', async () => {
+  it('affiche les 4 onglets annexes', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockReport),
@@ -119,6 +119,7 @@ describe('Results', () => {
       expect(screen.getByRole('tab', { name: /images/i })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /liens/i })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /titres/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /heuristiques/i })).toBeInTheDocument();
     });
   });
 

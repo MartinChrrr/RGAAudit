@@ -55,6 +55,7 @@
     "tabImages": "Images",
     "tabLinks": "Liens",
     "tabHeadings": "Titres",
+    "tabHeuristics": "Heuristiques",
     "comingSoon": "Annexes détaillées disponibles à l'étape 9",
     "backHome": "Nouvel audit"
   },
@@ -111,6 +112,29 @@
       "structureIssues": "{count} problème(s) détecté(s)",
       "levelSkip": "Saut h{from} → h{to} (h{missing} manquant)",
       "noHeadings": "Aucun titre sur cette page"
+    },
+    "heuristics": {
+      "title": "Annexe Heuristiques",
+      "description": "Détections heuristiques — éléments suspects identifiés par analyse comportementale. Les détections 'certain' indiquent une violation probable. Les détections 'likely' nécessitent une vérification manuelle. Les détections 'possible' sont à confirmer.",
+      "tabInteractive": "Interactifs",
+      "tabStructure": "Structure",
+      "tabSvg": "SVG",
+      "filterAll": "Tous",
+      "filterCertain": "Certain",
+      "filterLikely": "Probable",
+      "togglePossible": "Afficher les détections possibles",
+      "badgeCertain": "Certain",
+      "badgeLikely": "Probable",
+      "badgePossible": "À vérifier",
+      "colSelector": "Sélecteur CSS",
+      "colHtml": "Extrait HTML",
+      "colEvidence": "Preuve",
+      "colCriteria": "Critères RGAA",
+      "colContext": "Contexte",
+      "noFindings": "Aucune détection heuristique",
+      "copied": "Copié !",
+      "filterByPage": "Filtrer par page",
+      "allPages": "Toutes les pages"
     }
   },
   "flags": {
@@ -127,7 +151,18 @@
     "MULTIPLE_H1": "Plusieurs titres h1",
     "TITLE_ABSENT": "Titre de page absent",
     "TITLE_GENERIC": "Titre de page générique",
-    "LEVEL_SKIP": "Saut de niveau de titre"
+    "LEVEL_SKIP": "Saut de niveau de titre",
+    "FAKE_BUTTON": "Bouton utilisé pour naviguer",
+    "FAKE_LINK": "Lien sans destination réelle",
+    "MISSING_ROLE": "Rôle ARIA manquant ou incomplet",
+    "DIV_CLICKABLE": "Élément cliquable sans rôle ARIA",
+    "FAKE_HEADING": "Titre simulé en CSS sans balise sémantique",
+    "FAKE_PARAGRAPH": "Paragraphe simulé avec des <br> multiples",
+    "FAKE_LIST": "Liste simulée avec des caractères typographiques",
+    "TEXT_IN_DIV": "Texte long dans un <div> sans balise sémantique",
+    "SVG_NO_TITLE": "SVG informatif sans élément <title>",
+    "SVG_ICON_NO_LABEL": "Icône SVG dans un bouton/lien sans label alternatif",
+    "SVG_DECORATIVE_NOT_HIDDEN": "SVG décoratif non masqué aux technologies d'assistance"
   },
   "pdf": {
     "downloadButton": "Télécharger le rapport PDF",

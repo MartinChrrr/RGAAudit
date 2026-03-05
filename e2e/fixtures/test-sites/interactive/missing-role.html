@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — Rôles ARIA manquants</title>
+</head>
+<body>
+  <h1>Rôles manquants</h1>
+
+  <!-- CAS 3 — role="button" sans tabindex → MISSING_ROLE "certain" -->
+  <span role="button" id="no-tabindex">Fermer</span>
+
+  <!-- role="button" avec tabindex="0" → ne doit PAS être détecté -->
+  <span role="button" tabindex="0" id="with-tabindex">OK</span>
+
+  <!-- CAS 5 — tabindex="0" sans rôle → MISSING_ROLE "possible" -->
+  <div tabindex="0" id="focusable-no-role">Élément focusable</div>
+
+  <!-- tabindex="0" avec rôle → ne doit PAS être détecté -->
+  <div tabindex="0" role="button" id="focusable-with-role">Bouton accessible</div>
+</body>
+</html>

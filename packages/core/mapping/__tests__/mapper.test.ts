@@ -438,7 +438,7 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(9);
+    expect(report.metadata.coveredCriteria).toBe(11);
 
     // limitBanner comes from locale, not hardcoded
     expect(report.limitBanner).toContain('9');

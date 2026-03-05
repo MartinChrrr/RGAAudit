@@ -1,7 +1,7 @@
 {
   "version": "4.1",
   "totalCriteria": 106,
-  "coveredThemes": ["Images", "Couleurs", "Liens", "Éléments obligatoires", "Structuration de l'information"],
+  "coveredThemes": ["Images", "Couleurs", "Liens", "Scripts", "Éléments obligatoires", "Structuration de l'information"],
   "uncoveredThemes": [
     {
       "id": "2",
@@ -26,7 +26,7 @@
     {
       "id": "7",
       "name": "Scripts",
-      "manualChecklist": ["Vérifier que les scripts sont compatibles avec les technologies d'assistance", "Vérifier que les changements de contexte sont signalés"]
+      "manualChecklist": ["Vérifier que les changements de contexte sont signalés"]
     },
     {
       "id": "10",
@@ -75,9 +75,13 @@
         "ALT_GENERIC",
         "ALT_TOO_LONG",
         "IMG_IN_LINK_ALT_EMPTY",
-        "ROLE_PRESENTATION_SUSPICIOUS"
+        "ROLE_PRESENTATION_SUSPICIOUS",
+        "SVG_NO_TITLE",
+        "SVG_ICON_NO_LABEL",
+        "SVG_DECORATIVE_NOT_HIDDEN"
       ],
       "heuristicPatterns": {
+        "heuristicId": ["svg-accessible"],
         "genericLabels": [
           "image",
           "photo",
@@ -220,6 +224,31 @@
     },
     {
       "rgaa": {
+        "id": "7.1",
+        "title": "Chaque script est-il, si nécessaire, compatible avec les technologies d'assistance ?",
+        "theme": "Scripts"
+      },
+      "wcag": ["4.1.2"],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [
+        "FAKE_BUTTON",
+        "FAKE_LINK",
+        "MISSING_ROLE",
+        "DIV_CLICKABLE"
+      ],
+      "heuristicPatterns": {
+        "heuristicId": ["fake-interactive"],
+        "manualChecks": [
+          "Vérifier que chaque composant interactif est opérable au clavier (Tab, Entrée, Espace)",
+          "Vérifier que le rôle ARIA correspond au comportement visuel",
+          "Vérifier que les <a> pointent vers une destination réelle (pas href='#' avec onclick)"
+        ]
+      },
+      "limits": "Détection heuristique des éléments interactifs non-natifs. Les findings 'certain' indiquent une violation probable. Les findings 'likely' nécessitent une vérification manuelle."
+    },
+    {
+      "rgaa": {
         "id": "8.5",
         "title": "Chaque page web a-t-elle un titre de page ?",
         "theme": "Éléments obligatoires"
@@ -267,6 +296,32 @@
         ]
       },
       "limits": "Un titre peut être techniquement présent mais non pertinent — détection heuristique uniquement."
+    },
+    {
+      "rgaa": {
+        "id": "8.9",
+        "title": "Dans chaque page web, les balises ne doivent pas être utilisées uniquement à des fins de présentation. Cette règle est-elle respectée ?",
+        "theme": "Éléments obligatoires"
+      },
+      "wcag": ["1.3.1"],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [
+        "FAKE_HEADING",
+        "FAKE_PARAGRAPH",
+        "FAKE_LIST",
+        "TEXT_IN_DIV"
+      ],
+      "heuristicPatterns": {
+        "heuristicId": ["unsemantic-text"],
+        "manualChecks": [
+          "Vérifier que les titres visuels sont balisés avec <h1>-<h6>",
+          "Vérifier que les paragraphes utilisent la balise <p>",
+          "Vérifier que les listes utilisent <ul>, <ol> ou <dl>",
+          "Vérifier que les balises de présentation ne sont pas détournées pour structurer le contenu"
+        ]
+      },
+      "limits": "Détection heuristique des éléments de contenu non sémantiques. Les findings 'certain' indiquent une violation probable. Les findings 'likely' et 'possible' nécessitent une vérification manuelle."
     },
     {
       "rgaa": {

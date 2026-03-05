@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — SVG icône dans bouton</title>
+</head>
+<body>
+  <h1>Page de test SVG icônes</h1>
+
+  <!-- DOIT être détecté — SVG_ICON_NO_LABEL "certain" -->
+  <button id="btn-no-label">
+    <svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+
+  <!-- NE DOIT PAS être détecté — button avec aria-label -->
+  <button aria-label="Fermer" id="btn-with-label">
+    <svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+
+  <!-- NE DOIT PAS être détecté — button avec texte visible -->
+  <button id="btn-with-text">
+    <svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+    Texte visible
+  </button>
+
+  <!-- DOIT être détecté — lien SVG sans label -->
+  <a href="/page" id="link-no-label">
+    <svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+
+  <!-- NE DOIT PAS être détecté — SVG dans button avec title sur le SVG -->
+  <button id="btn-svg-title">
+    <svg viewBox="0 0 24 24" width="24" height="24"><title>Supprimer</title><path d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+</body>
+</html>

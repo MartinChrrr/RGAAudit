@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — Liens factices</title>
+</head>
+<body>
+  <h1>Liens factices</h1>
+
+  <!-- CAS 1 — Lien sans destination réelle avec onclick → FAKE_LINK "certain" -->
+  <a href="#" onclick="doSomething()" id="fake-link-hash">Ouvrir le modal</a>
+
+  <!-- Lien javascript:void(0) avec onclick → FAKE_LINK "certain" -->
+  <a href="javascript:void(0)" onclick="doSomething()" id="fake-link-void">Action JS</a>
+
+  <!-- Vrai lien — ne doit PAS être détecté -->
+  <a href="/contact" id="real-link">Contact</a>
+
+  <!-- Lien avec ancre interne sans onclick — ne doit PAS être détecté -->
+  <a href="#section" id="anchor-link">Aller à la section</a>
+
+  <script>
+    function doSomething() { console.log('action'); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — Listes simulées</title>
+</head>
+<body>
+  <h1>Page de test</h1>
+
+  <!-- DOIT être détecté — 3 éléments consécutifs avec bullet -->
+  <div id="fake-list-parent">
+    <div id="fake-list-1">&#8226; Élément 1</div>
+    <div id="fake-list-2">&#8226; Élément 2</div>
+    <div id="fake-list-3">&#8226; Élément 3</div>
+  </div>
+
+  <!-- NE DOIT PAS être détecté — seulement 2 éléments -->
+  <div id="short-list-parent">
+    <div id="short-list-1">&#8226; Un</div>
+    <div id="short-list-2">&#8226; Deux</div>
+  </div>
+
+  <!-- NE DOIT PAS être détecté — vrai <ul> -->
+  <ul id="real-list">
+    <li>Item</li>
+    <li>Item</li>
+    <li>Item</li>
+  </ul>
+
+  <!-- DOIT être détecté — liste numérotée simulée -->
+  <div id="numbered-list-parent">
+    <div id="num-1">1. Premier point</div>
+    <div id="num-2">2. Deuxième point</div>
+    <div id="num-3">3. Troisième point</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — Boutons et divs cliquables</title>
+</head>
+<body>
+  <h1>Boutons factices</h1>
+
+  <!-- CAS 2 — div cliquable sans rôle → DIV_CLICKABLE "certain" -->
+  <div onclick="openMenu()" style="cursor:pointer" id="div-clickable">Menu</div>
+
+  <!-- CAS 4 — button qui navigue → FAKE_BUTTON "likely" -->
+  <button onclick="window.location='/contact'" id="button-navigate">Contact</button>
+
+  <!-- Vrai bouton submit — ne doit PAS être détecté -->
+  <button type="submit" id="real-button">Envoyer</button>
+
+  <!-- div avec rôle button — ne doit PAS être détecté comme DIV_CLICKABLE -->
+  <div onclick="doAction()" role="button" tabindex="0" id="div-with-role">Action accessible</div>
+
+  <!-- div contenant un bouton enfant — ne doit PAS être détecté -->
+  <div onclick="doAction()" style="cursor:pointer" id="div-with-child-button">
+    <button>Bouton enfant</button>
+  </div>
+
+  <script>
+    function openMenu() { console.log('menu'); }
+    function doAction() { console.log('action'); }
+  </script>
+</body>
+</html>

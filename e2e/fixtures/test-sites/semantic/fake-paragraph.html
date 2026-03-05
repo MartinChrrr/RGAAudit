@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test — Paragraphes simulés avec br</title>
+</head>
+<body>
+  <h1>Page de test</h1>
+
+  <!-- DOIT être détecté — FAKE_PARAGRAPH "certain" -->
+  <div id="fake-paragraph">Premier paragraphe.<br><br>Deuxième paragraphe.<br><br>Troisième.</div>
+
+  <!-- NE DOIT PAS être détecté — simple <br> dans un <p> -->
+  <p id="real-paragraph">Texte avec<br>saut de ligne simple</p>
+
+  <!-- NE DOIT PAS être détecté — dans <nav> -->
+  <nav><div id="nav-br">Menu<br><br>Sous-menu</div></nav>
+</body>
+</html>
