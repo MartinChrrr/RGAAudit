@@ -23,7 +23,7 @@ const mockReport = {
       { rgaaId: '1.2', title: 'Images décoratives', status: 'pass' },
     ],
     topIssues: [
-      { rgaaId: '1.1', title: 'Images', pagesViolating: ['https://example.com/'] },
+      { rgaaId: '1.1', title: 'Images', pagesAffected: 1 },
     ],
     overlaysDetected: false,
   },

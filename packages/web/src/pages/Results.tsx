@@ -41,7 +41,7 @@ interface ReportData {
     topIssues?: Array<{
       rgaaId: string;
       title: string;
-      pagesViolating: string[];
+      pagesAffected: number;
     }>;
     overlaysDetected?: boolean;
   };
@@ -235,7 +235,7 @@ export default function Results() {
                     <span className="text-sm text-gray-800">{issue.title}</span>
                   </div>
                   <span className="text-xs text-gray-500">
-                    {t('report.topIssuePages', { count: issue.pagesViolating.length })}
+                    {t('report.topIssuePages', { count: issue.pagesAffected })}
                   </span>
                 </div>
               ))}
