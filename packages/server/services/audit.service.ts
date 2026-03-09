@@ -71,6 +71,15 @@ export function cancelAudit(sessionId: string): boolean {
   return false;
 }
 
+export function connectClient(sessionId: string, res: import('express').Response): void {
+  sseManager.addClient(sessionId, res);
+
+  const completed = getCompletedAudit(sessionId);
+  if (completed) {
+    sseManager.send(sessionId, completed.type, completed);
+  }
+}
+
 export function getCompletedAudit(sessionId: string): ProgressEvent | undefined {
   const entry = completedAudits.get(sessionId);
   if (!entry) return undefined;

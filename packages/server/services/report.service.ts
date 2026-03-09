@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   mapPageResults,
   aggregateResults,
@@ -5,6 +8,10 @@ import {
   type MappedPage,
 } from '@rgaaudit/core/mapping/mapper';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
+const APP_VERSION: string = pkg.version;
 
 export interface ContrastViolationItem {
   pageUrl: string;
@@ -39,7 +46,7 @@ export function buildReportFromSession(session: SessionState): ReportData {
     url: firstUrl,
     date: session.startedAt,
     pagesAudited: session.completedPages.length,
-    version: '0.1.0',
+    version: APP_VERSION,
   }, allCollected);
 
   const contrastViolations = extractContrastViolations(mappedPages);

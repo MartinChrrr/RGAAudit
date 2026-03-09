@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
-import { sseManager } from '../sse/progress';
 import { loadSession } from '../services/session.store';
-import { startAudit, cancelAudit, getCompletedAudit } from '../services/audit.service';
+import { startAudit, cancelAudit, connectClient } from '../services/audit.service';
+import { asyncHandler, HttpError } from '../middleware/error.handler';
 
 export const auditRouter = Router();
 
@@ -14,13 +14,11 @@ auditRouter.post('/api/audit/start', (req: Request, res: Response) => {
   };
 
   if (!Array.isArray(urls) || urls.length === 0) {
-    res.status(400).json({ error: 'Le champ "urls" doit être un tableau non vide.' });
-    return;
+    throw new HttpError(400, 'Le champ "urls" doit être un tableau non vide.');
   }
 
   if (urls.length > 50) {
-    res.status(400).json({ error: 'Maximum 50 URLs par audit.' });
-    return;
+    throw new HttpError(400, 'Maximum 50 URLs par audit.');
   }
 
   const sessionId = randomUUID();
@@ -38,14 +36,7 @@ auditRouter.post('/api/audit/start', (req: Request, res: Response) => {
 // GET /api/audit/progress/:sessionId
 auditRouter.get('/api/audit/progress/:sessionId', (req: Request, res: Response) => {
   const sessionId = req.params.sessionId as string;
-
-  sseManager.addClient(sessionId, res);
-
-  // If audit already completed, send the event immediately
-  const completed = getCompletedAudit(sessionId);
-  if (completed) {
-    sseManager.send(sessionId, completed.type, completed);
-  }
+  connectClient(sessionId, res);
 });
 
 // DELETE /api/audit/:sessionId
@@ -56,14 +47,13 @@ auditRouter.delete('/api/audit/:sessionId', (req: Request, res: Response) => {
 });
 
 // GET /api/audit/session/:sessionId
-auditRouter.get('/api/audit/session/:sessionId', async (req: Request, res: Response) => {
+auditRouter.get('/api/audit/session/:sessionId', asyncHandler(async (req, res) => {
   const sessionId = req.params.sessionId as string;
   const session = await loadSession(sessionId);
 
   if (!session) {
-    res.status(404).json({ error: 'Session introuvable.' });
-    return;
+    throw new HttpError(404, 'Session introuvable.');
   }
 
   res.json(session);
-});
+}));
