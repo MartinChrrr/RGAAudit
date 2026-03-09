@@ -1,15 +1,10 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
-import { auditPages, type ProgressEvent } from '@rgaaudit/core/analyzer/analyzer';
 import { sseManager } from '../sse/progress';
 import { loadSession } from '../services/session.store';
+import { startAudit, cancelAudit, getCompletedAudit } from '../services/audit.service';
 
 export const auditRouter = Router();
-
-// Track running audits for cancellation
-const runningAudits = new Map<string, { cancelled: boolean }>();
-// Track completed audits for late SSE connections
-const completedAudits = new Map<string, ProgressEvent>();
 
 // POST /api/audit/start
 auditRouter.post('/api/audit/start', (req: Request, res: Response) => {
@@ -29,37 +24,13 @@ auditRouter.post('/api/audit/start', (req: Request, res: Response) => {
   }
 
   const sessionId = randomUUID();
-  const control = { cancelled: false };
-  runningAudits.set(sessionId, control);
 
-  // Launch audit in background — do NOT await
-  void (async () => {
-    try {
-      const disableRules = options?.disableContrasts
-        ? ['color-contrast', 'color-contrast-enhanced']
-        : undefined;
-
-      const gen = auditPages(urls, {
-        sessionId,
-        maxConcurrent: options?.maxConcurrent,
-        disableRules,
-      });
-
-      for await (const event of gen) {
-        if (control.cancelled) break;
-        sseManager.send(sessionId, event.type, event);
-
-        if (event.type === 'audit_complete') {
-          completedAudits.set(sessionId, event);
-        }
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      sseManager.send(sessionId, 'audit_error', { type: 'audit_error', error: message });
-    } finally {
-      runningAudits.delete(sessionId);
-    }
-  })();
+  startAudit({
+    sessionId,
+    urls,
+    maxConcurrent: options?.maxConcurrent,
+    disableContrasts: options?.disableContrasts,
+  });
 
   res.status(202).json({ sessionId });
 });
@@ -71,7 +42,7 @@ auditRouter.get('/api/audit/progress/:sessionId', (req: Request, res: Response) 
   sseManager.addClient(sessionId, res);
 
   // If audit already completed, send the event immediately
-  const completed = completedAudits.get(sessionId);
+  const completed = getCompletedAudit(sessionId);
   if (completed) {
     sseManager.send(sessionId, completed.type, completed);
   }
@@ -80,12 +51,7 @@ auditRouter.get('/api/audit/progress/:sessionId', (req: Request, res: Response) 
 // DELETE /api/audit/:sessionId
 auditRouter.delete('/api/audit/:sessionId', (req: Request, res: Response) => {
   const sessionId = req.params.sessionId as string;
-  const control = runningAudits.get(sessionId);
-
-  if (control) {
-    control.cancelled = true;
-  }
-
+  cancelAudit(sessionId);
   res.json({ cancelled: true });
 });
 
