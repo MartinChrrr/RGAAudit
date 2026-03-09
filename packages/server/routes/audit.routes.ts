@@ -1,10 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { auditPages, type ProgressEvent } from '@rgaaudit/core/analyzer/analyzer';
 import { sseManager } from '../sse/progress';
+import { loadSession } from '../services/session.store';
 
 export const auditRouter = Router();
 
@@ -94,12 +92,12 @@ auditRouter.delete('/api/audit/:sessionId', (req: Request, res: Response) => {
 // GET /api/audit/session/:sessionId
 auditRouter.get('/api/audit/session/:sessionId', async (req: Request, res: Response) => {
   const sessionId = req.params.sessionId as string;
-  const sessionPath = join(homedir(), '.rgaaudit', 'sessions', `audit-${sessionId}.json`);
+  const session = await loadSession(sessionId);
 
-  try {
-    const content = await readFile(sessionPath, 'utf-8');
-    res.json(JSON.parse(content));
-  } catch {
+  if (!session) {
     res.status(404).json({ error: 'Session introuvable.' });
+    return;
   }
+
+  res.json(session);
 });

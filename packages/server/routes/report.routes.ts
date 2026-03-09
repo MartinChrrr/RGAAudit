@@ -1,7 +1,5 @@
 import { Router, type Request, type Response } from 'express';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import {
   mapPageResults,
   aggregateResults,
@@ -10,7 +8,7 @@ import {
 } from '@rgaaudit/core/mapping/mapper';
 import { renderReportHtml } from '@rgaaudit/core/report/html.renderer';
 import { generatePDF, getPdfPathIfExists } from '@rgaaudit/core/report/pdf.generator';
-import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
+import { loadSession } from '../services/session.store';
 
 export interface ContrastViolationItem {
   pageUrl: string;
@@ -55,16 +53,6 @@ function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolation
 }
 
 export const reportRouter = Router();
-
-async function loadSession(sessionId: string): Promise<SessionState | null> {
-  const sessionPath = join(homedir(), '.rgaaudit', 'sessions', `audit-${sessionId}.json`);
-  try {
-    const content = await readFile(sessionPath, 'utf-8');
-    return JSON.parse(content) as SessionState;
-  } catch {
-    return null;
-  }
-}
 
 // GET /api/report/:sessionId
 reportRouter.get('/api/report/:sessionId', async (req: Request, res: Response) => {
