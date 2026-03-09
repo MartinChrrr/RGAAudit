@@ -1,9 +1,9 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { parseSitemap } from '@rgaaudit/core/crawler/sitemap.parser';
 
 export const crawlRouter = Router();
 
-crawlRouter.post('/api/crawl', async (req: Request, res: Response) => {
+crawlRouter.post('/api/crawl', async (req: Request, res: Response, next: NextFunction) => {
   const { url } = req.body as { url?: string };
 
   if (!url || typeof url !== 'string') {
@@ -24,7 +24,6 @@ crawlRouter.post('/api/crawl', async (req: Request, res: Response) => {
       source: result.source,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    res.status(500).json({ error: message });
+    next(err);
   }
 });

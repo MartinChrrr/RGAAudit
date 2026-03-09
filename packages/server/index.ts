@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 import { crawlRouter } from './routes/crawl.routes';
 import { auditRouter } from './routes/audit.routes';
 import { reportRouter } from './routes/report.routes';
+import { errorHandler } from './middleware/error.handler';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -19,6 +20,9 @@ app.use(express.json());
 app.use(crawlRouter);
 app.use(auditRouter);
 app.use(reportRouter);
+
+// Error handler (must be after routes)
+app.use(errorHandler);
 
 // Serve web frontend in production
 const webDist = resolve(__dirname, '../web/dist');

@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { readFile } from 'node:fs/promises';
 import { renderReportHtml } from '@rgaaudit/core/report/html.renderer';
 import { generatePDF, getPdfPathIfExists } from '@rgaaudit/core/report/pdf.generator';
@@ -38,7 +38,7 @@ reportRouter.get('/api/report/:sessionId/html', async (req: Request, res: Respon
 });
 
 // GET /api/report/:sessionId/pdf
-reportRouter.get('/api/report/:sessionId/pdf', async (req: Request, res: Response) => {
+reportRouter.get('/api/report/:sessionId/pdf', async (req: Request, res: Response, next: NextFunction) => {
   const sessionId = req.params.sessionId as string;
   const session = await loadSession(sessionId);
 
@@ -70,6 +70,6 @@ reportRouter.get('/api/report/:sessionId/pdf', async (req: Request, res: Respons
     const pdfContent = await readFile(filePath);
     res.send(pdfContent);
   } catch (err) {
-    res.status(500).json({ error: 'Erreur lors de la génération du PDF.' });
+    next(err);
   }
 });

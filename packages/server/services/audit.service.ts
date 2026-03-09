@@ -7,7 +7,16 @@ interface AuditControl {
 
 // In-memory state for running and completed audits
 const runningAudits = new Map<string, AuditControl>();
-const completedAudits = new Map<string, ProgressEvent>();
+const completedAudits = new Map<string, { event: ProgressEvent; expiresAt: number }>();
+
+const COMPLETED_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function cleanupExpired(): void {
+  const now = Date.now();
+  for (const [id, entry] of completedAudits) {
+    if (entry.expiresAt <= now) completedAudits.delete(id);
+  }
+}
 
 export interface StartAuditOptions {
   sessionId: string;
@@ -37,7 +46,11 @@ export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }:
         sseManager.send(sessionId, event.type, event);
 
         if (event.type === 'audit_complete') {
-          completedAudits.set(sessionId, event);
+          cleanupExpired();
+          completedAudits.set(sessionId, {
+            event,
+            expiresAt: Date.now() + COMPLETED_TTL_MS,
+          });
         }
       }
     } catch (err) {
@@ -59,5 +72,11 @@ export function cancelAudit(sessionId: string): boolean {
 }
 
 export function getCompletedAudit(sessionId: string): ProgressEvent | undefined {
-  return completedAudits.get(sessionId);
+  const entry = completedAudits.get(sessionId);
+  if (!entry) return undefined;
+  if (entry.expiresAt <= Date.now()) {
+    completedAudits.delete(sessionId);
+    return undefined;
+  }
+  return entry.event;
 }
