@@ -8,6 +8,7 @@ import { crawlRouter } from './routes/crawl.routes';
 import { auditRouter } from './routes/audit.routes';
 import { reportRouter } from './routes/report.routes';
 import { errorHandler } from './middleware/error.handler';
+import { config } from './config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -30,9 +31,7 @@ if (process.env.NODE_ENV === 'production' && existsSync(webDist)) {
   app.use(express.static(webDist));
 }
 
-const PORT = Number(process.env.PORT) || 3001;
-
-export function startServer(port = PORT): ReturnType<typeof app.listen> {
+export function startServer(port = config.port): ReturnType<typeof app.listen> {
   return app.listen(port, () => {
     console.log(`RGAAudit server → http://localhost:${port}`);
   });

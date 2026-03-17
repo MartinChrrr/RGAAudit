@@ -1,5 +1,6 @@
 import { auditPages, type ProgressEvent } from '@rgaaudit/core/analyzer/analyzer';
 import { sseManager } from '../sse/progress';
+import { config } from '../config';
 
 interface AuditControl {
   cancelled: boolean;
@@ -9,7 +10,7 @@ interface AuditControl {
 const runningAudits = new Map<string, AuditControl>();
 const completedAudits = new Map<string, { event: ProgressEvent; expiresAt: number }>();
 
-const COMPLETED_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const COMPLETED_TTL_MS = config.audit.completedTtlMs;
 
 function cleanupExpired(): void {
   const now = Date.now();

@@ -5,13 +5,14 @@ import { loadSession } from '../services/session.store';
 import { startAudit, cancelAudit, connectClient } from '../services/audit.service';
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
+import { config } from '../config';
 
 const startAuditSchema = z.object({
   urls: z.array(z.string().min(1))
     .min(1, 'Le champ "urls" doit être un tableau non vide.')
-    .max(50, 'Maximum 50 URLs par audit.'),
+    .max(config.audit.maxUrls, `Maximum ${config.audit.maxUrls} URLs par audit.`),
   options: z.object({
-    maxConcurrent: z.number().int().min(1).max(3).optional(),
+    maxConcurrent: z.number().int().min(1).max(config.audit.maxConcurrent).optional(),
     disableContrasts: z.boolean().optional(),
   }).optional(),
 });

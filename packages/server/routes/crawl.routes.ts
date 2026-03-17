@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { parseSitemap } from '@rgaaudit/core/crawler/sitemap.parser';
 import { asyncHandler } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
+import { config } from '../config';
 
 const crawlBodySchema = z.object({
   url: z.string()
@@ -18,7 +19,7 @@ export const crawlRouter = Router();
 crawlRouter.post('/api/crawl', validateBody(crawlBodySchema), asyncHandler(async (req, res) => {
   const { url } = req.body;
 
-  const result = await parseSitemap(url, { timeout: 30_000 });
+  const result = await parseSitemap(url, { timeout: config.crawl.timeoutMs });
   res.json({
     urls: result.urls,
     count: result.count,
