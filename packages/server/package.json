@@ -14,8 +14,9 @@
   },
   "dependencies": {
     "@rgaaudit/core": "*",
+    "cors": "^2.8.5",
     "express": "^4.21.2",
-    "cors": "^2.8.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
