@@ -112,7 +112,7 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
       {/* Duplicate groups view */}
       {filter === 'duplicates' ? (
         duplicateGroups.length === 0 ? (
-          <p className="text-sm text-gray-500 py-4">{t('annexes.links.noResults')}</p>
+          <p className="text-sm text-gray-600 py-4">{t('annexes.links.noResults')}</p>
         ) : (
           <div className="space-y-2">
             {duplicateGroups.map((group) => (
@@ -133,7 +133,7 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
                     {group.items.map((item, i) => (
                       <li key={i} className="px-4 py-2 text-xs text-gray-600 flex items-center gap-2">
                         <span className="truncate flex-1">{item.href}</span>
-                        {item.pageUrl && <span className="text-gray-400 truncate max-w-32">{item.pageUrl}</span>}
+                        {item.pageUrl && <span className="text-gray-600 truncate max-w-32">{item.pageUrl}</span>}
                       </li>
                     ))}
                   </ul>
@@ -145,11 +145,11 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
       ) : (
         /* Standard table view */
         filtered && filtered.length === 0 ? (
-          <p className="text-sm text-gray-500 py-4">{t('annexes.links.noResults')}</p>
+          <p className="text-sm text-gray-600 py-4">{t('annexes.links.noResults')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-3 py-2">{t('annexes.links.colPage')}</th>
                   <th className="px-3 py-2">{t('annexes.links.colLabel')}</th>
@@ -161,7 +161,7 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
               <tbody className="divide-y divide-gray-100">
                 {filtered?.map((link, i) => (
                   <tr key={`${link.selector}-${i}`} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-xs text-gray-500 max-w-32 truncate">{link.pageUrl ?? ''}</td>
+                    <td className="px-3 py-2 text-xs text-gray-700 max-w-32 truncate">{link.pageUrl ?? ''}</td>
                     <td className="px-3 py-2">
                       {link.accessibleLabel ? (
                         <span className="text-gray-800">{link.accessibleLabel}</span>
@@ -174,7 +174,7 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
                         {link.tagName}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-xs text-gray-500 max-w-48 truncate" title={link.href ?? ''}>
+                    <td className="px-3 py-2 text-xs text-gray-700 max-w-48 truncate" title={link.href ?? ''}>
                       {link.href}
                     </td>
                     <td className="px-3 py-2">

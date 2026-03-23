@@ -103,7 +103,7 @@ export default function AnnexeHeuristiques({ findings }: Props) {
       </p>
 
       {/* Sub-tabs */}
-      <div className="flex border-b border-gray-200 mb-4">
+      <div className="flex border-b border-gray-200 mb-4" role="tablist">
         {(['interactive', 'structure', 'svg'] as const).map((tab) => (
           <button
             key={tab}
@@ -112,7 +112,7 @@ export default function AnnexeHeuristiques({ findings }: Props) {
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               subTab === tab
                 ? 'border-primary-600 text-primary-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
             }`}
             aria-selected={subTab === tab}
             role="tab"
@@ -134,7 +134,7 @@ export default function AnnexeHeuristiques({ findings }: Props) {
               className={`px-3 py-1 text-xs rounded-full transition-colors ${
                 confidenceFilter === level
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
               data-testid={`filter-${level}`}
             >
@@ -176,7 +176,7 @@ export default function AnnexeHeuristiques({ findings }: Props) {
 
       {/* Findings list */}
       {filtered.length === 0 ? (
-        <p className="text-sm text-gray-500 py-8 text-center" data-testid="no-findings">
+        <p className="text-sm text-gray-600 py-8 text-center" data-testid="no-findings">
           {t('annexes.heuristics.noFindings')}
         </p>
       ) : (
@@ -237,7 +237,7 @@ export default function AnnexeHeuristiques({ findings }: Props) {
 
                 {/* Context */}
                 {finding.context && (
-                  <p className="text-xs text-gray-500" data-testid="finding-context">
+                  <p className="text-xs text-gray-600" data-testid="finding-context">
                     {t('annexes.heuristics.colContext')} : {finding.context}
                   </p>
                 )}

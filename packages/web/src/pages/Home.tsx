@@ -61,18 +61,18 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <main id="main-content" className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('app.title')}</h1>
-          <p className="text-gray-600">{t('app.subtitle')}</p>
+          <p className="text-gray-700">{t('app.subtitle')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             {t('home.heading')}
           </h2>
-          <p className="text-sm text-gray-500 mb-6">{t('home.description')}</p>
+          <p className="text-sm text-gray-600 mb-6">{t('home.description')}</p>
 
           <form onSubmit={handleSubmit} noValidate>
             <label htmlFor="url-input" className="block text-sm font-medium text-gray-700 mb-1">
@@ -84,7 +84,7 @@ export default function Home() {
               value={url}
               onChange={(e) => { setUrl(e.target.value); setError(''); setSitemapNotFound(false); }}
               placeholder={t('home.urlPlaceholder')}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               disabled={loading}
               aria-describedby={error ? 'url-error' : undefined}
               aria-invalid={error ? 'true' : undefined}

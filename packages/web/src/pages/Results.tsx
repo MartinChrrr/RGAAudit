@@ -94,15 +94,15 @@ export default function Results() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">{t('results.loading')}</p>
+      <main id="main-content" className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-700">{t('results.loading')}</p>
       </main>
     );
   }
 
   if (error || !report) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main id="main-content" className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || t('results.error')}</p>
           <Link to="/" className="text-primary-600 hover:underline">{t('results.backHome')}</Link>
@@ -165,7 +165,7 @@ export default function Results() {
     }));
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4">
+    <main id="main-content" className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Limit banner — always visible */}
         <div
@@ -199,16 +199,16 @@ export default function Results() {
           </button>
         </div>
 
-        <p className="text-xs text-gray-500 mb-4" role="note" data-testid="pdf-a11y-warning">
+        <p className="text-xs text-gray-600 mb-4" role="note" data-testid="pdf-a11y-warning">
           {t('pdf.a11yWarning')}
         </p>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
           <SummaryCard label={t('report.criteriaTotal')} value={report.summary.totalCriteria} />
-          <SummaryCard label={t('report.criteriaViolation')} value={report.summary.violations} className="text-red-700" />
-          <SummaryCard label={t('report.criteriaPass')} value={report.summary.passes} className="text-green-700" />
-          <SummaryCard label={t('report.criteriaManual')} value={report.summary.manual} className="text-amber-700" />
+          <SummaryCard label={t('report.criteriaViolation')} value={report.summary.violations} className="text-red-800" />
+          <SummaryCard label={t('report.criteriaPass')} value={report.summary.passes} className="text-green-800" />
+          <SummaryCard label={t('report.criteriaManual')} value={report.summary.manual} className="text-amber-900" />
         </div>
 
         {/* Pages audited */}
@@ -231,10 +231,10 @@ export default function Results() {
               {topIssues.map((issue) => (
                 <div key={issue.rgaaId} className="p-4 flex items-center justify-between">
                   <div>
-                    <span className="font-mono text-sm text-gray-500 mr-2">{issue.rgaaId}</span>
+                    <span className="font-mono text-sm text-gray-700 mr-2">{issue.rgaaId}</span>
                     <span className="text-sm text-gray-800">{issue.title}</span>
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-600">
                     {t('report.topIssuePages', { count: issue.pagesAffected })}
                   </span>
                 </div>
@@ -257,7 +257,7 @@ export default function Results() {
                 <ul className="divide-y divide-gray-100">
                   {criteria.map((c) => (
                     <li key={c.rgaaId} className="px-4 py-3 flex items-center gap-3">
-                      <span className="font-mono text-xs text-gray-500 w-10">{c.rgaaId}</span>
+                      <span className="font-mono text-xs text-gray-700 w-10">{c.rgaaId}</span>
                       <span className="text-sm text-gray-700 flex-1">{c.title}</span>
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor[c.status] ?? 'bg-gray-100 text-gray-800'}`}>
                         {t(`status.${c.status}`)}
@@ -276,7 +276,7 @@ export default function Results() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('report.contrastDetail')}</h2>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-3 py-2">ID</th>
                     <th className="px-3 py-2">{t('report.contrastSelector')}</th>
@@ -287,7 +287,7 @@ export default function Results() {
                 <tbody className="divide-y divide-gray-100">
                   {report.contrastViolations!.map((v, i) => (
                     <tr key={i}>
-                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{v.rgaaId}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-gray-700">{v.rgaaId}</td>
                       <td className="px-3 py-2 text-xs text-gray-700 break-all">{v.selector}</td>
                       <td className="px-3 py-2 text-xs text-gray-700">{v.contrastRatio}</td>
                       <td className="px-3 py-2 text-xs text-gray-700">{v.expectedContrastRatio}</td>
@@ -310,7 +310,7 @@ export default function Results() {
             >
               <span className={`transition-transform ${uncoveredOpen ? 'rotate-90' : ''}`}>&#x25B6;</span>
               {t('results.uncoveredThemes')}
-              <span className="text-sm font-normal text-gray-500">({report.uncoveredThemes.length})</span>
+              <span className="text-sm font-normal text-gray-600">({report.uncoveredThemes.length})</span>
             </button>
             {uncoveredOpen && (
               <div className="space-y-3">
@@ -331,7 +331,7 @@ export default function Results() {
 
         {/* Annexes tabs */}
         <section className="mb-8">
-          <div className="flex border-b border-gray-200 mb-4">
+          <div className="flex border-b border-gray-200 mb-4" role="tablist">
             {(['images', 'links', 'headings', 'heuristics'] as const).map((tab) => (
               <button
                 key={tab}
@@ -340,7 +340,7 @@ export default function Results() {
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-primary-600 text-primary-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
                 aria-selected={activeTab === tab}
                 role="tab"
@@ -384,7 +384,7 @@ export default function Results() {
 function SummaryCard({ label, value, className = '' }: { label: string; value: number; className?: string }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
+      <p className="text-xs text-gray-600 mb-1">{label}</p>
       <p className={`text-2xl font-bold ${className || 'text-gray-900'}`}>{value}</p>
     </div>
   );

@@ -95,9 +95,9 @@ export default function AnnexeImages({ images, sessionId }: Props) {
     });
 
   const altColor: Record<string, string> = {
-    absent: 'text-red-600',
-    empty: 'text-amber-600',
-    present: 'text-green-700',
+    absent: 'text-red-700',
+    empty: 'text-amber-800',
+    present: 'text-green-800',
   };
 
   const tagColors: Record<string, string> = {
@@ -144,17 +144,17 @@ export default function AnnexeImages({ images, sessionId }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('annexes.images.searchPlaceholder')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </div>
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <p className="text-sm text-gray-500 py-4">{t('annexes.images.noResults')}</p>
+        <p className="text-sm text-gray-600 py-4">{t('annexes.images.noResults')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-2">{t('annexes.images.colThumbnail')}</th>
                 <th className="px-3 py-2">{t('annexes.images.colTag')}</th>
@@ -183,7 +183,7 @@ export default function AnnexeImages({ images, sessionId }: Props) {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       ) : (
-                        <div className="w-20 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-xs text-gray-400">
+                        <div className="w-20 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-xs text-gray-600">
                           {img.tagName}
                         </div>
                       )}
@@ -264,7 +264,7 @@ export default function AnnexeImages({ images, sessionId }: Props) {
                           value={dec.notes}
                           onChange={(e) => updateDecision(img.selector, 'notes', e.target.value)}
                           placeholder={t('annexes.images.decisionNotes')}
-                          className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                           rows={1}
                         />
                       </fieldset>

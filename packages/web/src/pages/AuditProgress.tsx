@@ -110,7 +110,7 @@ export default function AuditProgress() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4">
+    <main id="main-content" className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auditProgress.heading')}</h1>
 
@@ -142,7 +142,7 @@ export default function AuditProgress() {
         {/* Page list */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           {pages.length === 0 ? (
-            <p className="text-sm text-gray-500">{t('auditProgress.statusPending')}</p>
+            <p className="text-sm text-gray-600">{t('auditProgress.statusPending')}</p>
           ) : (
             <ul className="space-y-2">
               {pages.map((page) => (
@@ -151,7 +151,7 @@ export default function AuditProgress() {
                   <span className="text-sm text-gray-700 truncate flex-1">{page.url}</span>
                   {page.status === 'error' && page.error && (
                     <span
-                      className="text-xs text-red-500 cursor-help"
+                      className="text-xs text-red-700 cursor-help"
                       title={page.error}
                     >
                       {t('auditProgress.statusError')}

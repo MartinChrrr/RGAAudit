@@ -24,7 +24,7 @@ export default function AnnexeTitres({ headingData, sessionId: _sessionId }: Pro
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (headingData.length === 0) {
-    return <p className="text-sm text-gray-500 py-4">{t('annexes.headings.noHeadings')}</p>;
+    return <p className="text-sm text-gray-600 py-4">{t('annexes.headings.noHeadings')}</p>;
   }
 
   const current = headingData[currentIndex];
@@ -90,14 +90,14 @@ export default function AnnexeTitres({ headingData, sessionId: _sessionId }: Pro
 
       {/* Page title */}
       <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <span className="text-xs text-gray-500 uppercase">{t('annexes.headings.pageTitle')}</span>
+        <span className="text-xs text-gray-700 uppercase">{t('annexes.headings.pageTitle')}</span>
         <div className="flex items-center gap-2 mt-1">
           {titleStatus === 'absent' ? (
             <span className="text-red-600 text-sm">{t('annexes.headings.titleAbsent')}</span>
           ) : titleStatus === 'generic' ? (
             <>
-              <span className="text-amber-600 text-sm">{current.documentTitle}</span>
-              <span className="text-xs text-amber-500">({t('annexes.headings.titleGeneric')})</span>
+              <span className="text-amber-800 text-sm">{current.documentTitle}</span>
+              <span className="text-xs text-amber-700">({t('annexes.headings.titleGeneric')})</span>
             </>
           ) : (
             <span className="text-green-700 text-sm">{current.documentTitle}</span>
@@ -107,7 +107,7 @@ export default function AnnexeTitres({ headingData, sessionId: _sessionId }: Pro
 
       {/* Heading tree */}
       {current.headings.length === 0 ? (
-        <p className="text-sm text-gray-500 py-4">{t('annexes.headings.noHeadings')}</p>
+        <p className="text-sm text-gray-600 py-4">{t('annexes.headings.noHeadings')}</p>
       ) : (
         <ul className="space-y-1">
           {current.headings.map((heading, i) => {

@@ -76,7 +76,7 @@ export default function PageSelection() {
   const tooMany = selectedCount > MAX_PAGES;
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4">
+    <main id="main-content" className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('pageSelection.heading')}</h1>
 
@@ -110,7 +110,7 @@ export default function PageSelection() {
 
           {/* URL list */}
           {urls.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4">{t('pageSelection.noPages')}</p>
+            <p className="text-sm text-gray-600 py-4">{t('pageSelection.noPages')}</p>
           ) : (
             <ul className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
               {urls.map((url) => (
@@ -137,7 +137,7 @@ export default function PageSelection() {
               value={manualUrl}
               onChange={(e) => setManualUrl(e.target.value)}
               placeholder={t('pageSelection.addUrlPlaceholder')}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
             <button
               type="submit"
@@ -161,7 +161,7 @@ export default function PageSelection() {
               {t('pageSelection.contrastToggleLabel')}
             </span>
           </label>
-          <p className="mt-2 text-xs text-gray-500 ml-7">
+          <p className="mt-2 text-xs text-gray-600 ml-7">
             {t('pageSelection.contrastToggleWarning')}
           </p>
         </div>
