@@ -1,4 +1,23 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    shm_size: 1gb
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      RGAAUDIT_DATA_DIR: /data
+      AUDIT_MAX_RUNNING: 1
+      AUDIT_MAX_CONCURRENT: 2
+      AUDIT_MAX_URLS: 50
+    ports:
+      - "${RGAAUDIT_PORT:-3000}:3000"
+    volumes:
+      - rgaaudit-data:/data
+
   dev:
     build:
       context: .
@@ -9,6 +28,7 @@ services:
     ports:
       - "3000:3000"
       - "3001:3001"
+    profiles: ["dev"]
 
   test:
     build:
@@ -17,3 +37,7 @@ services:
     command: npm test
     environment:
       - CI=true
+    profiles: ["test"]
+
+volumes:
+  rgaaudit-data:

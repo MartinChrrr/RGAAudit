@@ -14,22 +14,44 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.disable('x-powered-by');
+app.use((_, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+if (process.env.NODE_ENV !== 'production' || config.corsOrigin) {
+  app.use(cors({ origin: config.corsOrigin ?? true }));
+}
+app.use(express.json({ limit: '1mb' }));
+
+app.get('/api/health', (_, res) => {
+  res.json({ status: 'ok' });
+});
 
 // API routes
 app.use(crawlRouter);
 app.use(auditRouter);
 app.use(reportRouter);
 
-// Error handler (must be after routes)
-app.use(errorHandler);
-
 // Serve web frontend in production
 const webDist = resolve(__dirname, '../web/dist');
 if (process.env.NODE_ENV === 'production' && existsSync(webDist)) {
   app.use(express.static(webDist));
+  app.get(/^(?!\/api(?:\/|$)).*/, (_, res) => {
+    res.sendFile(resolve(webDist, 'index.html'));
+  });
 }
+
+app.use('/api', (_, res) => {
+  res.status(404).json({ error: 'Route API introuvable.' });
+});
+
+// Error handler (must be last)
+app.use(errorHandler);
 
 export function startServer(port = config.port): ReturnType<typeof app.listen> {
   return app.listen(port, () => {
