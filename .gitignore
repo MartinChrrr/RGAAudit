@@ -4,5 +4,7 @@ dist
 screenshots
 sessions
 coverage
+test-results
+playwright-report
 *.tmp
 docs

@@ -92,12 +92,11 @@ test.describe('Audit flow e2e', () => {
 
     // Deselect all
     const deselectBtn = page.getByRole('button', { name: /désélectionner/i });
-    if (await deselectBtn.isVisible()) {
-      await deselectBtn.click();
-    }
+    await expect(deselectBtn).toBeVisible();
+    await deselectBtn.click();
 
     // Counter should show 0
-    await expect(page.getByText(/0 page\(s\) sélectionnée/)).toBeVisible();
+    await expect(page.getByText(/0 page\(s\) sélectionnée\(s\)/)).toBeVisible();
 
     // Select all
     const selectBtn = page.getByRole('button', { name: /tout sélectionner/i });
@@ -138,7 +137,8 @@ test.describe('Audit flow e2e', () => {
 
     // Should show page status updates (SSE events)
     // Wait for at least one page to appear in the list
-    await expect(page.getByText(/localhost/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/localhost/).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: /résultats/i })).toBeVisible({ timeout: 60_000 });
   });
 
   test('audit terminé -> rapport HTML avec bandeau de limite', async ({ page }) => {
@@ -151,9 +151,8 @@ test.describe('Audit flow e2e', () => {
 
     // Select first page only for faster test
     const deselectBtn = page.getByRole('button', { name: /désélectionner/i });
-    if (await deselectBtn.isVisible()) {
-      await deselectBtn.click();
-    }
+    await expect(deselectBtn).toBeVisible();
+    await deselectBtn.click();
     const checkboxes = page.getByRole('checkbox');
     await checkboxes.first().check();
 
@@ -162,7 +161,7 @@ test.describe('Audit flow e2e', () => {
     await page.waitForURL('**/progress/**', { timeout: 10_000 });
 
     // Wait for results button
-    const resultsBtn = page.getByRole('link', { name: /résultats/i });
+    const resultsBtn = page.getByRole('button', { name: /résultats/i });
     await expect(resultsBtn).toBeVisible({ timeout: 60_000 });
     await resultsBtn.click();
 
@@ -185,15 +184,14 @@ test.describe('Audit flow e2e', () => {
 
     // Select first page
     const deselectBtn = page.getByRole('button', { name: /désélectionner/i });
-    if (await deselectBtn.isVisible()) {
-      await deselectBtn.click();
-    }
+    await expect(deselectBtn).toBeVisible();
+    await deselectBtn.click();
     await page.getByRole('checkbox').first().check();
 
     await page.getByRole('button', { name: /lancer/i }).click();
     await page.waitForURL('**/progress/**', { timeout: 10_000 });
 
-    const resultsBtn = page.getByRole('link', { name: /résultats/i });
+    const resultsBtn = page.getByRole('button', { name: /résultats/i });
     await expect(resultsBtn).toBeVisible({ timeout: 60_000 });
     await resultsBtn.click();
     await page.waitForURL('**/results/**', { timeout: 10_000 });
@@ -240,7 +238,7 @@ test.describe('Audit flow e2e', () => {
     await page.getByRole('button', { name: /lancer/i }).click();
     await page.waitForURL('**/progress/**', { timeout: 10_000 });
 
-    const resultsBtn = page.getByRole('link', { name: /résultats/i });
+    const resultsBtn = page.getByRole('button', { name: /résultats/i });
     await expect(resultsBtn).toBeVisible({ timeout: 60_000 });
     await resultsBtn.click();
     await page.waitForURL('**/results/**', { timeout: 10_000 });

@@ -11,17 +11,16 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'npx tsx packages/server/index.ts',
+      command: 'env PORT=3001 RGAAUDIT_ALLOW_PRIVATE_NETWORKS=true npx tsx packages/server/index.ts',
       port: 3001,
       cwd: '..',
-      reuseExistingServer: !process.env.CI,
-      env: { PORT: '3001' },
+      reuseExistingServer: false,
     },
     {
       command: 'npx vite --port 3000',
       port: 3000,
       cwd: '../packages/web',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
     },
   ],
 });
