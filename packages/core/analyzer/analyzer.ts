@@ -52,6 +52,8 @@ export interface AuditPagesOptions {
   sessionId: string;
   disableRules?: string[];
   onPageComplete?: (url: string, result: PageResult) => void;
+  persistState?: (state: SessionState) => Promise<void>;
+  isRequestAllowed?: (url: string) => Promise<boolean>;
 }
 
 export type ScreenshotEvent =
@@ -74,7 +76,8 @@ export async function saveSessionState(
   sessionId: string,
   state: SessionState,
 ): Promise<void> {
-  const sessionDir = join(homedir(), '.rgaaudit', 'sessions');
+  const dataDir = process.env.RGAAUDIT_DATA_DIR ?? join(homedir(), '.rgaaudit');
+  const sessionDir = join(dataDir, 'sessions');
   await mkdir(sessionDir, { recursive: true });
 
   const filePath = join(sessionDir, `audit-${sessionId}.json`);
@@ -142,7 +145,20 @@ export async function* auditPages(
 
   try {
     for (let i = 0; i < concurrency; i++) {
-      contexts.push(await browser.newContext());
+      const context = await browser.newContext();
+      if (options.isRequestAllowed) {
+        await context.route('**/*', async (route) => {
+          const requestUrl = route.request().url();
+          if (requestUrl.startsWith('data:') || requestUrl.startsWith('blob:')) {
+            await route.continue();
+            return;
+          }
+          const allowed = await options.isRequestAllowed!(requestUrl).catch(() => false);
+          if (allowed) await route.continue();
+          else await route.abort('blockedbyclient');
+        });
+      }
+      contexts.push(context);
     }
 
     const state: SessionState = {
@@ -153,6 +169,17 @@ export async function* auditPages(
       pendingPages: [...urls],
       results: {},
     };
+
+    const persistState = options.persistState
+      ?? ((nextState: SessionState) => saveSessionState(options.sessionId, nextState));
+
+    let persistenceQueue = Promise.resolve();
+    const persist = async (): Promise<void> => {
+      persistenceQueue = persistenceQueue.then(() => persistState(state));
+      await persistenceQueue;
+    };
+
+    await persist();
 
     // Event buffer + signaling for the async generator
     const eventBuffer: ProgressEvent[] = [];
@@ -197,7 +224,7 @@ export async function* auditPages(
             pushEvent({ type: 'page_complete', url, result });
           }
 
-          await saveSessionState(options.sessionId, state);
+          await persist();
 
           options.onPageComplete?.(url, result);
         } finally {
@@ -248,7 +275,8 @@ export async function* generateScreenshots(
   imageData: ScreenshotInput[],
   baseUrl: string,
 ): AsyncGenerator<ScreenshotEvent> {
-  const screenshotDir = join(homedir(), '.rgaaudit', 'sessions', sessionId, 'screenshots');
+  const dataDir = process.env.RGAAUDIT_DATA_DIR ?? join(homedir(), '.rgaaudit');
+  const screenshotDir = join(dataDir, 'sessions', sessionId, 'screenshots');
   await mkdir(screenshotDir, { recursive: true });
 
   const browser = await chromium.launch();

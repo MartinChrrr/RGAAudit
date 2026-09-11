@@ -1,12 +1,7 @@
 import type { Response } from 'express';
 
-interface SSEClient {
-  id: string;
-  res: Response;
-}
-
 export class SSEManager {
-  private clients = new Map<string, SSEClient>();
+  private clients = new Map<string, Set<Response>>();
 
   addClient(id: string, res: Response): void {
     res.writeHead(200, {
@@ -17,28 +12,38 @@ export class SSEManager {
     });
     res.flushHeaders();
 
-    this.clients.set(id, { id, res });
+    const sessionClients = this.clients.get(id) ?? new Set<Response>();
+    sessionClients.add(res);
+    this.clients.set(id, sessionClients);
 
     res.on('close', () => {
-      this.removeClient(id);
+      this.removeClient(id, res);
     });
   }
 
-  removeClient(id: string): void {
-    this.clients.delete(id);
+  removeClient(id: string, res?: Response): void {
+    if (!res) {
+      this.clients.delete(id);
+      return;
+    }
+
+    const sessionClients = this.clients.get(id);
+    sessionClients?.delete(res);
+    if (sessionClients?.size === 0) this.clients.delete(id);
   }
 
   broadcast(eventType: string, data: unknown): void {
     const payload = formatSSE(eventType, data);
-    for (const client of this.clients.values()) {
-      client.res.write(payload);
+    for (const sessionClients of this.clients.values()) {
+      for (const client of sessionClients) client.write(payload);
     }
   }
 
   send(id: string, eventType: string, data: unknown): void {
-    const client = this.clients.get(id);
-    if (!client) return;
-    client.res.write(formatSSE(eventType, data));
+    const sessionClients = this.clients.get(id);
+    if (!sessionClients) return;
+    const payload = formatSSE(eventType, data);
+    for (const client of sessionClients) client.write(payload);
   }
 
   hasClient(id: string): boolean {
@@ -46,7 +51,7 @@ export class SSEManager {
   }
 
   get size(): number {
-    return this.clients.size;
+    return [...this.clients.values()].reduce((total, clients) => total + clients.size, 0);
   }
 }
 

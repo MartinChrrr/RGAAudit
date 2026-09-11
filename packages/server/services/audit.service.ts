@@ -1,6 +1,8 @@
 import { auditPages, type ProgressEvent } from '@rgaaudit/core/analyzer/analyzer';
 import { sseManager } from '../sse/progress';
 import { config } from '../config';
+import { loadSession, saveSession } from './session.store';
+import { isPublicNetworkUrl } from '../security/url.policy';
 
 interface AuditControl {
   cancelled: boolean;
@@ -26,7 +28,9 @@ export interface StartAuditOptions {
   disableContrasts?: boolean;
 }
 
-export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }: StartAuditOptions): void {
+export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }: StartAuditOptions): boolean {
+  if (runningAudits.size >= config.audit.maxRunning) return false;
+
   const control: AuditControl = { cancelled: false };
   runningAudits.set(sessionId, control);
 
@@ -40,6 +44,8 @@ export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }:
         sessionId,
         maxConcurrent,
         disableRules,
+        persistState: saveSession,
+        isRequestAllowed: isPublicNetworkUrl,
       });
 
       for await (const event of gen) {
@@ -61,6 +67,8 @@ export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }:
       runningAudits.delete(sessionId);
     }
   })();
+
+  return true;
 }
 
 export function cancelAudit(sessionId: string): boolean {
@@ -75,10 +83,25 @@ export function cancelAudit(sessionId: string): boolean {
 export function connectClient(sessionId: string, res: import('express').Response): void {
   sseManager.addClient(sessionId, res);
 
-  const completed = getCompletedAudit(sessionId);
-  if (completed) {
-    sseManager.send(sessionId, completed.type, completed);
-  }
+  // Rehydrate progress after refresh or when a very short audit finishes before SSE connects.
+  void loadSession(sessionId).then((session) => {
+    if (!session) return;
+    for (const url of [...session.completedPages, ...session.pendingPages]) {
+      sseManager.send(sessionId, 'page_start', { type: 'page_start', url });
+    }
+    for (const url of session.completedPages) {
+      const result = session.results[url];
+      if (!result) continue;
+      if (result.error) {
+        sseManager.send(sessionId, 'page_error', { type: 'page_error', url, error: result.error });
+      } else {
+        sseManager.send(sessionId, 'page_complete', { type: 'page_complete', url, result });
+      }
+    }
+  }).catch(() => {}).finally(() => {
+    const completed = getCompletedAudit(sessionId);
+    if (completed) sseManager.send(sessionId, completed.type, completed);
+  });
 }
 
 export function getCompletedAudit(sessionId: string): ProgressEvent | undefined {

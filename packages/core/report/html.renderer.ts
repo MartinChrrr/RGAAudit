@@ -43,6 +43,15 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function serializeForHtmlScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 export interface ContrastViolationItem {
   pageUrl: string;
   rgaaId: string;
@@ -149,7 +158,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
     : '';
 
   const annexeDataJson = allCollected
-    ? escapeHtml(JSON.stringify(allCollected))
+    ? serializeForHtmlScript(allCollected)
     : '[]';
 
   return `<!DOCTYPE html>
@@ -158,23 +167,48 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(metadata.url)} — ${escapeHtml(t('report.title'))}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: {
-              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
-              400: '#60a5fa', 500: '#2563eb', 600: '#1d4ed8', 700: '#1e40af',
-              800: '#1e3a8a', 900: '#1e3163',
-            },
-          },
-        },
-      },
-    }
-  </script>
   <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #f9fafb; color: #111827; font-family: system-ui, sans-serif; line-height: 1.5; }
+    main { max-width: 64rem; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { font-size: 1.5rem; margin: 0 0 .5rem; }
+    h2 { font-size: 1.125rem; margin: 0 0 .75rem; }
+    h3 { margin: 0; }
+    section, .mb-8 { margin-bottom: 2rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-3 { margin-bottom: .75rem; }
+    .bg-white { background: white; }
+    .bg-gray-50 { background: #f9fafb; }
+    .bg-red-50, .bg-red-100 { background: #fee2e2; }
+    .bg-green-100 { background: #dcfce7; }
+    .bg-amber-50, .bg-amber-100 { background: #fef3c7; }
+    .rounded-lg, .rounded-xl { border-radius: .75rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border, .border-b, .border-t { border: 1px solid #e5e7eb; }
+    .p-4 { padding: 1rem; }
+    .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-3 { padding-left: .75rem; padding-right: .75rem; }
+    .px-2\.5 { padding-left: .625rem; padding-right: .625rem; }
+    .py-3 { padding-top: .75rem; padding-bottom: .75rem; }
+    .py-2 { padding-top: .5rem; padding-bottom: .5rem; }
+    .py-0\.5 { padding-top: .125rem; padding-bottom: .125rem; }
+    .text-xs { font-size: .75rem; }
+    .text-sm { font-size: .875rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .font-mono { font-family: ui-monospace, monospace; }
+    .text-red-700, .text-red-800 { color: #991b1b; }
+    .text-green-700, .text-green-800 { color: #166534; }
+    .text-amber-700, .text-amber-800, .text-amber-900 { color: #92400e; }
+    .text-gray-400, .text-gray-500, .text-gray-600 { color: #4b5563; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    a { color: #1d4ed8; }
+    footer { margin-top: 3rem; padding: 1rem 0; border-top: 1px solid #e5e7eb; text-align: center; }
     @media print {
       .no-print { display: none !important; }
       body { font-size: 12px; color: #000; background: #fff; }

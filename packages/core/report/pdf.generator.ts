@@ -16,9 +16,9 @@ export interface GeneratePDFResult {
 
 function buildPdfPath(sessionId: string, date: string): string {
   const dateStr = date.replace(/[/:]/g, '-').slice(0, 10);
+  const dataDir = process.env.RGAAUDIT_DATA_DIR ?? join(homedir(), '.rgaaudit');
   return join(
-    homedir(),
-    '.rgaaudit',
+    dataDir,
     'sessions',
     sessionId,
     `rapport-${dateStr}.pdf`,

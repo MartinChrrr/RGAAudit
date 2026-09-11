@@ -1,11 +1,11 @@
 {
   "app": {
     "title": "RGAAudit",
-    "subtitle": "Audit d'accessibilité RGAA 4.1"
+    "subtitle": "Aide à l'audit RGAA 4.1.2"
   },
   "home": {
     "heading": "Auditer l'accessibilité de votre site",
-    "description": "Entrez l'URL de votre site pour découvrir ses pages via le sitemap et lancer un audit automatisé RGAA 4.1.",
+    "description": "Entrez l'URL de votre site pour préparer un audit assisté RGAA 4.1.2. Chaque résultat devra être validé par un auditeur.",
     "urlLabel": "URL du site",
     "urlPlaceholder": "https://exemple.fr",
     "urlError": "L'URL doit commencer par http:// ou https://",
@@ -171,7 +171,7 @@
     "filename": "rapport-rgaa"
   },
   "report": {
-    "title": "Rapport d'audit d'accessibilité RGAA 4.1",
+    "title": "Rapport d'audit d'accessibilité RGAA 4.1.2",
     "generatedBy": "RGAAudit",
     "generatedAt": "Généré le",
     "auditedUrl": "URL auditée",
@@ -181,9 +181,9 @@
     "themesNotCovered": "Thématiques non couvertes (audit manuel requis)",
     "summary": "Synthèse",
     "criteriaTotal": "Critères évalués",
-    "criteriaViolation": "Non conformes",
-    "criteriaPass": "Conformes",
-    "criteriaManual": "À vérifier manuellement",
+    "criteriaViolation": "Anomalies probables",
+    "criteriaPass": "Sans anomalie détectée",
+    "criteriaManual": "À vérifier",
     "criteriaIncomplete": "Incomplets",
     "topIssues": "Principaux problèmes détectés",
     "topIssuePages": "{count} page(s) concernée(s)",
@@ -199,7 +199,7 @@
     "htmlColStatus": "Statut",
     "htmlColPages": "Pages",
     "htmlManualChecklist": "Points de contrôle manuel",
-    "htmlFooter": "Rapport généré par RGAAudit — outil open-source d'aide à l'audit RGAA 4.1",
+    "htmlFooter": "Rapport généré par RGAAudit — outil open-source d'aide à l'audit RGAA 4.1.2",
     "contrastDetail": "Détail des contrastes",
     "contrastSelector": "Sélecteur CSS",
     "contrastRatio": "Ratio calculé",
@@ -212,10 +212,10 @@
     "openBrowser": "Ouvrez votre navigateur sur {url}"
   },
   "status": {
-    "violation": "Non conforme",
-    "pass": "Conforme",
+    "violation": "Anomalie probable",
+    "pass": "Aucune anomalie détectée",
     "manual": "Vérification manuelle requise",
-    "incomplete": "Résultat incomplet"
+    "incomplete": "Analyse à confirmer"
   },
   "heuristics": {
     "confidence": {

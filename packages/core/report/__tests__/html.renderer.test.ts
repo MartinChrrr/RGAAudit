@@ -105,10 +105,11 @@ describe('renderReportHtml', () => {
     expect(html).toContain('</html>');
   });
 
-  it('contient le Tailwind CDN pour le styling', () => {
+  it('embarque ses styles sans dépendance CDN', () => {
     const html = renderReportHtml({ report: makeReport() });
 
-    expect(html).toContain('cdn.tailwindcss.com');
+    expect(html).toContain('<style>');
+    expect(html).not.toContain('cdn.tailwindcss.com');
   });
 
   it('affiche le bandeau de limite', () => {
@@ -131,8 +132,8 @@ describe('renderReportHtml', () => {
 
     expect(html).toContain('1.1');
     expect(html).toContain('6.1');
-    expect(html).toContain('Non conforme'); // violation status label
-    expect(html).toContain('Conforme'); // pass status label
+    expect(html).toContain('Anomalie probable');
+    expect(html).toContain('Aucune anomalie détectée');
   });
 
   it('affiche les top issues', () => {

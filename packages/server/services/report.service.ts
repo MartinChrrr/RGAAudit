@@ -7,7 +7,19 @@ import {
   buildReport,
   type MappedPage,
 } from '@rgaaudit/core/mapping/mapper';
+import { getCriterion } from '@rgaaudit/core/mapping';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
+import type { CollectedData } from '@rgaaudit/core/analyzer/data-collector';
+import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
+import {
+  aggregateHumanStatus,
+  machineStatusFromLegacyStatus,
+  type AuditDecision,
+  type AuditReviewState,
+  type HumanStatus,
+  type ImageAuditDecision,
+  type MachineStatus,
+} from '@rgaaudit/core/domain/review';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
@@ -26,14 +38,57 @@ export interface ContrastViolationItem {
 export interface ReportData {
   report: ReturnType<typeof buildReport>;
   mappedPages: MappedPage[];
-  allCollected: { url: string; collectedData: unknown }[];
+  allCollected: { url: string; collectedData: CollectedData | null }[];
   contrastViolations: ContrastViolationItem[];
+  heuristicFindings: Array<HeuristicFinding & {
+    heuristicId: string;
+    rgaaCriteria: string[];
+    pageUrl: string;
+  }>;
+  review: ReviewData;
 }
 
-export function buildReportFromSession(session: SessionState): ReportData {
+export interface ReviewCriterion {
+  rgaaId: string;
+  title: string;
+  theme: string;
+  wcag: string[];
+  machineStatus: MachineStatus;
+  humanStatus: HumanStatus;
+  comment: string;
+  reviewedAt: string | null;
+  violationsCount: number;
+  incompletesCount: number;
+  elements: Array<{ selector: string; flags: string[] }>;
+  manualChecks: string[];
+}
+
+export interface ReviewData {
+  updatedAt: string;
+  summary: {
+    total: number;
+    reviewed: number;
+    compliant: number;
+    nonCompliant: number;
+    notApplicable: number;
+    notTested: number;
+  };
+  pages: Array<{ url: string; criteria: ReviewCriterion[] }>;
+  criteria: Array<{
+    rgaaId: string;
+    machineStatus: MachineStatus;
+    humanStatus: HumanStatus;
+  }>;
+  imageDecisions: ImageAuditDecision[];
+}
+
+export function buildReportFromSession(
+  session: SessionState,
+  reviewState?: AuditReviewState,
+): ReportData {
   const mappedPages = Object.values(session.results)
     .filter((r) => !r.error)
-    .map((r) => mapPageResults(r.axeResults, r.collectedData, r.url));
+    .map((r) => mapPageResults(r.axeResults, r.collectedData, r.url, r.heuristicResults));
 
   const allCollected = Object.values(session.results)
     .filter((r) => !r.error)
@@ -50,8 +105,79 @@ export function buildReportFromSession(session: SessionState): ReportData {
   }, allCollected);
 
   const contrastViolations = extractContrastViolations(mappedPages);
+  const heuristicFindings = Object.values(session.results).flatMap((page) =>
+    (page.heuristicResults ?? []).flatMap((result) =>
+      result.findings.map((finding) => ({
+        ...finding,
+        heuristicId: result.heuristicId,
+        rgaaCriteria: result.rgaaCriteria,
+        pageUrl: page.url,
+      })),
+    ),
+  );
+  const review = buildReviewData(mappedPages, reviewState);
 
-  return { report, mappedPages, allCollected, contrastViolations };
+  return { report, mappedPages, allCollected, contrastViolations, heuristicFindings, review };
+}
+
+function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): ReviewData {
+  const decisions = state?.decisions ?? [];
+  const decisionByCriterion = new Map<string, AuditDecision>();
+  for (const decision of decisions) {
+    decisionByCriterion.set(`${decision.pageUrl}\u001f${decision.criterionId}`, decision);
+  }
+
+  const pages = mappedPages.map((page) => ({
+    url: page.url,
+    criteria: page.criteria.map((criterion): ReviewCriterion => {
+      const decision = decisionByCriterion.get(`${page.url}\u001f${criterion.rgaaId}`);
+      return {
+        rgaaId: criterion.rgaaId,
+        title: criterion.title,
+        theme: criterion.theme,
+        wcag: getCriterion(criterion.rgaaId)?.wcag ?? [],
+        machineStatus: machineStatusFromLegacyStatus(criterion.status),
+        humanStatus: decision?.status ?? 'not_tested',
+        comment: decision?.comment ?? '',
+        reviewedAt: decision?.reviewedAt ?? null,
+        violationsCount: criterion.violations?.length ?? 0,
+        incompletesCount: criterion.incompletes?.length ?? 0,
+        elements: criterion.elements ?? [],
+        manualChecks: criterion.manualChecks ?? [],
+      };
+    }),
+  }));
+
+  const allCriteria = pages.flatMap((page) => page.criteria);
+  const reviewed = allCriteria.filter((criterion) => criterion.humanStatus !== 'not_tested');
+  const criterionIds = [...new Set(allCriteria.map((criterion) => criterion.rgaaId))];
+
+  return {
+    updatedAt: state?.updatedAt ?? new Date(0).toISOString(),
+    summary: {
+      total: allCriteria.length,
+      reviewed: reviewed.length,
+      compliant: reviewed.filter((criterion) => criterion.humanStatus === 'compliant').length,
+      nonCompliant: reviewed.filter((criterion) => criterion.humanStatus === 'non_compliant').length,
+      notApplicable: reviewed.filter((criterion) => criterion.humanStatus === 'not_applicable').length,
+      notTested: allCriteria.length - reviewed.length,
+    },
+    pages,
+    criteria: criterionIds.map((rgaaId) => {
+      const pageCriteria = allCriteria.filter((criterion) => criterion.rgaaId === rgaaId);
+      const machineStatus = pageCriteria.some((criterion) => criterion.machineStatus === 'probable_issue')
+        ? 'probable_issue'
+        : pageCriteria.some((criterion) => criterion.machineStatus === 'needs_review')
+          ? 'needs_review'
+          : 'no_issue_detected';
+      return {
+        rgaaId,
+        machineStatus,
+        humanStatus: aggregateHumanStatus(pageCriteria.map((criterion) => criterion.humanStatus)),
+      };
+    }),
+    imageDecisions: state?.imageDecisions ?? [],
+  };
 }
 
 function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolationItem[] {

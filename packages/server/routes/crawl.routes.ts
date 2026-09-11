@@ -4,14 +4,12 @@ import { parseSitemap } from '@rgaaudit/core/crawler/sitemap.parser';
 import { asyncHandler } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
 import { config } from '../config';
+import { isAllowedAuditUrl } from '../security/url.policy';
 
 const crawlBodySchema = z.object({
   url: z.string()
     .min(1, 'Le champ "url" est requis.')
-    .refine(
-      (v) => v.startsWith('http://') || v.startsWith('https://'),
-      'L\'URL doit commencer par http:// ou https://.',
-    ),
+    .refine(isAllowedAuditUrl, 'L\'URL doit être une adresse web publique en http ou https.'),
 });
 
 export const crawlRouter = Router();
