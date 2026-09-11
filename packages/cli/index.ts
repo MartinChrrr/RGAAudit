@@ -1,7 +1,6 @@
 #!/usr/bin/env npx tsx
 import { type Server } from 'node:net';
 import minimist from 'minimist';
-import { startServer } from '@rgaaudit/server';
 import { findAvailablePort, printHelp } from './lib';
 
 const args = minimist(process.argv.slice(2), {
@@ -30,13 +29,14 @@ if (Number.isNaN(maxPages) || maxPages < 1) {
 }
 
 async function main(): Promise<void> {
+  process.env.AUDIT_MAX_URLS = String(maxPages);
+  process.env.RGAAUDIT_ALLOW_PRIVATE_NETWORKS = 'true';
+  const { startServer } = await import('@rgaaudit/server');
   const port = await findAvailablePort(requestedPort);
 
   if (port !== requestedPort) {
     console.log(`Port ${requestedPort} occupé, utilisation du port ${port}`);
   }
-
-  process.env.RGAAUDIT_MAX_PAGES = String(maxPages);
 
   const server = startServer(port);
   const url = `http://localhost:${port}`;

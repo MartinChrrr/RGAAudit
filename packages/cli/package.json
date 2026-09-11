@@ -2,7 +2,7 @@
   "name": "rgaaudit",
   "version": "0.1.0",
   "type": "module",
-  "description": "CLI pour lancer un audit RGAA 4.1 — npx rgaaudit",
+  "description": "CLI pour lancer RGAAudit 4.1.2 en local — npx rgaaudit",
   "bin": {
     "rgaaudit": "./index.ts"
   },

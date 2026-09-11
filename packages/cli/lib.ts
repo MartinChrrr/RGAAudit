@@ -22,7 +22,7 @@ export function isPortAvailable(port: number): Promise<boolean> {
 
 export function printHelp(): void {
   console.log(`
-RGAAudit — Audit d'accessibilité RGAA 4.1
+RGAAudit — Aide à l'audit d'accessibilité RGAA 4.1.2
 
 Usage : npx rgaaudit [options]
 
