@@ -334,6 +334,11 @@ export function aggregateResults(
   const mapping = loadMapping();
   const criteriaMap = new Map<string, AggregatedCriterion>();
 
+  // Cross-page evidence must be applied before the aggregate statuses are computed.
+  if (allCollectedData) {
+    detectDuplicateLabels(mappedPages, allCollectedData);
+  }
+
   // Initialize from mapping
   for (const criterion of mapping.criteria) {
     criteriaMap.set(criterion.rgaa.id, {
@@ -384,11 +389,6 @@ export function aggregateResults(
     } else {
       agg.status = 'manual';
     }
-  }
-
-  // Detect DUPLICATE_LABEL cross-pages
-  if (allCollectedData) {
-    detectDuplicateLabels(mappedPages, allCollectedData);
   }
 
   const criteria = [...criteriaMap.values()];

@@ -48,7 +48,7 @@ describe('loadMapping', () => {
 
   it('charge et valide le mapping JSON', () => {
     const mapping = loadMapping();
-    expect(mapping.version).toBe('4.1');
+    expect(mapping.version).toBe('4.1.2');
     expect(mapping.criteria.length).toBeGreaterThan(0);
     expect(mapping.totalCriteria).toBe(106);
     expect(mapping.coveredThemes).toContain('Images');
