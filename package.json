@@ -2,7 +2,7 @@
   "name": "rgaaudit-monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Outil local d'aide à l'audit d'accessibilité web selon le RGAA 4.1",
+  "description": "Application web d'aide à l'audit d'accessibilité selon le RGAA 4.1.2",
   "workspaces": [
     "packages/*"
   ],

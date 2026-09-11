@@ -1,112 +1,96 @@
 # RGAAudit
 
-Outil open-source **local-first** d'aide à l'audit d'accessibilité web selon le référentiel **RGAA 4.1** français.
+Application web open-source d’aide à l’audit d’accessibilité selon le **RGAA 4.1.2**. RGAAudit préanalyse les pages, rassemble les preuves utiles et laisse toujours la décision finale à l’auditeur.
 
-RGAAudit tourne entièrement sur votre machine — aucune donnée ne quitte votre ordinateur.
+## Principe
 
-## Prérequis
+L’application sépare volontairement deux informations :
 
-- **Node.js** v20 ou supérieur
-- **npm** v9 ou supérieur
+- la **suggestion machine** : anomalie probable, à vérifier, aucune anomalie détectée ;
+- la **décision humaine** : non vérifié, conforme, non conforme, non applicable.
 
-## Installation et lancement
+Le vert ne signifie donc jamais qu’un critère est automatiquement déclaré conforme.
+
+## Lancement avec Docker
+
+Prérequis : Docker avec le plugin Compose.
 
 ```bash
-npx rgaaudit
+docker compose up --build -d
 ```
 
-Le navigateur s'ouvre automatiquement sur `http://localhost:3000`.
+L’application est ensuite disponible sur `http://localhost:3000`. Les audits et les validations sont conservés dans le volume Docker `rgaaudit-data`.
 
-### Options
+Pour utiliser un autre port :
 
-```
--p, --port <port>     Port du serveur (défaut : 3000)
---max-pages <n>       Nombre max de pages par audit (défaut : 50)
---no-open             Ne pas ouvrir le navigateur automatiquement
--h, --help            Afficher l'aide
+```bash
+RGAAUDIT_PORT=8080 docker compose up --build -d
 ```
 
-## Comment ça marche
+Commandes utiles :
 
-1. Entrez l'URL d'un site web
-2. RGAAudit découvre les pages via le `sitemap.xml`
-3. Sélectionnez les pages à auditer
-4. L'audit lance axe-core sur chaque page via Playwright
-5. Les résultats sont mappés sur les critères RGAA 4.1
-6. Consultez le rapport interactif avec les annexes filtrables
+```bash
+docker compose logs -f app
+docker compose ps
+docker compose down
+```
 
-## Ce que l'outil fait
+`docker compose down` conserve les données. L’option `-v` supprime aussi le volume et doit donc être utilisée avec prudence.
 
-- Découvre les pages d'un site via `sitemap.xml`
-- Lance axe-core sur chaque page via un navigateur headless
-- Mappe les résultats sur les critères RGAA 4.1
-- Génère un rapport HTML interactif avec annexes (images, liens, titres)
-- Permet à l'auditeur humain de prendre ses décisions dans les annexes
+## Architecture
 
-## Couverture RGAA
+Le produit reste un **monolithe modulaire**, simple à exploiter :
 
-RGAAudit couvre actuellement **11 critères** sur les 106 du RGAA 4.1, répartis sur **5 thématiques** :
+```text
+packages/
+├── core/       moteur d’analyse, mapping RGAA/WCAG et rapports
+├── server/     API Express, orchestration et dépôt de données JSON
+├── web/        interface React de préanalyse et validation humaine
+└── cli/        lancement local historique
+```
 
-| Thématique | Critères | Détail |
-|---|---|---|
-| Images | 1.1, 1.2 | Alternative textuelle (présence, pertinence, décoration) |
-| Couleurs | 3.2, 3.3 | Contrastes texte/fond (ratio 4.5:1 et 3:1 composants UI) |
-| Liens | 6.1, 6.2 | Liens explicites, intitulés vides/génériques/dupliqués, nouvelle fenêtre |
-| Éléments obligatoires | 8.5, 8.6 | Titre de page (présence et pertinence) |
-| Structuration | 9.1 | Hiérarchie des titres (sauts de niveau, h1 absent/multiple) |
+Le dépôt `AuditRepository` isole la persistance du reste de l’application. La V1 utilise des fichiers JSON atomiques ; une base SQLite ou PostgreSQL pourra le remplacer sans réécrire le moteur ni l’interface.
 
-Les **8 thématiques restantes** (Cadres, Multimédia, Tableaux, Scripts, Présentation, Formulaires, Navigation, Consultation) génèrent une checklist manuelle dans le rapport.
+La table de correspondance stocke déjà les critères WCAG liés aux critères RGAA pour permettre de futurs exports.
 
-L'outil utilise deux moteurs d'analyse complémentaires :
-- **axe-core** — détection automatisée des violations WCAG via Playwright
-- **Heuristiques custom** — analyse Playwright complémentaire pour les patterns qu'axe-core ne couvre pas (liens factices, éléments interactifs simulés, etc.)
+## Couverture et limites
 
-## Ce que l'outil ne fait PAS
+Le mapping actuel prépare **11 critères sur les 106** du RGAA. Certains restent entièrement manuels ; le taux de couverture fonctionnelle est donc d’environ **10,4 %**, pas 25 %.
 
-- Il ne remplace pas un auditeur humain
-- Il ne couvre pas 100 % des critères RGAA (MVP : environ 25 %)
-- Il n'envoie aucune donnée à un serveur externe
-- Il ne modifie rien sur le site audité
+L’analyse combine axe-core, des collecteurs dédiés aux images, liens et titres, et quelques heuristiques Playwright. Elle ne remplace pas un audit RGAA complet et ne produit pas seule un taux de conformité opposable.
 
 ## Développement
 
 ```bash
-git clone <repo-url>
-cd rgaaudit
-npm install
+npm ci
 npm run dev
 ```
 
-### Tests
+Ou dans le conteneur de développement :
 
 ```bash
-# Tous les tests unitaires et d'intégration
+docker compose --profile dev run --rm --service-ports dev
+```
+
+Vérifications :
+
+```bash
 npm test
-
-# Tests d'un package spécifique
-npm test --workspace=packages/core
-npm test --workspace=packages/server
-npm test --workspace=packages/web
-npm test --workspace=packages/cli
-
-# Tests end-to-end (Playwright)
+npm run build
+npx tsc --noEmit -p tsconfig.json
 npm run test:e2e
-
-# Couverture
-npm run test:coverage
 ```
 
-### Structure du projet
+## Configuration serveur
 
-```
-rgaaudit/
-├── packages/
-│   ├── core/       — Moteur d'audit (crawl, axe-core, mapping, rapport)
-│   ├── server/     — Serveur Express local (API + SSE)
-│   ├── web/        — Interface React (Vite + Tailwind CSS)
-│   └── cli/        — Point d'entrée CLI (npx rgaaudit)
-└── e2e/            — Tests end-to-end (Playwright Test)
-```
+| Variable | Défaut | Usage |
+|---|---:|---|
+| `PORT` | `3000` dans Docker | Port HTTP |
+| `RGAAUDIT_DATA_DIR` | `/data` dans Docker | Répertoire persistant |
+| `AUDIT_MAX_URLS` | `50` | Pages maximum par audit |
+| `AUDIT_MAX_CONCURRENT` | `2` | Pages analysées en parallèle |
+| `AUDIT_MAX_RUNNING` | `1` | Audits globaux simultanés |
+| `CORS_ORIGIN` | vide | Origine front autorisée si séparée |
 
 ## Licence
 

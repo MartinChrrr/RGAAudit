@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Serveur Express local pour RGAAudit",
+  "description": "API Express et stockage persistant pour RGAAudit",
   "main": "index.ts",
   "scripts": {
     "dev": "tsx watch index.ts",
