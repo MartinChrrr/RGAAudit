@@ -21,22 +21,38 @@ export interface ImageDecision {
   notes: string;
 }
 
+export interface PersistedImageDecision extends ImageDecision {
+  pageUrl: string;
+  selector: string;
+}
+
 type FilterType = 'all' | 'violations' | 'warnings' | 'passes';
 
 interface Props {
   images: ImageItem[];
   sessionId: string;
+  initialDecisions?: PersistedImageDecision[];
 }
 
 function storageKey(sessionId: string): string {
   return `rgaaudit-images-${sessionId}`;
 }
 
-export default function AnnexeImages({ images, sessionId }: Props) {
+function imageKey(image: Pick<ImageItem, 'pageUrl' | 'selector'>): string {
+  return `${image.pageUrl ?? ''}\u001f${image.selector}`;
+}
+
+export default function AnnexeImages({ images, sessionId, initialDecisions = [] }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [pageFilter, setPageFilter] = useState('');
   const [search, setSearch] = useState('');
   const [decisions, setDecisions] = useState<Record<string, ImageDecision>>(() => {
+    if (initialDecisions.length > 0) {
+      return Object.fromEntries(initialDecisions.map((item) => [imageKey(item), {
+        decision: item.decision,
+        notes: item.notes,
+      }]));
+    }
     try {
       const saved = localStorage.getItem(storageKey(sessionId));
       return saved ? JSON.parse(saved) : {};
@@ -56,15 +72,34 @@ export default function AnnexeImages({ images, sessionId }: Props) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [decisions, sessionId]);
 
-  const updateDecision = useCallback((selector: string, field: keyof ImageDecision, value: string | null) => {
+  const updateDecision = useCallback((image: ImageItem, field: keyof ImageDecision, value: string | null) => {
+    const key = imageKey(image);
     setDecisions((prev) => ({
       ...prev,
-      [selector]: {
-        ...prev[selector] ?? { decision: null, notes: '' },
+      [key]: {
+        ...prev[key] ?? { decision: null, notes: '' },
         [field]: value,
       },
     }));
   }, []);
+
+  const persistDecision = useCallback(async (image: ImageItem, decision: ImageDecision) => {
+    if (!image.pageUrl) return;
+    try {
+      await fetch(`/api/audit/${sessionId}/image-decision`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageUrl: image.pageUrl,
+          selector: image.selector,
+          decision: decision.decision,
+          notes: decision.notes,
+        }),
+      });
+    } catch {
+      // The local cache remains available and a later edit can retry the save.
+    }
+  }, [sessionId]);
 
   // Counts
   const violationCount = images.filter((img) => img.automatedStatus === 'violation').length;
@@ -167,7 +202,9 @@ export default function AnnexeImages({ images, sessionId }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map((img) => {
-                const dec = decisions[img.selector] ?? { decision: null, notes: '' };
+                const key = imageKey(img);
+                const legacyDecision = decisions[img.selector];
+                const dec = decisions[key] ?? legacyDecision ?? { decision: null, notes: '' };
                 return (
                   <tr key={img.selector + (img.pageUrl ?? '')} className="hover:bg-gray-50">
                     {/* Thumbnail */}
@@ -251,9 +288,13 @@ export default function AnnexeImages({ images, sessionId }: Props) {
                             <label key={opt} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
                               <input
                                 type="radio"
-                                name={`decision-${img.selector}`}
+                                name={`decision-${key}`}
                                 checked={dec.decision === opt}
-                                onChange={() => updateDecision(img.selector, 'decision', opt)}
+                                onChange={() => {
+                                  const next = { ...dec, decision: opt };
+                                  updateDecision(img, 'decision', opt);
+                                  void persistDecision(img, next);
+                                }}
                                 className="h-3 w-3 text-primary-600 focus:ring-primary-500"
                               />
                               {t(`annexes.images.decision${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
@@ -262,7 +303,8 @@ export default function AnnexeImages({ images, sessionId }: Props) {
                         </div>
                         <textarea
                           value={dec.notes}
-                          onChange={(e) => updateDecision(img.selector, 'notes', e.target.value)}
+                          onChange={(e) => updateDecision(img, 'notes', e.target.value)}
+                          onBlur={() => { void persistDecision(img, dec); }}
                           placeholder={t('annexes.images.decisionNotes')}
                           className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                           rows={1}

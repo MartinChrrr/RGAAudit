@@ -50,6 +50,7 @@ const mockImages: ImageItem[] = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -77,6 +78,7 @@ describe('AnnexeImages', () => {
   });
 
   it('persiste les décisions en localStorage', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true } as Response);
     const user = userEvent.setup();
     render(<AnnexeImages images={mockImages} sessionId="test-3" />);
 
@@ -90,8 +92,13 @@ describe('AnnexeImages', () => {
     const stored = localStorage.getItem('rgaaudit-images-test-3');
     expect(stored).toBeTruthy();
     const parsed = JSON.parse(stored!);
-    expect(parsed['img#hero']).toBeDefined();
-    expect(parsed['img#hero'].decision).toBe('decorative');
+    const key = 'https://example.com/\u001fimg#hero';
+    expect(parsed[key]).toBeDefined();
+    expect(parsed[key].decision).toBe('decorative');
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      '/api/audit/test-3/image-decision',
+      expect.objectContaining({ method: 'PATCH' }),
+    );
   });
 
   it('restaure les décisions depuis localStorage au montage', () => {

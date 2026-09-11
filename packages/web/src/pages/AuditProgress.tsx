@@ -22,8 +22,6 @@ export default function AuditProgress() {
 
   const [pages, setPages] = useState<PageState[]>([]);
   const [elapsed, setElapsed] = useState(0);
-  const [completed, setCompleted] = useState(0);
-  const [total, setTotal] = useState(0);
   const [auditDone, setAuditDone] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
 
@@ -43,9 +41,7 @@ export default function AuditProgress() {
         if (existing) {
           return prev.map((p) => p.url === data.url ? { ...p, status: 'running' } : p);
         }
-        const next = [...prev, { url: data.url, status: 'running' as const }];
-        setTotal(next.length);
-        return next;
+        return [...prev, { url: data.url, status: 'running' as const }];
       });
     });
 
@@ -54,7 +50,6 @@ export default function AuditProgress() {
       setPages((prev) =>
         prev.map((p) => p.url === data.url ? { ...p, status: 'done' } : p),
       );
-      setCompleted((prev) => prev + 1);
     });
 
     es.addEventListener('page_error', (e) => {
@@ -62,7 +57,6 @@ export default function AuditProgress() {
       setPages((prev) =>
         prev.map((p) => p.url === data.url ? { ...p, status: 'error', error: data.error } : p),
       );
-      setCompleted((prev) => prev + 1);
     });
 
     es.addEventListener('audit_complete', () => {
@@ -91,6 +85,9 @@ export default function AuditProgress() {
       clearInterval(timerRef.current);
     }
   }, [auditDone]);
+
+  const completed = pages.filter((page) => page.status === 'done' || page.status === 'error').length;
+  const total = pages.length;
 
   async function handleCancel() {
     if (!sessionId) return;

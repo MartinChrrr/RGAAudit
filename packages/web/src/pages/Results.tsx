@@ -5,6 +5,7 @@ import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
 import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
 import AnnexeHeuristiques, { type HeuristicFindingItem } from '../components/annexes/AnnexeHeuristiques';
+import ReviewWorkspace, { type ReviewData } from '../components/ReviewWorkspace';
 
 interface ContrastViolationItem {
   pageUrl: string;
@@ -51,6 +52,7 @@ interface ReportData {
   }>;
   contrastViolations?: ContrastViolationItem[];
   heuristicFindings?: HeuristicFindingItem[];
+  review?: ReviewData;
   allCollected?: Array<{
     url: string;
     collectedData: {
@@ -211,6 +213,14 @@ export default function Results() {
           <SummaryCard label={t('report.criteriaManual')} value={report.summary.manual} className="text-amber-900" />
         </div>
 
+        <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="note">
+          Le rouge, l’orange et le vert décrivent uniquement la suggestion de la machine. La conformité RGAA doit toujours être confirmée par une décision humaine.
+        </div>
+
+        {report.review && sessionId && (
+          <ReviewWorkspace sessionId={sessionId} review={report.review} />
+        )}
+
         {/* Pages audited */}
         <p className="text-sm text-gray-600 mb-6">
           {t('results.pagesAudited', { count: report.metadata.pagesAudited })}
@@ -353,7 +363,11 @@ export default function Results() {
           </div>
           <div role="tabpanel" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             {activeTab === 'images' && (
-              <AnnexeImages images={allImages} sessionId={sessionId!} />
+              <AnnexeImages
+                images={allImages}
+                sessionId={sessionId!}
+                initialDecisions={report.review?.imageDecisions}
+              />
             )}
             {activeTab === 'links' && (
               <AnnexeLiens links={allLinks} sessionId={sessionId!} />
