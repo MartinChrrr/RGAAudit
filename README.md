@@ -55,7 +55,7 @@ La table de correspondance stocke déjà les critères WCAG liés aux critères 
 
 ## Couverture et limites
 
-Le mapping actuel prépare **11 critères sur les 106** du RGAA. Certains restent entièrement manuels ; le taux de couverture fonctionnelle est donc d’environ **10,4 %**, pas 25 %.
+Le mapping actuel prépare **12 critères sur les 106** du RGAA. Certains restent entièrement manuels ; le taux de couverture fonctionnelle est donc d’environ **11,3 %**. Le critère 2.1 contrôle automatiquement la présence d'un titre non vide sur chaque cadre ; la pertinence de ce titre reste hors périmètre jusqu'à l'ajout du critère 2.2.
 
 L’analyse combine axe-core, des collecteurs dédiés aux images, liens et titres, et quelques heuristiques Playwright. Elle ne remplace pas un audit RGAA complet et ne produit pas seule un taux de conformité opposable.
 
