@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { getCriterion } from '@rgaaudit/core/mapping';
-import { loadSession, saveDecision, saveImageDecision } from '../services/session.store';
+import { loadSession, saveDecision, saveImageDecision, saveImageDecisions } from '../services/session.store';
 import { startAudit, cancelAudit, connectClient } from '../services/audit.service';
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
@@ -31,8 +31,16 @@ const decisionSchema = z.object({
 const imageDecisionSchema = z.object({
   pageUrl: z.string().url(),
   selector: z.string().trim().min(1).max(2_000),
+  elementIndex: z.number().int().min(0).optional(),
   decision: z.enum(['decorative', 'informative', 'violation']).nullable(),
+  status: z.enum(['not_tested', 'compliant', 'non_compliant', 'not_applicable']).default('not_tested'),
+  correctedAlt: z.string().trim().max(2_000).default(''),
   notes: z.string().trim().max(5_000).default(''),
+});
+
+const imageDecisionsBatchSchema = z.object({
+  decisions: z.array(imageDecisionSchema).min(1).max(2_000),
+  markCriteriaNonCompliant: z.boolean().default(false),
 });
 
 export const auditRouter = Router();
@@ -101,6 +109,7 @@ auditRouter.patch(
       status,
       comment,
       reviewedAt: status === 'not_tested' ? null : new Date().toISOString(),
+      source: 'criterion',
     });
     res.json({ review });
   }),
@@ -114,20 +123,67 @@ auditRouter.patch(
     const session = await loadSession(sessionId);
     if (!session) throw new HttpError(404, 'Session introuvable.');
 
-    const { pageUrl, selector, decision, notes } = req.body;
+    const { pageUrl, selector, elementIndex, decision, status, correctedAlt, notes } = req.body;
     const page = session.results[pageUrl];
     if (!page) throw new HttpError(400, 'Cette page ne fait pas partie de l\'audit.');
-    if (!page.collectedData?.images.some((image) => image.selector === selector)) {
+    const images = page.collectedData?.images ?? [];
+    const resolvedIndex = elementIndex ?? images.findIndex((image) => image.selector === selector);
+    if (resolvedIndex < 0 || images[resolvedIndex]?.selector !== selector) {
       throw new HttpError(400, 'Image inconnue pour cette page.');
     }
 
     const review = await saveImageDecision(sessionId, {
       pageUrl,
       selector,
+      elementIndex: resolvedIndex,
       decision,
+      status,
+      correctedAlt,
       notes,
-      reviewedAt: decision === null ? null : new Date().toISOString(),
+      reviewedAt: status === 'not_tested' ? null : new Date().toISOString(),
+    }, images.map((image) => image.selector));
+    res.json({ review });
+  }),
+);
+
+auditRouter.patch(
+  '/api/audit/:sessionId/image-decisions',
+  validateBody(imageDecisionsBatchSchema),
+  asyncHandler(async (req, res) => {
+    const sessionId = sessionIdSchema.parse(req.params.sessionId);
+    const session = await loadSession(sessionId);
+    if (!session) throw new HttpError(404, 'Session introuvable.');
+
+    const pageImageSelectorsByUrl: Record<string, string[]> = {};
+    const decisions = req.body.decisions.map((input: z.infer<typeof imageDecisionSchema>) => {
+      const page = session.results[input.pageUrl];
+      if (!page) throw new HttpError(400, 'Une image concerne une page absente de l’audit.');
+
+      const images = page.collectedData?.images ?? [];
+      const resolvedIndex = input.elementIndex ?? images.findIndex((image) => image.selector === input.selector);
+      if (resolvedIndex < 0 || images[resolvedIndex]?.selector !== input.selector) {
+        throw new HttpError(400, 'Une image indiquée est inconnue pour cette page.');
+      }
+      pageImageSelectorsByUrl[input.pageUrl] = images.map((image) => image.selector);
+
+      return {
+        pageUrl: input.pageUrl,
+        selector: input.selector,
+        elementIndex: resolvedIndex,
+        decision: input.decision,
+        status: input.status,
+        correctedAlt: input.correctedAlt,
+        notes: input.notes,
+        reviewedAt: input.status === 'not_tested' ? null : new Date().toISOString(),
+      };
     });
+
+    const review = await saveImageDecisions(
+      sessionId,
+      decisions,
+      pageImageSelectorsByUrl,
+      req.body.markCriteriaNonCompliant,
+    );
     res.json({ review });
   }),
 );

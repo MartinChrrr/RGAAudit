@@ -87,6 +87,7 @@ function makeCollectedData(): CollectedData {
         screenshotPath: null,
       },
     ],
+    frames: [],
     links: [],
     headings: {
       documentTitle: 'Accueil',
@@ -132,7 +133,7 @@ describe('renderReportHtml', () => {
 
     expect(html).toContain('1.1');
     expect(html).toContain('6.1');
-    expect(html).toContain('Anomalie probable');
+    expect(html).toContain('Anomalies détectées');
     expect(html).toContain('Aucune anomalie détectée');
   });
 
@@ -193,5 +194,25 @@ describe('renderReportHtml', () => {
 
     expect(html).toContain('id="rgaaudit-data"');
     expect(html).toContain('[]');
+  });
+
+  it('affiche une jauge pour un contraste insuffisant', () => {
+    const html = renderReportHtml({
+      report: makeReport(),
+      contrastViolations: [{
+        pageUrl: 'https://example.com/',
+        rgaaId: '3.2',
+        selector: 'p.low-contrast',
+        contrastRatio: '2.5:1',
+        expectedContrastRatio: '4.5:1',
+        fgColor: '#aaaaaa',
+        bgColor: '#ffffff',
+      }],
+    });
+
+    expect(html).toContain('role="meter"');
+    expect(html).toContain('aria-valuenow="2.5"');
+    expect(html).toContain('aria-valuemax="4.5"');
+    expect(html).toContain('Insuffisant');
   });
 });

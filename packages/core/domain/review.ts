@@ -19,6 +19,8 @@ export interface AuditDecision {
   status: HumanStatus;
   comment: string;
   reviewedAt: string | null;
+  /** Identifies decisions explicitly entered on a criterion versus an annex summary. */
+  source?: 'criterion' | 'annex_images';
 }
 
 export type ImageClassification = 'decorative' | 'informative' | 'violation' | null;
@@ -26,7 +28,11 @@ export type ImageClassification = 'decorative' | 'informative' | 'violation' | n
 export interface ImageAuditDecision {
   pageUrl: string;
   selector: string;
+  /** Stable position in the collected page, used when CSS selectors are duplicated. */
+  elementIndex?: number;
   decision: ImageClassification;
+  status: HumanStatus;
+  correctedAlt: string;
   notes: string;
   reviewedAt: string | null;
 }
@@ -48,8 +54,8 @@ export function machineStatusFromLegacyStatus(
 }
 
 export function aggregateHumanStatus(statuses: HumanStatus[]): HumanStatus {
-  if (statuses.length === 0 || statuses.includes('not_tested')) return 'not_tested';
   if (statuses.includes('non_compliant')) return 'non_compliant';
+  if (statuses.length === 0 || statuses.includes('not_tested')) return 'not_tested';
   if (statuses.every((status) => status === 'not_applicable')) return 'not_applicable';
   return 'compliant';
 }

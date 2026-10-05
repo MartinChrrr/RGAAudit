@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { t } from '../../locales';
 
 export interface LinkItem {
@@ -17,6 +17,7 @@ type FilterType = 'all' | 'empty' | 'generic' | 'duplicates' | 'newWindow';
 interface Props {
   links: LinkItem[];
   sessionId: string;
+  initialPageUrl?: string;
 }
 
 interface DuplicateGroup {
@@ -26,9 +27,12 @@ interface DuplicateGroup {
   expanded: boolean;
 }
 
-export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
+export default function AnnexeLiens({ links, sessionId: _sessionId, initialPageUrl }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
 
   // Counts
   const emptyCount = links.filter((l) => l.flags.includes('EMPTY_LABEL')).length;
@@ -74,13 +78,15 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
   // Apply filter
   const filtered = useMemo(() => {
     switch (filter) {
-      case 'empty': return links.filter((l) => l.flags.includes('EMPTY_LABEL'));
-      case 'generic': return links.filter((l) => l.flags.includes('GENERIC_LABEL'));
-      case 'newWindow': return links.filter((l) => l.flags.includes('NEW_WINDOW_NO_WARNING'));
+      case 'empty': return links.filter((l) => l.flags.includes('EMPTY_LABEL') && (!pageFilter || l.pageUrl === pageFilter));
+      case 'generic': return links.filter((l) => l.flags.includes('GENERIC_LABEL') && (!pageFilter || l.pageUrl === pageFilter));
+      case 'newWindow': return links.filter((l) => l.flags.includes('NEW_WINDOW_NO_WARNING') && (!pageFilter || l.pageUrl === pageFilter));
       case 'duplicates': return null; // handled separately
-      default: return links;
+      default: return links.filter((l) => !pageFilter || l.pageUrl === pageFilter);
     }
-  }, [links, filter]);
+  }, [links, filter, pageFilter]);
+
+  const pages = [...new Set(links.map((link) => link.pageUrl).filter(Boolean))] as string[];
 
   const typeColors: Record<string, string> = {
     a: 'bg-blue-100 text-blue-800',
@@ -107,6 +113,17 @@ export default function AnnexeLiens({ links, sessionId: _sessionId }: Props) {
         <FilterButton active={filter === 'newWindow'} onClick={() => setFilter('newWindow')}>
           {t('annexes.links.filterNewWindow')} ({newWindowCount})
         </FilterButton>
+        {pages.length > 1 && (
+          <select
+            value={pageFilter}
+            onChange={(event) => setPageFilter(event.target.value)}
+            className="ml-auto rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700"
+            aria-label="Filtrer les liens par page"
+          >
+            <option value="">Toutes les pages</option>
+            {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+          </select>
+        )}
       </div>
 
       {/* Duplicate groups view */}

@@ -14,7 +14,7 @@ export interface ReviewCriterion {
   reviewedAt: string | null;
   violationsCount: number;
   incompletesCount: number;
-  elements: Array<{ selector: string; flags: string[] }>;
+  elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
   manualChecks: string[];
 }
 
@@ -32,19 +32,33 @@ export interface ReviewData {
   imageDecisions?: Array<{
     pageUrl: string;
     selector: string;
+    elementIndex?: number;
     decision: 'decorative' | 'informative' | 'violation' | null;
+    status: HumanStatus;
+    correctedAlt: string;
     notes: string;
     reviewedAt: string | null;
   }>;
 }
 
+export type AnnexTab = 'images' | 'frames' | 'links' | 'headings' | 'heuristics';
+
+export interface AnnexTarget {
+  tab: AnnexTab;
+  pageUrl: string;
+  criterionId: string;
+  selectors: string[];
+  elementIndexes: number[];
+}
+
 interface Props {
   sessionId: string;
   review: ReviewData;
+  onOpenAnnex?: (target: AnnexTarget) => void;
 }
 
 const machineLabels: Record<MachineStatus, string> = {
-  probable_issue: 'Anomalie probable',
+  probable_issue: 'Anomalies détectées',
   needs_review: 'À vérifier',
   no_issue_detected: 'Aucune anomalie détectée',
 };
@@ -53,6 +67,12 @@ const machineColors: Record<MachineStatus, string> = {
   probable_issue: 'border-red-300 bg-red-50 text-red-800',
   needs_review: 'border-amber-300 bg-amber-50 text-amber-900',
   no_issue_detected: 'border-green-300 bg-green-50 text-green-800',
+};
+
+const humanColors: Record<Exclude<HumanStatus, 'not_tested'>, string> = {
+  compliant: 'border-green-300 bg-green-50 text-green-800',
+  non_compliant: 'border-red-300 bg-red-50 text-red-800',
+  not_applicable: 'border-gray-300 bg-gray-50 text-gray-700',
 };
 
 const humanLabels: Record<HumanStatus, string> = {
@@ -66,7 +86,25 @@ function decisionKey(pageUrl: string, criterionId: string): string {
   return `${pageUrl}\u001f${criterionId}`;
 }
 
-export default function ReviewWorkspace({ sessionId, review }: Props) {
+function annexForCriterion(criterionId: string): AnnexTab | null {
+  const theme = criterionId.split('.')[0];
+  if (theme === '1') return 'images';
+  if (theme === '2') return 'frames';
+  if (theme === '6') return 'links';
+  if (theme === '8' || theme === '9') return 'headings';
+  if (theme === '7') return 'heuristics';
+  return null;
+}
+
+const annexLabels: Record<AnnexTab, string> = {
+  images: 'Images',
+  frames: 'Cadres',
+  links: 'Liens',
+  headings: 'Titres',
+  heuristics: 'Sémantique HTML',
+};
+
+export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Props) {
   const [activePage, setActivePage] = useState(review.pages[0]?.url ?? '');
   const [criteria, setCriteria] = useState(review.pages);
   const [saving, setSaving] = useState<string | null>(null);
@@ -152,15 +190,27 @@ export default function ReviewWorkspace({ sessionId, review }: Props) {
       <div className="space-y-3">
         {page.criteria.map((criterion) => {
           const key = decisionKey(page.url, criterion.rgaaId);
+          const annex = annexForCriterion(criterion.rgaaId);
           return (
             <article key={criterion.rgaaId} id={`criterion-${criterion.rgaaId}`} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-sm font-semibold text-gray-800">{criterion.rgaaId}</span>
-                    <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${machineColors[criterion.machineStatus]}`}>
-                      {machineLabels[criterion.machineStatus]}
-                    </span>
+                    {criterion.humanStatus === 'not_tested' ? (
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${machineColors[criterion.machineStatus]}`}>
+                        {machineLabels[criterion.machineStatus]}
+                      </span>
+                    ) : (
+                      <>
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${humanColors[criterion.humanStatus]}`}>
+                          Auditeur : {humanLabels[criterion.humanStatus]}
+                        </span>
+                        <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                          Signal automatique : {machineLabels[criterion.machineStatus]}
+                        </span>
+                      </>
+                    )}
                     {criterion.wcag.map((wcag) => (
                       <span key={wcag} className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">WCAG {wcag}</span>
                     ))}
@@ -170,6 +220,24 @@ export default function ReviewWorkspace({ sessionId, review }: Props) {
                     <p className="mt-1 text-xs text-gray-600">
                       {criterion.violationsCount} anomalie(s) automatisée(s), {criterion.elements.length} élément(s) à examiner.
                     </p>
+                  )}
+                  {annex && onOpenAnnex && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenAnnex({
+                        tab: annex,
+                        pageUrl: page.url,
+                        criterionId: criterion.rgaaId,
+                        selectors: criterion.elements.map((element) => element.selector),
+                        elementIndexes: criterion.elements.flatMap((element) => (
+                          element.elementIndex === undefined ? [] : [element.elementIndex]
+                        )),
+                      })}
+                      className="mt-2 inline-flex items-center rounded-md text-xs font-medium text-primary-700 underline decoration-primary-300 underline-offset-2 hover:text-primary-900"
+                    >
+                      Examiner dans l’annexe {annexLabels[annex]}
+                      {criterion.elements.length > 0 ? ` (${criterion.elements.length})` : ''}
+                    </button>
                   )}
                 </div>
 

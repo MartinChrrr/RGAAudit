@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../../locales';
 
 export interface HeadingItem {
@@ -18,10 +18,17 @@ export interface HeadingTreeData {
 interface Props {
   headingData: HeadingTreeData[];
   sessionId: string;
+  initialPageUrl?: string;
 }
 
-export default function AnnexeTitres({ headingData, sessionId: _sessionId }: Props) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export default function AnnexeTitres({ headingData, sessionId: _sessionId, initialPageUrl }: Props) {
+  const initialIndex = Math.max(0, headingData.findIndex((page) => page.url === initialPageUrl));
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    const index = headingData.findIndex((page) => page.url === initialPageUrl);
+    if (index >= 0) setCurrentIndex(index);
+  }, [headingData, initialPageUrl]);
 
   if (headingData.length === 0) {
     return <p className="text-sm text-gray-600 py-4">{t('annexes.headings.noHeadings')}</p>;

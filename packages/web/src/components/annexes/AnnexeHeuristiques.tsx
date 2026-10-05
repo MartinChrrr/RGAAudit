@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../../locales';
 
 export interface HeuristicFindingItem {
@@ -15,6 +15,7 @@ export interface HeuristicFindingItem {
 interface Props {
   findings: HeuristicFindingItem[];
   sessionId: string;
+  initialPageUrl?: string;
 }
 
 type SubTab = 'interactive' | 'structure' | 'svg';
@@ -38,12 +39,14 @@ const CONFIDENCE_BADGES: Record<string, { icon: string; className: string }> = {
   possible: { icon: '\uD83D\uDD0D', className: 'bg-blue-100 text-blue-800' },
 };
 
-export default function AnnexeHeuristiques({ findings }: Props) {
+export default function AnnexeHeuristiques({ findings, initialPageUrl }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('interactive');
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('all');
-  const [showPossible, setShowPossible] = useState(false);
+  const [showPossible, setShowPossible] = useState(true);
   const [copiedSelector, setCopiedSelector] = useState<string | null>(null);
-  const [pageFilter, setPageFilter] = useState<string>('');
+  const [pageFilter, setPageFilter] = useState<string>(initialPageUrl ?? '');
+
+  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
 
   // Group findings by sub-tab
   const grouped: Record<SubTab, HeuristicFindingItem[]> = {

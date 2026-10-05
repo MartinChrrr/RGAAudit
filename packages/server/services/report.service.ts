@@ -59,7 +59,7 @@ export interface ReviewCriterion {
   reviewedAt: string | null;
   violationsCount: number;
   incompletesCount: number;
-  elements: Array<{ selector: string; flags: string[] }>;
+  elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
   manualChecks: string[];
 }
 
@@ -199,8 +199,8 @@ function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolation
             pageUrl: page.url,
             rgaaId: rgaaIdByRule[violation.rule] ?? criterion.rgaaId,
             selector: el.target.join(', '),
-            contrastRatio: data.contrastRatio != null ? `${data.contrastRatio}:1` : '',
-            expectedContrastRatio: data.expectedContrastRatio != null ? `${data.expectedContrastRatio}:1` : '',
+            contrastRatio: formatContrastRatio(data.contrastRatio),
+            expectedContrastRatio: formatContrastRatio(data.expectedContrastRatio),
             fgColor: typeof data.fgColor === 'string' ? data.fgColor : '',
             bgColor: typeof data.bgColor === 'string' ? data.bgColor : '',
           });
@@ -210,4 +210,12 @@ function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolation
   }
 
   return items;
+}
+
+export function formatContrastRatio(value: unknown): string {
+  if (value == null) return '';
+
+  const normalized = String(value).trim().replace(',', '.');
+  const ratio = normalized.match(/^(\d+(?:\.\d+)?)\s*(?::\s*1)*$/);
+  return ratio ? `${ratio[1]}:1` : normalized;
 }

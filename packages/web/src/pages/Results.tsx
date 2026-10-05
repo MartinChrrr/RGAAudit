@@ -1,11 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { t } from '../locales';
 import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
+import AnnexeCadres, { type FrameItem } from '../components/annexes/AnnexeCadres';
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
 import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
 import AnnexeHeuristiques, { type HeuristicFindingItem } from '../components/annexes/AnnexeHeuristiques';
-import ReviewWorkspace, { type ReviewData } from '../components/ReviewWorkspace';
+import ReviewWorkspace, {
+  type AnnexTab,
+  type AnnexTarget,
+  type ReviewData,
+} from '../components/ReviewWorkspace';
 
 interface ContrastViolationItem {
   pageUrl: string;
@@ -57,6 +62,7 @@ interface ReportData {
     url: string;
     collectedData: {
       images: ImageItem[];
+      frames: FrameItem[];
       links: LinkItem[];
       headings: {
         documentTitle: string;
@@ -72,27 +78,72 @@ interface ReportData {
   }>;
 }
 
+function ratioNumber(value: string): number | null {
+  const parsed = Number.parseFloat(value.replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function ContrastGauge({ actual, required }: { actual: string; required: string }) {
+  const actualValue = ratioNumber(actual);
+  const requiredValue = ratioNumber(required);
+
+  if (actualValue == null || requiredValue == null || requiredValue <= 0) {
+    return <span className="text-xs text-gray-700">{actual}</span>;
+  }
+
+  const completion = Math.min(100, Math.max(0, (actualValue / requiredValue) * 100));
+
+  return (
+    <div className="min-w-40">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="font-semibold text-red-800">{actual}</span>
+        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">
+          {t('report.contrastInsufficient')}
+        </span>
+      </div>
+      <div
+        role="meter"
+        aria-label={t('report.contrastGaugeLabel', { actual, required })}
+        aria-valuemin={0}
+        aria-valuemax={requiredValue}
+        aria-valuenow={actualValue}
+        aria-valuetext={t('report.contrastGaugeLabel', { actual, required })}
+        className="h-2.5 overflow-hidden rounded-full bg-gray-200"
+      >
+        <div
+          className="h-full rounded-full bg-red-600"
+          style={{ width: `${completion}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Results() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'images' | 'links' | 'headings' | 'heuristics'>('images');
+  const [activeTab, setActiveTab] = useState<AnnexTab>('images');
+  const [annexTarget, setAnnexTarget] = useState<AnnexTarget | null>(null);
   const [uncoveredOpen, setUncoveredOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  useEffect(() => {
+  const loadReport = useCallback(async () => {
     if (!sessionId) return;
-
-    fetch(`/api/report/${sessionId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(String(res.status));
-        return res.json();
-      })
-      .then((data) => setReport(data))
-      .catch(() => setError(t('results.error')))
-      .finally(() => setLoading(false));
+    try {
+      const response = await fetch(`/api/report/${sessionId}`);
+      if (!response.ok) throw new Error(String(response.status));
+      setReport(await response.json());
+      setError('');
+    } catch {
+      setError(t('results.error'));
+    } finally {
+      setLoading(false);
+    }
   }, [sessionId]);
+
+  useEffect(() => { void loadReport(); }, [loadReport]);
 
   if (loading) {
     return (
@@ -152,9 +203,26 @@ export default function Results() {
 
   const topIssues = (report.summary.topIssues ?? []).slice(0, 5);
 
+  const handleOpenAnnex = (target: AnnexTarget) => {
+    setAnnexTarget(target);
+    setActiveTab(target.tab);
+    requestAnimationFrame(() => {
+      const annexes = document.getElementById('annexes');
+      annexes?.focus({ preventScroll: true });
+      annexes?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   // Flatten collected data for annexes
   const allImages: ImageItem[] = (report.allCollected ?? []).flatMap((entry) =>
-    (entry.collectedData?.images ?? []).map((img) => ({ ...img, pageUrl: entry.url })),
+    (entry.collectedData?.images ?? []).map((img, elementIndex) => ({
+      ...img,
+      pageUrl: entry.url,
+      elementIndex,
+    })),
+  );
+  const allFrames: FrameItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.frames ?? []).map((frame) => ({ ...frame, pageUrl: entry.url })),
   );
   const allLinks: LinkItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.links ?? []).map((link) => ({ ...link, pageUrl: entry.url })),
@@ -168,7 +236,7 @@ export default function Results() {
 
   return (
     <main id="main-content" className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-[1400px] mx-auto">
         {/* Limit banner — always visible */}
         <div
           role="alert"
@@ -218,7 +286,11 @@ export default function Results() {
         </div>
 
         {report.review && sessionId && (
-          <ReviewWorkspace sessionId={sessionId} review={report.review} />
+          <ReviewWorkspace
+            sessionId={sessionId}
+            review={report.review}
+            onOpenAnnex={handleOpenAnnex}
+          />
         )}
 
         {/* Pages audited */}
@@ -284,9 +356,9 @@ export default function Results() {
         {(report.contrastViolations ?? []).length > 0 && (
           <section className="mb-8" data-testid="contrast-violations">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('report.contrastDetail')}</h2>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <table className="w-full text-left text-sm">
+                <thead className="hidden border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700 md:table-header-group">
                   <tr>
                     <th className="px-3 py-2">ID</th>
                     <th className="px-3 py-2">{t('report.contrastSelector')}</th>
@@ -294,13 +366,25 @@ export default function Results() {
                     <th className="px-3 py-2">{t('report.contrastRequired')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-200 md:divide-gray-100">
                   {report.contrastViolations!.map((v, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2 font-mono text-xs text-gray-700">{v.rgaaId}</td>
-                      <td className="px-3 py-2 text-xs text-gray-700 break-all">{v.selector}</td>
-                      <td className="px-3 py-2 text-xs text-gray-700">{v.contrastRatio}</td>
-                      <td className="px-3 py-2 text-xs text-gray-700">{v.expectedContrastRatio}</td>
+                    <tr key={i} className="grid grid-cols-2 gap-x-3 gap-y-3 p-4 md:table-row md:p-0">
+                      <td className="order-1 p-0 font-mono text-xs text-gray-700 md:table-cell md:px-3 md:py-2">
+                        <span className="mb-0.5 block font-sans text-[10px] font-semibold uppercase text-gray-500 md:hidden">ID</span>
+                        {v.rgaaId}
+                      </td>
+                      <td className="order-3 col-span-2 min-w-0 break-all p-0 text-xs text-gray-700 md:table-cell md:px-3 md:py-2">
+                        <span className="mb-0.5 block text-[10px] font-semibold uppercase text-gray-500 md:hidden">{t('report.contrastSelector')}</span>
+                        {v.selector}
+                      </td>
+                      <td className="order-4 col-span-2 p-0 text-xs text-gray-700 md:table-cell md:px-3 md:py-2">
+                        <span className="mb-1 block text-[10px] font-semibold uppercase text-gray-500 md:hidden">{t('report.contrastRatio')}</span>
+                        <ContrastGauge actual={v.contrastRatio} required={v.expectedContrastRatio} />
+                      </td>
+                      <td className="order-2 p-0 text-right text-xs font-semibold text-gray-800 md:table-cell md:px-3 md:py-2 md:text-left">
+                        <span className="mb-0.5 block text-[10px] font-semibold uppercase text-gray-500 md:hidden">{t('report.contrastRequired')}</span>
+                        {v.expectedContrastRatio}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -340,13 +424,16 @@ export default function Results() {
         )}
 
         {/* Annexes tabs */}
-        <section className="mb-8">
+        <section id="annexes" tabIndex={-1} className="mb-8 scroll-mt-4 focus:outline-none">
           <div className="flex border-b border-gray-200 mb-4" role="tablist">
-            {(['images', 'links', 'headings', 'heuristics'] as const).map((tab) => (
+            {(['images', 'frames', 'links', 'headings', 'heuristics'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setAnnexTarget(null);
+                }}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-primary-600 text-primary-700'
@@ -367,16 +454,42 @@ export default function Results() {
                 images={allImages}
                 sessionId={sessionId!}
                 initialDecisions={report.review?.imageDecisions}
+                initialPageUrl={annexTarget?.tab === 'images' ? annexTarget.pageUrl : undefined}
+                focusedSelectors={annexTarget?.tab === 'images' ? annexTarget.selectors : undefined}
+                focusedElementIndexes={annexTarget?.tab === 'images' ? annexTarget.elementIndexes : undefined}
+                focusedCriterionId={annexTarget?.tab === 'images' ? annexTarget.criterionId : undefined}
+                onSaved={loadReport}
+              />
+            )}
+            {activeTab === 'frames' && (
+              <AnnexeCadres
+                frames={allFrames}
+                sessionId={sessionId!}
+                initialPageUrl={annexTarget?.tab === 'frames' ? annexTarget.pageUrl : undefined}
+                focusedSelectors={annexTarget?.tab === 'frames' ? annexTarget.selectors : undefined}
+                focusedCriterionId={annexTarget?.tab === 'frames' ? annexTarget.criterionId : undefined}
               />
             )}
             {activeTab === 'links' && (
-              <AnnexeLiens links={allLinks} sessionId={sessionId!} />
+              <AnnexeLiens
+                links={allLinks}
+                sessionId={sessionId!}
+                initialPageUrl={annexTarget?.tab === 'links' ? annexTarget.pageUrl : undefined}
+              />
             )}
             {activeTab === 'headings' && (
-              <AnnexeTitres headingData={allHeadings} sessionId={sessionId!} />
+              <AnnexeTitres
+                headingData={allHeadings}
+                sessionId={sessionId!}
+                initialPageUrl={annexTarget?.tab === 'headings' ? annexTarget.pageUrl : undefined}
+              />
             )}
             {activeTab === 'heuristics' && (
-              <AnnexeHeuristiques findings={report.heuristicFindings ?? []} sessionId={sessionId!} />
+              <AnnexeHeuristiques
+                findings={report.heuristicFindings ?? []}
+                sessionId={sessionId!}
+                initialPageUrl={annexTarget?.tab === 'heuristics' ? annexTarget.pageUrl : undefined}
+              />
             )}
           </div>
         </section>

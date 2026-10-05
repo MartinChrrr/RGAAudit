@@ -61,15 +61,15 @@ beforeEach(() => {
 });
 
 describe('AnnexeHeuristiques', () => {
-  it('les findings "possible" sont masqués par défaut', () => {
+  it('les éléments "à vérifier" sont visibles par défaut', () => {
     render(<AnnexeHeuristiques findings={mockFindings} sessionId="test-1" />);
 
-    // The "possible" finding should not be visible
+    // Les éléments à vérifier restent immédiatement visibles pour l'auditeur.
     const cards = screen.getAllByTestId('finding-card');
     const possibleCards = cards.filter(
       (card) => card.getAttribute('data-confidence') === 'possible',
     );
-    expect(possibleCards).toHaveLength(0);
+    expect(possibleCards.length).toBeGreaterThanOrEqual(1);
 
     // The "certain" finding should be visible
     const certainCards = cards.filter(
@@ -78,7 +78,7 @@ describe('AnnexeHeuristiques', () => {
     expect(certainCards.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('toggle "Afficher les détections possibles" → findings "possible" apparaissent', async () => {
+  it('le filtre permet de masquer les éléments "à vérifier"', async () => {
     const user = userEvent.setup();
     render(<AnnexeHeuristiques findings={mockFindings} sessionId="test-2" />);
 
@@ -89,7 +89,7 @@ describe('AnnexeHeuristiques', () => {
     const possibleCards = cards.filter(
       (card) => card.getAttribute('data-confidence') === 'possible',
     );
-    expect(possibleCards.length).toBeGreaterThanOrEqual(1);
+    expect(possibleCards).toHaveLength(0);
   });
 
   it('filtre "Certain" masque les findings "likely" et "possible"', async () => {

@@ -23,6 +23,7 @@ describe('aggregateHumanStatus', () => {
 
   it('fait remonter une non-conformité et gère le non applicable', () => {
     expect(aggregateHumanStatus(['compliant', 'non_compliant'])).toBe('non_compliant');
+    expect(aggregateHumanStatus(['not_tested', 'non_compliant'])).toBe('non_compliant');
     expect(aggregateHumanStatus(['not_applicable', 'not_applicable'])).toBe('not_applicable');
     expect(aggregateHumanStatus(['compliant', 'not_applicable'])).toBe('compliant');
   });

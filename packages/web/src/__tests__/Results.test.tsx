@@ -107,7 +107,7 @@ describe('Results', () => {
     });
   });
 
-  it('affiche les 4 onglets annexes', async () => {
+  it('affiche les 5 onglets annexes', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockReport),
@@ -117,9 +117,10 @@ describe('Results', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: /images/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /cadres/i })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /liens/i })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /titres/i })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: /heuristiques/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /sémantique html/i })).toBeInTheDocument();
     });
   });
 
@@ -156,6 +157,17 @@ describe('Results', () => {
   it('affiche les violations de contraste avec ratios', async () => {
     const reportWithContrast = {
       ...mockReport,
+      summary: {
+        ...mockReport.summary,
+        criteria: [
+          ...mockReport.summary.criteria,
+          {
+            rgaaId: '3.2',
+            title: 'Le contraste du texte est-il suffisamment élevé ?',
+            status: 'violation',
+          },
+        ],
+      },
       contrastViolations: [
         {
           pageUrl: 'https://example.com/',
@@ -181,6 +193,14 @@ describe('Results', () => {
       expect(section).toBeInTheDocument();
       expect(section).toHaveTextContent('2.5:1');
       expect(section).toHaveTextContent('4.5:1');
+      expect(section).toHaveTextContent('Insuffisant');
     });
+
+    const gauge = screen.getByRole('meter', { name: /contraste calculé/i });
+    expect(gauge).toHaveAttribute('aria-valuenow', '2.5');
+    expect(gauge).toHaveAttribute('aria-valuemax', '4.5');
+    expect(screen.getAllByText('Ratio requis')).toHaveLength(2);
+    expect(screen.getByText('Le contraste du texte est-il suffisamment élevé ?').parentElement)
+      .toHaveTextContent('Anomalies détectées');
   });
 });

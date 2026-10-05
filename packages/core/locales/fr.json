@@ -53,9 +53,10 @@
     "criteriaSection": "Critères par thématique",
     "uncoveredThemes": "Thématiques non couvertes",
     "tabImages": "Images",
+    "tabFrames": "Cadres",
     "tabLinks": "Liens",
     "tabHeadings": "Titres",
-    "tabHeuristics": "Heuristiques",
+    "tabHeuristics": "Sémantique HTML",
     "comingSoon": "Annexes détaillées disponibles à l'étape 9",
     "backHome": "Nouvel audit"
   },
@@ -84,6 +85,25 @@
       "decisionNotes": "Notes",
       "noResults": "Aucune image à afficher",
       "loadingScreenshot": "Chargement…"
+    },
+    "frames": {
+      "title": "Annexe Cadres",
+      "description": "Le critère 2.1 exige un attribut title non vide sur chaque iframe ou frame. La pertinence de ce titre sera traitée séparément par le critère 2.2.",
+      "filterByPage": "Filtrer par page",
+      "allPages": "Toutes les pages",
+      "focusedCriterion": "{count} élément(s) lié(s) au critère {criterion}.",
+      "colSelector": "Sélecteur CSS",
+      "colSource": "Source",
+      "colTitle": "Titre du cadre",
+      "colStatus": "Statut technique",
+      "sourceAbsent": "Source absente",
+      "titleAbsent": "Attribut title absent",
+      "titleEmpty": "Attribut title vide",
+      "statusPresent": "Titre présent",
+      "statusViolation": "Titre manquant",
+      "issueCount": "{count} cadre(s) sans titre exploitable",
+      "noIssues": "Tous les cadres affichés possèdent un titre",
+      "noResults": "Aucun cadre à afficher"
     },
     "links": {
       "title": "Annexe Liens",
@@ -114,15 +134,15 @@
       "noHeadings": "Aucun titre sur cette page"
     },
     "heuristics": {
-      "title": "Annexe Heuristiques",
-      "description": "Détections heuristiques — éléments suspects identifiés par analyse comportementale. Les détections 'certain' indiquent une violation probable. Les détections 'likely' nécessitent une vérification manuelle. Les détections 'possible' sont à confirmer.",
+      "title": "Sémantique HTML",
+      "description": "Cet écran analyse certains usages de la sémantique HTML : éléments cliquables qui ne sont pas de vrais boutons ou liens ; titres, paragraphes ou listes construits avec des balises inadaptées ; SVG sans alternative textuelle ou mal masqués aux technologies d’assistance. Chaque élément détecté est classé comme « certain », « probable » ou « à vérifier ». La décision finale reste humaine.",
       "tabInteractive": "Interactifs",
       "tabStructure": "Structure",
       "tabSvg": "SVG",
       "filterAll": "Tous",
       "filterCertain": "Certain",
       "filterLikely": "Probable",
-      "togglePossible": "Afficher les détections possibles",
+      "togglePossible": "Afficher les éléments à vérifier",
       "badgeCertain": "Certain",
       "badgeLikely": "Probable",
       "badgePossible": "À vérifier",
@@ -131,7 +151,7 @@
       "colEvidence": "Preuve",
       "colCriteria": "Critères RGAA",
       "colContext": "Contexte",
-      "noFindings": "Aucune détection heuristique",
+      "noFindings": "Aucun élément suspect détecté par l’analyse de la sémantique HTML. Les critères marqués « À vérifier » dans la synthèse restent à contrôler manuellement.",
       "copied": "Copié !",
       "filterByPage": "Filtrer par page",
       "allPages": "Toutes les pages"
@@ -162,7 +182,9 @@
     "TEXT_IN_DIV": "Texte long dans un <div> sans balise sémantique",
     "SVG_NO_TITLE": "SVG informatif sans élément <title>",
     "SVG_ICON_NO_LABEL": "Icône SVG dans un bouton/lien sans label alternatif",
-    "SVG_DECORATIVE_NOT_HIDDEN": "SVG décoratif non masqué aux technologies d'assistance"
+    "SVG_DECORATIVE_NOT_HIDDEN": "SVG décoratif non masqué aux technologies d'assistance",
+    "FRAME_TITLE_ABSENT": "Attribut title du cadre absent",
+    "FRAME_TITLE_EMPTY": "Attribut title du cadre vide"
   },
   "pdf": {
     "downloadButton": "Télécharger le rapport PDF",
@@ -181,7 +203,7 @@
     "themesNotCovered": "Thématiques non couvertes (audit manuel requis)",
     "summary": "Synthèse",
     "criteriaTotal": "Critères évalués",
-    "criteriaViolation": "Anomalies probables",
+    "criteriaViolation": "Anomalies détectées",
     "criteriaPass": "Sans anomalie détectée",
     "criteriaManual": "À vérifier",
     "criteriaIncomplete": "Incomplets",
@@ -203,7 +225,9 @@
     "contrastDetail": "Détail des contrastes",
     "contrastSelector": "Sélecteur CSS",
     "contrastRatio": "Ratio calculé",
-    "contrastRequired": "Ratio requis"
+    "contrastRequired": "Ratio requis",
+    "contrastInsufficient": "Insuffisant",
+    "contrastGaugeLabel": "Contraste calculé : {actual}, pour un ratio requis de {required} — insuffisant"
   },
   "cli": {
     "starting": "RGAAudit démarré → {url}",
@@ -212,7 +236,7 @@
     "openBrowser": "Ouvrez votre navigateur sur {url}"
   },
   "status": {
-    "violation": "Anomalie probable",
+    "violation": "Anomalies détectées",
     "pass": "Aucune anomalie détectée",
     "manual": "Vérification manuelle requise",
     "incomplete": "Analyse à confirmer"
@@ -229,11 +253,11 @@
       "possible": "ℹ️"
     },
     "labels": {
-      "heuristicFindings": "Détections heuristiques",
+      "heuristicFindings": "Détections de sémantique HTML",
       "evidence": "Preuve",
       "context": "Contexte",
-      "heuristicId": "Heuristique",
-      "noFindings": "Aucune détection heuristique"
+      "heuristicId": "Type d’analyse",
+      "noFindings": "Aucune détection de sémantique HTML"
     }
   },
   "themes": {

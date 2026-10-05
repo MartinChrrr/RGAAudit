@@ -205,6 +205,10 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
     .text-green-700, .text-green-800 { color: #166534; }
     .text-amber-700, .text-amber-800, .text-amber-900 { color: #92400e; }
     .text-gray-400, .text-gray-500, .text-gray-600 { color: #4b5563; }
+    .contrast-result { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 10rem; margin-bottom: .25rem; }
+    .contrast-badge { border-radius: 9999px; background: #fee2e2; color: #991b1b; font-size: .6875rem; font-weight: 600; padding: .125rem .5rem; }
+    .contrast-meter { height: .625rem; overflow: hidden; border-radius: 9999px; background: #e5e7eb; }
+    .contrast-meter-fill { display: block; height: 100%; border-radius: inherit; background: #dc2626; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th, td { border-bottom: 1px solid #e5e7eb; vertical-align: top; }
     a { color: #1d4ed8; }
@@ -288,14 +292,34 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 function buildContrastSection(violations: ContrastViolationItem[]): string {
   if (violations.length === 0) return '';
 
-  const rows = violations.map((v) => `
+  const rows = violations.map((v) => {
+    const actual = Number.parseFloat(v.contrastRatio.replace(',', '.'));
+    const required = Number.parseFloat(v.expectedContrastRatio.replace(',', '.'));
+    const percentage = Number.isFinite(actual) && Number.isFinite(required) && required > 0
+      ? Math.min(100, Math.max(0, (actual / required) * 100))
+      : 0;
+    const gaugeLabel = t('report.contrastGaugeLabel', {
+      actual: v.contrastRatio,
+      required: v.expectedContrastRatio,
+    });
+
+    return `
     <tr>
       <td class="px-3 py-2 font-mono text-xs text-gray-500">${escapeHtml(v.rgaaId)}</td>
       <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(v.selector)}</td>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(v.contrastRatio)}</td>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(v.expectedContrastRatio)}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">
+        <div class="contrast-result">
+          <strong class="text-red-800">${escapeHtml(v.contrastRatio)}</strong>
+          <span class="contrast-badge">${escapeHtml(t('report.contrastInsufficient'))}</span>
+        </div>
+        <div class="contrast-meter" role="meter" aria-label="${escapeHtml(gaugeLabel)}" aria-valuemin="0" aria-valuemax="${Number.isFinite(required) ? required : 0}" aria-valuenow="${Number.isFinite(actual) ? actual : 0}" aria-valuetext="${escapeHtml(gaugeLabel)}">
+          <span class="contrast-meter-fill" style="width: ${percentage}%"></span>
+        </div>
+      </td>
+      <td class="px-3 py-2 text-xs font-semibold text-gray-800">${escapeHtml(v.expectedContrastRatio)}</td>
       <td class="px-3 py-2 text-xs text-gray-500 break-all">${escapeHtml(v.pageUrl)}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   return `
     <section class="mb-8" data-testid="contrast-section">

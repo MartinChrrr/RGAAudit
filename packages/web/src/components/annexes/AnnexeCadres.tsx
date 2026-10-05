@@ -1,0 +1,126 @@
+import { useEffect, useMemo, useState } from 'react';
+import { t } from '../../locales';
+
+export interface FrameItem {
+  selector: string;
+  tagName: string;
+  src: string | null;
+  titleAttribute: string | null;
+  titleStatus: 'absent' | 'empty' | 'present';
+  flags: string[];
+  pageUrl?: string;
+}
+
+interface Props {
+  frames: FrameItem[];
+  sessionId: string;
+  initialPageUrl?: string;
+  focusedSelectors?: string[];
+  focusedCriterionId?: string;
+}
+
+export default function AnnexeCadres({
+  frames,
+  sessionId: _sessionId,
+  initialPageUrl,
+  focusedSelectors,
+  focusedCriterionId,
+}: Props) {
+  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+
+  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
+
+  const pages = useMemo(
+    () => [...new Set(frames.map((frame) => frame.pageUrl).filter(Boolean))] as string[],
+    [frames],
+  );
+  const selectorFilter = focusedSelectors && focusedSelectors.length > 0
+    ? new Set(focusedSelectors)
+    : null;
+  const visibleFrames = frames.filter((frame) => (
+    (!pageFilter || frame.pageUrl === pageFilter)
+    && (!selectorFilter || selectorFilter.has(frame.selector))
+  ));
+  const issueCount = visibleFrames.filter((frame) => frame.titleStatus !== 'present').length;
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">{t('annexes.frames.title')}</h2>
+          <p className="mt-1 text-sm text-gray-600">{t('annexes.frames.description')}</p>
+        </div>
+        {pages.length > 1 && (
+          <label className="text-xs text-gray-700">
+            {t('annexes.frames.filterByPage')}
+            <select
+              value={pageFilter}
+              onChange={(event) => setPageFilter(event.target.value)}
+              className="ml-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700"
+            >
+              <option value="">{t('annexes.frames.allPages')}</option>
+              {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+            </select>
+          </label>
+        )}
+      </div>
+
+      {focusedCriterionId && (
+        <p className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          {t('annexes.frames.focusedCriterion', {
+            count: visibleFrames.length,
+            criterion: focusedCriterionId,
+          })}
+        </p>
+      )}
+
+      {visibleFrames.length === 0 ? (
+        <p className="py-4 text-sm text-gray-600">{t('annexes.frames.noResults')}</p>
+      ) : (
+        <>
+          <p className={`mb-3 text-sm font-medium ${issueCount > 0 ? 'text-red-700' : 'text-green-700'}`}>
+            {issueCount > 0
+              ? t('annexes.frames.issueCount', { count: issueCount })
+              : t('annexes.frames.noIssues')}
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700">
+                <tr>
+                  <th className="px-3 py-2">{t('annexes.frames.colSelector')}</th>
+                  <th className="px-3 py-2">{t('annexes.frames.colSource')}</th>
+                  <th className="px-3 py-2">{t('annexes.frames.colTitle')}</th>
+                  <th className="px-3 py-2">{t('annexes.frames.colStatus')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {visibleFrames.map((frame) => (
+                  <tr key={`${frame.pageUrl ?? ''}-${frame.selector}`} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 font-mono text-xs text-gray-700">{frame.selector}</td>
+                    <td className="max-w-64 truncate px-3 py-2 text-xs text-gray-700" title={frame.src ?? ''}>
+                      {frame.src || t('annexes.frames.sourceAbsent')}
+                    </td>
+                    <td className="px-3 py-2 text-gray-800">
+                      {frame.titleStatus === 'present'
+                        ? frame.titleAttribute
+                        : <span className="italic text-red-700">{t(`annexes.frames.title${frame.titleStatus === 'absent' ? 'Absent' : 'Empty'}`)}</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        frame.titleStatus === 'present'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {t(`annexes.frames.status${frame.titleStatus === 'present' ? 'Present' : 'Violation'}`)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
