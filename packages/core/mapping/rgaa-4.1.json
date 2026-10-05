@@ -1,12 +1,12 @@
 {
   "version": "4.1.2",
   "totalCriteria": 106,
-  "coveredThemes": ["Images", "Couleurs", "Liens", "Scripts", "Éléments obligatoires", "Structuration de l'information"],
+  "coveredThemes": ["Images", "Cadres", "Couleurs", "Liens", "Scripts", "Éléments obligatoires", "Structuration de l'information"],
   "uncoveredThemes": [
     {
       "id": "2",
       "name": "Cadres",
-      "manualChecklist": ["Vérifier que chaque cadre (iframe) a un attribut title pertinent"]
+      "manualChecklist": ["Vérifier que le titre de chaque cadre est pertinent (critère 2.2)"]
     },
     {
       "id": "3",
@@ -131,6 +131,22 @@
       ],
       "heuristicPatterns": {},
       "limits": "Ne peut pas distinguer automatiquement une image décorative d'une image porteuse d'information."
+    },
+    {
+      "rgaa": {
+        "id": "2.1",
+        "title": "Chaque cadre a-t-il un titre de cadre ?",
+        "theme": "Cadres"
+      },
+      "wcag": ["4.1.2"],
+      "axeRules": ["frame-title"],
+      "evaluationStrategy": "ANY_VIOLATION",
+      "dataCollectorFlags": [
+        "FRAME_TITLE_ABSENT",
+        "FRAME_TITLE_EMPTY"
+      ],
+      "heuristicPatterns": {},
+      "limits": "Vérifie la présence d'un attribut title non vide sur les éléments iframe et frame du document principal. La pertinence du titre relève du critère 2.2 et reste à vérifier manuellement."
     },
     {
       "rgaa": {

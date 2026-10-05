@@ -3,7 +3,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { collectImages, collectLinks, collectHeadings, collectAll } from '../data-collector';
+import { collectImages, collectFrames, collectLinks, collectHeadings, collectAll } from '../data-collector';
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites');
 
@@ -61,6 +61,17 @@ async function withPage<T>(url: string, fn: (page: Page) => Promise<T>): Promise
 // ───────────────────────────────────────────────────────────────
 
 describe('collectImages', () => {
+  it('produit un sélecteur CSS unique et utilisable pour chaque image', async () => {
+    await withPage(`${baseUrl}/images/alt-missing.html`, async (page) => {
+      const images = await collectImages(page);
+
+      expect(new Set(images.map((image) => image.selector)).size).toBe(images.length);
+      for (const image of images) {
+        await expect(page.locator(image.selector).count()).resolves.toBe(1);
+      }
+    });
+  });
+
   it('alt absent (null), vide (""), présent (string)', async () => {
     const images = await withPage(`${baseUrl}/images/alt-missing.html`, collectImages);
 
@@ -150,6 +161,47 @@ describe('collectImages', () => {
       expect(img.altAttribute).toBeNull();
       expect(img.automatedStatus).toBe('violation');
     }
+  });
+});
+
+// ───────────────────────────────────────────────────────────────
+// collectFrames
+// ───────────────────────────────────────────────────────────────
+
+describe('collectFrames', () => {
+  it('signale les attributs title absents et vides', async () => {
+    await withPage(`${baseUrl}/frames/missing-title.html`, async (page) => {
+      const frames = await collectFrames(page);
+
+      expect(frames).toHaveLength(2);
+      expect(frames.find((frame) => frame.selector === 'iframe#missing-title')).toMatchObject({
+        titleAttribute: null,
+        titleStatus: 'absent',
+        flags: ['FRAME_TITLE_ABSENT'],
+      });
+      expect(frames.find((frame) => frame.selector === 'iframe#empty-title')).toMatchObject({
+        titleAttribute: '   ',
+        titleStatus: 'empty',
+        flags: ['FRAME_TITLE_EMPTY'],
+      });
+
+      for (const frame of frames) {
+        await expect(page.locator(frame.selector).count()).resolves.toBe(1);
+      }
+    });
+  });
+
+  it('conserve le titre et la source d’un cadre conforme', async () => {
+    const frames = await withPage(`${baseUrl}/frames/with-title.html`, collectFrames);
+
+    expect(frames).toHaveLength(1);
+    expect(frames[0]).toMatchObject({
+      selector: 'iframe#help-frame',
+      tagName: 'iframe',
+      titleAttribute: 'Aide à la saisie',
+      titleStatus: 'present',
+      flags: [],
+    });
   });
 });
 
@@ -318,13 +370,15 @@ describe('collectHeadings', () => {
 // ───────────────────────────────────────────────────────────────
 
 describe('collectAll', () => {
-  it('retourne { images, links, headings }', async () => {
+  it('retourne { images, frames, links, headings }', async () => {
     const result = await withPage(`${baseUrl}/images/img-in-link.html`, collectAll);
 
     expect(result).toHaveProperty('images');
+    expect(result).toHaveProperty('frames');
     expect(result).toHaveProperty('links');
     expect(result).toHaveProperty('headings');
     expect(Array.isArray(result.images)).toBe(true);
+    expect(Array.isArray(result.frames)).toBe(true);
     expect(Array.isArray(result.links)).toBe(true);
     expect(result.headings).toHaveProperty('documentTitle');
     expect(result.headings).toHaveProperty('headings');

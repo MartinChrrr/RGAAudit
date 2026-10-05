@@ -35,6 +35,15 @@ export interface LinkData {
   flags: string[];
 }
 
+export interface FrameData {
+  selector: string;
+  tagName: string;
+  src: string | null;
+  titleAttribute: string | null;
+  titleStatus: 'absent' | 'empty' | 'present';
+  flags: string[];
+}
+
 export interface HeadingData {
   level: number;
   text: string;
@@ -50,6 +59,7 @@ export interface HeadingTree {
 
 export interface CollectedData {
   images: ImageData[];
+  frames: FrameData[];
   links: LinkData[];
   headings: HeadingTree;
 }
@@ -105,6 +115,36 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
   const altMaxLength = getAltMaxLength();
 
   const rawImages = await page.evaluate(() => {
+    const getUniqueSelector = (element: Element): string => {
+      const parts: string[] = [];
+      let current: Element | null = element;
+
+      while (current && current !== document.documentElement) {
+        const tag = current.tagName.toLowerCase();
+        const id = current.getAttribute('id');
+        const idSelector = id ? `${tag}#${CSS.escape(id)}` : null;
+        if (idSelector && document.querySelectorAll(idSelector).length === 1) {
+          parts.unshift(idSelector);
+          break;
+        }
+
+        const parentElement: Element | null = current.parentElement;
+        if (!parentElement) {
+          parts.unshift(tag);
+          break;
+        }
+        const sameTagSiblings = (Array.from(parentElement.children) as Element[])
+          .filter((sibling: Element) => sibling.tagName === current!.tagName);
+        const suffix = sameTagSiblings.length > 1
+          ? `:nth-of-type(${sameTagSiblings.indexOf(current) + 1})`
+          : '';
+        parts.unshift(`${idSelector ?? tag}${suffix}`);
+        current = parentElement;
+      }
+
+      return parts.join(' > ');
+    };
+
     const elements = [
       ...document.querySelectorAll('img'),
       ...document.querySelectorAll('svg[role="img"]'),
@@ -145,15 +185,8 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
         linkText = clone.textContent?.trim() || null;
       }
 
-      // Build a CSS selector
-      let selector = tagName;
-      const id = el.getAttribute('id');
-      if (id) {
-        selector = `${tagName}#${id}`;
-      } else if (src) {
-        const shortSrc = src.length > 50 ? src.slice(0, 50) : src;
-        selector = `${tagName}[src="${shortSrc}"]`;
-      }
+      // Keep a valid, unique selector: it identifies the annex row and is reused for screenshots.
+      const selector = getUniqueSelector(el);
 
       return {
         selector,
@@ -333,6 +366,66 @@ export async function collectLinks(page: Page): Promise<LinkData[]> {
 }
 
 // ---------------------------------------------------------------------------
+// collectFrames
+// ---------------------------------------------------------------------------
+
+export async function collectFrames(page: Page): Promise<FrameData[]> {
+  const frames = await page.evaluate(() => {
+    const getUniqueSelector = (element: Element): string => {
+      const parts: string[] = [];
+      let current: Element | null = element;
+
+      while (current && current !== document.documentElement) {
+        const tag = current.tagName.toLowerCase();
+        const id = current.getAttribute('id');
+        const idSelector = id ? `${tag}#${CSS.escape(id)}` : null;
+        if (idSelector && document.querySelectorAll(idSelector).length === 1) {
+          parts.unshift(idSelector);
+          break;
+        }
+
+        const parentElement: Element | null = current.parentElement;
+        if (!parentElement) {
+          parts.unshift(tag);
+          break;
+        }
+
+        const sameTagSiblings = (Array.from(parentElement.children) as Element[])
+          .filter((sibling: Element) => sibling.tagName === current!.tagName);
+        const suffix = sameTagSiblings.length > 1
+          ? `:nth-of-type(${sameTagSiblings.indexOf(current) + 1})`
+          : '';
+        parts.unshift(`${tag}${suffix}`);
+        current = parentElement;
+      }
+
+      return parts.join(' > ');
+    };
+
+    return [...document.querySelectorAll('iframe, frame')].map((element) => ({
+      selector: getUniqueSelector(element),
+      tagName: element.tagName.toLowerCase(),
+      src: element.getAttribute('src'),
+      titleAttribute: element.getAttribute('title'),
+    }));
+  });
+
+  return frames.map((frame) => {
+    const titleStatus: FrameData['titleStatus'] = frame.titleAttribute === null
+      ? 'absent'
+      : frame.titleAttribute.trim() === ''
+        ? 'empty'
+        : 'present';
+    const flags: string[] = [];
+
+    if (titleStatus === 'absent') flags.push('FRAME_TITLE_ABSENT');
+    if (titleStatus === 'empty') flags.push('FRAME_TITLE_EMPTY');
+
+    return { ...frame, titleStatus, flags };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // collectHeadings
 // ---------------------------------------------------------------------------
 
@@ -405,11 +498,12 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
 // ---------------------------------------------------------------------------
 
 export async function collectAll(page: Page): Promise<CollectedData> {
-  const [images, links, headings] = await Promise.all([
+  const [images, frames, links, headings] = await Promise.all([
     collectImages(page),
+    collectFrames(page),
     collectLinks(page),
     collectHeadings(page),
   ]);
 
-  return { images, links, headings };
+  return { images, frames, links, headings };
 }

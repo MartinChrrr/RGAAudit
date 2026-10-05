@@ -193,6 +193,28 @@ describe('AxeCoreAdapter', () => {
     });
   });
 
+  it('détecte les cadres sans titre via frame-title', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/frames/missing-title.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+      const frameTitle = violations.find((violation) => violation.rule === 'frame-title');
+
+      expect(frameTitle).toBeDefined();
+      expect(frameTitle!.elements).toHaveLength(2);
+    });
+  });
+
+  it('ne signale pas frame-title pour un cadre correctement titré', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/frames/with-title.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+
+      expect(violations.find((violation) => violation.rule === 'frame-title')).toBeUndefined();
+    });
+  });
+
   it('détecte le contraste insuffisant via color-contrast', async () => {
     const adapter = new AxeCoreAdapter();
     await withPage(`${baseUrl}/contrast/low-contrast.html`, async (page) => {

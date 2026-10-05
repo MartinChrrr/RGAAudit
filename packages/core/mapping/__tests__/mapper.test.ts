@@ -27,6 +27,7 @@ function makeAxeResult(overrides?: Partial<EngineResult>): EngineResult {
 function makeCollectedData(overrides?: Partial<CollectedData>): CollectedData {
   return {
     images: [],
+    frames: [],
     links: [],
     headings: {
       documentTitle: 'Test Page',
@@ -103,6 +104,38 @@ describe('mapPageResults — ANY_VIOLATION', () => {
     expect(criterion11).toBeDefined();
     expect(criterion11!.status).toBe('violation');
     expect(criterion11!.violations.length).toBeGreaterThan(0);
+  });
+
+  it('mappe frame-title et les preuves collectées vers le critère 2.1', () => {
+    const axeResults = makeAxeResult({
+      violations: [{
+        rule: 'frame-title',
+        impact: 'serious',
+        description: 'Frames must have an accessible name',
+        helpUrl: 'https://dequeuniversity.com/rules/axe/4.9/frame-title',
+        elements: [{ html: '<iframe id="help">', target: ['iframe#help'] }],
+      }],
+    });
+    const collected = makeCollectedData({
+      frames: [{
+        selector: 'iframe#help',
+        tagName: 'iframe',
+        src: '/help',
+        titleAttribute: null,
+        titleStatus: 'absent',
+        flags: ['FRAME_TITLE_ABSENT'],
+      }],
+    });
+
+    const result = mapPageResults(axeResults, collected, 'http://example.com');
+    const criterion21 = result.criteria.find((criterion) => criterion.rgaaId === '2.1');
+
+    expect(criterion21).toBeDefined();
+    expect(criterion21!.status).toBe('violation');
+    expect(criterion21!.violations).toHaveLength(1);
+    expect(criterion21!.elements).toEqual([
+      { selector: 'iframe#help', flags: ['FRAME_TITLE_ABSENT'] },
+    ]);
   });
 
   it('"pass" si aucune violation', () => {
@@ -438,7 +471,7 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(11);
+    expect(report.metadata.coveredCriteria).toBe(12);
 
     // limitBanner comes from locale, not hardcoded
     expect(report.limitBanner).toContain('9');

@@ -27,7 +27,7 @@ export interface MappedCriterion {
   status: CriterionStatus;
   violations: AxeViolation[];
   incompletes: AxeIncomplete[];
-  elements: Array<{ selector: string; flags: string[] }>;
+  elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
   heuristicFindings: MappedHeuristicFinding[];
   notes: string;
   manualChecks: string[];
@@ -233,7 +233,7 @@ function mapCriterion(
 function mapAnyViolation(
   criterion: RgaaCriterion,
   result: EngineResult,
-  elements: Array<{ selector: string; flags: string[] }>,
+  elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>,
   base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements' | 'heuristicFindings'>,
 ): MappedCriterion {
   const violations = result.violations.filter((v) => criterion.axeRules.includes(v.rule));
@@ -254,7 +254,7 @@ function mapAnyViolation(
 function mapAllPass(
   criterion: RgaaCriterion,
   result: EngineResult,
-  elements: Array<{ selector: string; flags: string[] }>,
+  elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>,
   base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements' | 'heuristicFindings'>,
 ): MappedCriterion {
   const violations = result.violations.filter((v) => criterion.axeRules.includes(v.rule));
@@ -278,17 +278,25 @@ function mapAllPass(
 function extractElements(
   criterion: RgaaCriterion,
   collectedData: CollectedData | null,
-): Array<{ selector: string; flags: string[] }> {
+): Array<{ selector: string; flags: string[]; elementIndex?: number }> {
   if (!collectedData) return [];
 
-  const elements: Array<{ selector: string; flags: string[] }> = [];
+  const elements: Array<{ selector: string; flags: string[]; elementIndex?: number }> = [];
   const relevantFlags = new Set(criterion.dataCollectorFlags);
 
   // Images
-  for (const img of collectedData.images) {
+  for (const [elementIndex, img] of collectedData.images.entries()) {
     const matchingFlags = img.flags.filter((f) => relevantFlags.has(f));
     if (matchingFlags.length > 0) {
-      elements.push({ selector: img.selector, flags: matchingFlags });
+      elements.push({ selector: img.selector, flags: matchingFlags, elementIndex });
+    }
+  }
+
+  // Frames
+  for (const frame of collectedData.frames ?? []) {
+    const matchingFlags = frame.flags.filter((f) => relevantFlags.has(f));
+    if (matchingFlags.length > 0) {
+      elements.push({ selector: frame.selector, flags: matchingFlags });
     }
   }
 
