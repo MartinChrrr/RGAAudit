@@ -50,10 +50,24 @@ describe('loadMapping', () => {
   it('charge et valide le mapping JSON', () => {
     const mapping = loadMapping();
     expect(mapping.version).toBe('4.1.2');
-    expect(mapping.criteria.length).toBeGreaterThan(0);
+    expect(mapping.criteria).toHaveLength(106);
+    expect(new Set(mapping.criteria.map((criterion) => criterion.rgaa.id)).size).toBe(106);
     expect(mapping.totalCriteria).toBe(106);
     expect(mapping.coveredThemes).toContain('Images');
     expect(mapping.coveredThemes).toContain('Couleurs');
+
+    const implemented = mapping.criteria.filter((criterion) => criterion.implementationLot === 0);
+    expect(implemented).toHaveLength(12);
+    expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.1')).toMatchObject({
+      coverage: 'partial',
+      humanLevel: 'H2',
+      implementationLot: 0,
+    });
+    expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '13.4')).toMatchObject({
+      coverage: 'manual_shell',
+      evaluationStrategy: 'MANUAL_ONLY',
+      implementationLot: 5,
+    });
   });
 });
 

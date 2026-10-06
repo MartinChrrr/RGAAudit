@@ -1,52 +1,88 @@
 {
   "version": "4.1.2",
   "totalCriteria": 106,
-  "coveredThemes": ["Images", "Cadres", "Couleurs", "Liens", "Scripts", "Éléments obligatoires", "Structuration de l'information"],
+  "coveredThemes": [
+    "Images",
+    "Cadres",
+    "Couleurs",
+    "Liens",
+    "Scripts",
+    "Éléments obligatoires",
+    "Structuration de l'information"
+  ],
   "uncoveredThemes": [
     {
       "id": "2",
       "name": "Cadres",
-      "manualChecklist": ["Vérifier que le titre de chaque cadre est pertinent (critère 2.2)"]
+      "manualChecklist": [
+        "Vérifier que le titre de chaque cadre est pertinent (critère 2.2)"
+      ]
     },
     {
       "id": "3",
       "name": "Couleurs",
-      "manualChecklist": ["Vérifier que l'information n'est pas véhiculée uniquement par la couleur"]
+      "manualChecklist": [
+        "Vérifier que l'information n'est pas véhiculée uniquement par la couleur"
+      ]
     },
     {
       "id": "4",
       "name": "Multimédia",
-      "manualChecklist": ["Vérifier la présence de sous-titres pour les vidéos", "Vérifier la présence d'une audiodescription si nécessaire", "Vérifier que les médias temporels sont contrôlables"]
+      "manualChecklist": [
+        "Vérifier la présence de sous-titres pour les vidéos",
+        "Vérifier la présence d'une audiodescription si nécessaire",
+        "Vérifier que les médias temporels sont contrôlables"
+      ]
     },
     {
       "id": "5",
       "name": "Tableaux",
-      "manualChecklist": ["Vérifier que chaque tableau de données a un résumé pertinent", "Vérifier que les en-têtes de lignes et colonnes sont correctement balisés"]
+      "manualChecklist": [
+        "Vérifier que chaque tableau de données a un résumé pertinent",
+        "Vérifier que les en-têtes de lignes et colonnes sont correctement balisés"
+      ]
     },
     {
       "id": "7",
       "name": "Scripts",
-      "manualChecklist": ["Vérifier que les changements de contexte sont signalés"]
+      "manualChecklist": [
+        "Vérifier que les changements de contexte sont signalés"
+      ]
     },
     {
       "id": "10",
       "name": "Présentation de l'information",
-      "manualChecklist": ["Vérifier que le contenu est lisible sans CSS", "Vérifier que le zoom à 200% ne provoque pas de perte d'information"]
+      "manualChecklist": [
+        "Vérifier que le contenu est lisible sans CSS",
+        "Vérifier que le zoom à 200% ne provoque pas de perte d'information"
+      ]
     },
     {
       "id": "11",
       "name": "Formulaires",
-      "manualChecklist": ["Vérifier que chaque champ a une étiquette visible et liée", "Vérifier que les erreurs de saisie sont explicites", "Vérifier que les champs obligatoires sont signalés"]
+      "manualChecklist": [
+        "Vérifier que chaque champ a une étiquette visible et liée",
+        "Vérifier que les erreurs de saisie sont explicites",
+        "Vérifier que les champs obligatoires sont signalés"
+      ]
     },
     {
       "id": "12",
       "name": "Navigation",
-      "manualChecklist": ["Vérifier la présence de deux systèmes de navigation minimum", "Vérifier la cohérence de la navigation entre les pages", "Vérifier l'ordre de tabulation"]
+      "manualChecklist": [
+        "Vérifier la présence de deux systèmes de navigation minimum",
+        "Vérifier la cohérence de la navigation entre les pages",
+        "Vérifier l'ordre de tabulation"
+      ]
     },
     {
       "id": "13",
       "name": "Consultation",
-      "manualChecklist": ["Vérifier que les documents en téléchargement sont accessibles", "Vérifier l'absence de piège au clavier", "Vérifier que les limites de temps sont contrôlables"]
+      "manualChecklist": [
+        "Vérifier que les documents en téléchargement sont accessibles",
+        "Vérifier l'absence de piège au clavier",
+        "Vérifier que les limites de temps sont contrôlables"
+      ]
     }
   ],
   "overlayScripts": [
@@ -64,11 +100,15 @@
     {
       "rgaa": {
         "id": "1.1",
-        "title": "Chaque image porteuse d'information a-t-elle une alternative textuelle ?",
+        "title": "Chaque image porteuse d’information a-t-elle une alternative textuelle ?",
         "theme": "Images"
       },
-      "wcag": ["1.1.1"],
-      "axeRules": ["image-alt"],
+      "wcag": [
+        "1.1.1"
+      ],
+      "axeRules": [
+        "image-alt"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "ALT_ABSENT",
@@ -81,7 +121,9 @@
         "SVG_DECORATIVE_NOT_HIDDEN"
       ],
       "heuristicPatterns": {
-        "heuristicId": ["svg-accessible"],
+        "heuristicId": [
+          "svg-accessible"
+        ],
         "genericLabels": [
           "image",
           "photo",
@@ -115,22 +157,145 @@
         ]
       },
       "altMaxLength": 80,
-      "limits": "Ne détecte pas les images CSS (background-image) ni les alternatives longues via aria-describedby."
+      "limits": "Ne détecte pas les images CSS (background-image) ni les alternatives longues via aria-describedby.",
+      "coverage": "partial",
+      "humanLevel": "H2",
+      "implementationLot": 0
     },
     {
       "rgaa": {
         "id": "1.2",
-        "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d'assistance ?",
+        "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d’assistance ?",
         "theme": "Images"
       },
-      "wcag": ["1.1.1"],
-      "axeRules": ["image-alt", "presentation-role-conflict"],
+      "wcag": [
+        "1.1.1"
+      ],
+      "axeRules": [
+        "image-alt",
+        "presentation-role-conflict"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "ROLE_PRESENTATION_SUSPICIOUS"
       ],
       "heuristicPatterns": {},
-      "limits": "Ne peut pas distinguer automatiquement une image décorative d'une image porteuse d'information."
+      "limits": "Ne peut pas distinguer automatiquement une image décorative d'une image porteuse d'information.",
+      "coverage": "partial",
+      "humanLevel": "H2",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "1.3",
+        "title": "Pour chaque image porteuse d’information ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "1.4",
+        "title": "Pour chaque image utilisée comme CAPTCHA ou comme image-test, ayant une alternative textuelle, cette alternative permet-elle d’identifier la nature et la fonction de l’image ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "1.5",
+        "title": "Pour chaque image utilisée comme CAPTCHA, une solution d’accès alternatif au contenu ou à la fonction du CAPTCHA est-elle présente ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "1.6",
+        "title": "Chaque image porteuse d’information a-t-elle, si nécessaire, une description détaillée ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "1.7",
+        "title": "Pour chaque image porteuse d’information ayant une description détaillée, cette description est-elle pertinente ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "1.8",
+        "title": "Chaque image texte porteuse d’information, en l’absence d’un mécanisme de remplacement, doit si possible être remplacée par du texte stylé. Cette règle est-elle respectée (hors cas particuliers) ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "1.9",
+        "title": "Chaque légende d’image est-elle, si nécessaire, correctement reliée à l’image correspondante ?",
+        "theme": "Images"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
       "rgaa": {
@@ -138,15 +303,54 @@
         "title": "Chaque cadre a-t-il un titre de cadre ?",
         "theme": "Cadres"
       },
-      "wcag": ["4.1.2"],
-      "axeRules": ["frame-title"],
+      "wcag": [
+        "4.1.2"
+      ],
+      "axeRules": [
+        "frame-title"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "FRAME_TITLE_ABSENT",
         "FRAME_TITLE_EMPTY"
       ],
       "heuristicPatterns": {},
-      "limits": "Vérifie la présence d'un attribut title non vide sur les éléments iframe et frame du document principal. La pertinence du titre relève du critère 2.2 et reste à vérifier manuellement."
+      "limits": "Vérifie la présence d'un attribut title non vide sur les éléments iframe et frame du document principal. La pertinence du titre relève du critère 2.2 et reste à vérifier manuellement.",
+      "coverage": "full",
+      "humanLevel": "H0",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "2.2",
+        "title": "Pour chaque cadre ayant un titre de cadre, ce titre de cadre est-il pertinent ?",
+        "theme": "Cadres"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "3.1",
+        "title": "Dans chaque page web, l’information ne doit pas être donnée uniquement par la couleur. Cette règle est-elle respectée ?",
+        "theme": "Couleurs"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
       "rgaa": {
@@ -154,34 +358,387 @@
         "title": "Dans chaque page web, le contraste entre la couleur du texte et la couleur de son arrière-plan est-il suffisamment élevé (hors cas particuliers) ?",
         "theme": "Couleurs"
       },
-      "wcag": ["1.4.3"],
-      "axeRules": ["color-contrast"],
+      "wcag": [
+        "1.4.3"
+      ],
+      "axeRules": [
+        "color-contrast"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "axe-core calcule les contrastes CSS computed. Textes en image et SVG complexes non vérifiés automatiquement."
+      "limits": "axe-core calcule les contrastes CSS computed. Textes en image et SVG complexes non vérifiés automatiquement.",
+      "coverage": "partial",
+      "humanLevel": "H1",
+      "implementationLot": 0
     },
     {
       "rgaa": {
         "id": "3.3",
-        "title": "Dans chaque page web, les couleurs utilisées dans les composants d'interface ou les éléments graphiques porteurs d'informations sont-elles suffisamment contrastées (hors cas particuliers) ?",
+        "title": "Dans chaque page web, les couleurs utilisées dans les composants d’interface ou les éléments graphiques porteurs d’informations sont-elles suffisamment contrastées (hors cas particuliers) ?",
         "theme": "Couleurs"
       },
-      "wcag": ["1.4.11"],
+      "wcag": [
+        "1.4.11"
+      ],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "La règle axe color-contrast-enhanced mesure le contraste renforcé du texte et ne valide pas les composants d'interface du critère 3.3. Vérification manuelle requise."
+      "limits": "La règle axe color-contrast-enhanced mesure le contraste renforcé du texte et ne valide pas les composants d'interface du critère 3.3. Vérification manuelle requise.",
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "4.1",
+        "title": "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une transcription textuelle ou une audiodescription (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.2",
+        "title": "Pour chaque média temporel pré-enregistré ayant une transcription textuelle ou une audiodescription synchronisée, celles-ci sont-elles pertinentes (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.3",
+        "title": "Chaque média temporel synchronisé pré-enregistré a-t-il, si nécessaire, des sous-titres synchronisés (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.4",
+        "title": "Pour chaque média temporel synchronisé pré-enregistré ayant des sous-titres synchronisés, ces sous-titres sont-ils pertinents ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.5",
+        "title": "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une audiodescription synchronisée (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.6",
+        "title": "Pour chaque média temporel pré-enregistré ayant une audiodescription synchronisée, celle-ci est-elle pertinente ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.7",
+        "title": "Chaque média temporel est-il clairement identifiable (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.8",
+        "title": "Chaque média non temporel a-t-il, si nécessaire, une alternative (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.9",
+        "title": "Pour chaque média non temporel ayant une alternative, cette alternative est-elle pertinente ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.10",
+        "title": "Chaque son déclenché automatiquement est-il contrôlable par l’utilisateur ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.11",
+        "title": "La consultation de chaque média temporel est-elle, si nécessaire, contrôlable par le clavier et tout dispositif de pointage ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.12",
+        "title": "La consultation de chaque média non temporel est-elle contrôlable par le clavier et tout dispositif de pointage ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "4.13",
+        "title": "Chaque média temporel et non temporel est-il compatible avec les technologies d’assistance (hors cas particuliers) ?",
+        "theme": "Multimédia"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.1",
+        "title": "Chaque tableau de données complexe a-t-il un résumé ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.2",
+        "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.3",
+        "title": "Pour chaque tableau de mise en forme, le contenu linéarisé reste-t-il compréhensible ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.4",
+        "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H0",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.5",
+        "title": "Pour chaque tableau de données ayant un titre, celui-ci est-il pertinent ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.6",
+        "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.7",
+        "title": "Pour chaque tableau de données, la technique appropriée permettant d’associer chaque cellule avec ses en-têtes est-elle utilisée (hors cas particuliers) ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "5.8",
+        "title": "Chaque tableau de mise en forme ne doit pas utiliser d’éléments propres aux tableaux de données. Cette règle est-elle respectée ?",
+        "theme": "Tableaux"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
       "rgaa": {
         "id": "6.1",
-        "title": "Chaque lien est-il explicite ?",
+        "title": "Chaque lien est-il explicite (hors cas particuliers) ?",
         "theme": "Liens"
       },
-      "wcag": ["2.4.4", "2.4.9"],
-      "axeRules": ["link-name"],
+      "wcag": [
+        "2.4.4",
+        "2.4.9"
+      ],
+      "axeRules": [
+        "link-name"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "EMPTY_LABEL",
@@ -221,7 +778,10 @@
           "here"
         ]
       },
-      "limits": "Ne détecte pas les liens dont le contexte rend l'intitulé explicite (paragraphe, liste, tableau)."
+      "limits": "Ne détecte pas les liens dont le contexte rend l'intitulé explicite (paragraphe, liste, tableau).",
+      "coverage": "partial",
+      "humanLevel": "H2",
+      "implementationLot": 0
     },
     {
       "rgaa": {
@@ -229,22 +789,32 @@
         "title": "Dans chaque page web, chaque lien a-t-il un intitulé ?",
         "theme": "Liens"
       },
-      "wcag": ["4.1.2", "2.4.4"],
-      "axeRules": ["link-name"],
+      "wcag": [
+        "4.1.2",
+        "2.4.4"
+      ],
+      "axeRules": [
+        "link-name"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "EMPTY_LABEL"
       ],
       "heuristicPatterns": {},
-      "limits": ""
+      "limits": "",
+      "coverage": "full",
+      "humanLevel": "H1",
+      "implementationLot": 0
     },
     {
       "rgaa": {
         "id": "7.1",
-        "title": "Chaque script est-il, si nécessaire, compatible avec les technologies d'assistance ?",
+        "title": "Chaque script est-il, si nécessaire, compatible avec les technologies d’assistance ?",
         "theme": "Scripts"
       },
-      "wcag": ["4.1.2"],
+      "wcag": [
+        "4.1.2"
+      ],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [
@@ -254,14 +824,147 @@
         "DIV_CLICKABLE"
       ],
       "heuristicPatterns": {
-        "heuristicId": ["fake-interactive"],
+        "heuristicId": [
+          "fake-interactive"
+        ],
         "manualChecks": [
           "Vérifier que chaque composant interactif est opérable au clavier (Tab, Entrée, Espace)",
           "Vérifier que le rôle ARIA correspond au comportement visuel",
           "Vérifier que les <a> pointent vers une destination réelle (pas href='#' avec onclick)"
         ]
       },
-      "limits": "Détection heuristique des éléments interactifs non-natifs. Les findings 'certain' indiquent une violation probable. Les findings 'likely' nécessitent une vérification manuelle."
+      "limits": "Détection heuristique des éléments interactifs non-natifs. Les findings 'certain' indiquent une violation probable. Les findings 'likely' nécessitent une vérification manuelle.",
+      "coverage": "partial",
+      "humanLevel": "H3",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "7.2",
+        "title": "Pour chaque script ayant une alternative, cette alternative est-elle pertinente ?",
+        "theme": "Scripts"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "7.3",
+        "title": "Chaque script est-il contrôlable par le clavier et par tout dispositif de pointage (hors cas particuliers) ?",
+        "theme": "Scripts"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "7.4",
+        "title": "Pour chaque script qui initie un changement de contexte, l’utilisateur est-il averti ou en a-t-il le contrôle ?",
+        "theme": "Scripts"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "7.5",
+        "title": "Dans chaque page web, les messages de statut sont-ils correctement restitués par les technologies d’assistance ?",
+        "theme": "Scripts"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "8.1",
+        "title": "Chaque page web est-elle définie par un type de document ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H0",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "8.2",
+        "title": "Pour chaque page web, le code source généré est-il valide selon le type de document spécifié ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "8.3",
+        "title": "Dans chaque page web, la langue par défaut est-elle présente ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H0",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "8.4",
+        "title": "Pour chaque page web ayant une langue par défaut, le code de langue est-il pertinent ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
       "rgaa": {
@@ -269,22 +972,31 @@
         "title": "Chaque page web a-t-elle un titre de page ?",
         "theme": "Éléments obligatoires"
       },
-      "wcag": ["2.4.2"],
-      "axeRules": ["document-title"],
+      "wcag": [
+        "2.4.2"
+      ],
+      "axeRules": [
+        "document-title"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "TITLE_ABSENT"
       ],
       "heuristicPatterns": {},
-      "limits": ""
+      "limits": "",
+      "coverage": "full",
+      "humanLevel": "H0",
+      "implementationLot": 0
     },
     {
       "rgaa": {
         "id": "8.6",
-        "title": "Dans chaque page web, le titre de page est-il pertinent ?",
+        "title": "Pour chaque page web ayant un titre de page, ce titre est-il pertinent ?",
         "theme": "Éléments obligatoires"
       },
-      "wcag": ["2.4.2"],
+      "wcag": [
+        "2.4.2"
+      ],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [
@@ -311,7 +1023,42 @@
           "website"
         ]
       },
-      "limits": "Un titre peut être techniquement présent mais non pertinent — détection heuristique uniquement."
+      "limits": "Un titre peut être techniquement présent mais non pertinent — détection heuristique uniquement.",
+      "coverage": "partial",
+      "humanLevel": "H2",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "8.7",
+        "title": "Dans chaque page web, chaque changement de langue est-il indiqué dans le code source (hors cas particuliers) ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "8.8",
+        "title": "Dans chaque page web, le code de langue de chaque changement de langue est-il valide et pertinent ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
       "rgaa": {
@@ -319,7 +1066,9 @@
         "title": "Dans chaque page web, les balises ne doivent pas être utilisées uniquement à des fins de présentation. Cette règle est-elle respectée ?",
         "theme": "Éléments obligatoires"
       },
-      "wcag": ["1.3.1"],
+      "wcag": [
+        "1.3.1"
+      ],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [
@@ -329,7 +1078,9 @@
         "TEXT_IN_DIV"
       ],
       "heuristicPatterns": {
-        "heuristicId": ["unsemantic-text"],
+        "heuristicId": [
+          "unsemantic-text"
+        ],
         "manualChecks": [
           "Vérifier que les titres visuels sont balisés avec <h1>-<h6>",
           "Vérifier que les paragraphes utilisent la balise <p>",
@@ -337,16 +1088,42 @@
           "Vérifier que les balises de présentation ne sont pas détournées pour structurer le contenu"
         ]
       },
-      "limits": "Détection heuristique des éléments de contenu non sémantiques. Les findings 'certain' indiquent une violation probable. Les findings 'likely' et 'possible' nécessitent une vérification manuelle."
+      "limits": "Détection heuristique des éléments de contenu non sémantiques. Les findings 'certain' indiquent une violation probable. Les findings 'likely' et 'possible' nécessitent une vérification manuelle.",
+      "coverage": "partial",
+      "humanLevel": "H2",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "8.10",
+        "title": "Dans chaque page web, les changements du sens de lecture sont-ils signalés ?",
+        "theme": "Éléments obligatoires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
       "rgaa": {
         "id": "9.1",
-        "title": "Dans chaque page web, l'information est-elle structurée par l'utilisation appropriée de titres ?",
-        "theme": "Structuration de l'information"
+        "title": "Dans chaque page web, l’information est-elle structurée par l’utilisation appropriée de titres ?",
+        "theme": "Structuration de l’information"
       },
-      "wcag": ["1.3.1", "2.4.6"],
-      "axeRules": ["heading-order", "page-has-heading-one", "empty-heading"],
+      "wcag": [
+        "1.3.1",
+        "2.4.6"
+      ],
+      "axeRules": [
+        "heading-order",
+        "page-has-heading-one",
+        "empty-heading"
+      ],
       "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [
         "NO_H1",
@@ -354,7 +1131,858 @@
         "LEVEL_SKIP"
       ],
       "heuristicPatterns": {},
-      "limits": "Ne détecte pas les titres visuellement styléss mais non balisés <hN>."
+      "limits": "Ne détecte pas les titres visuellement styléss mais non balisés <hN>.",
+      "coverage": "partial",
+      "humanLevel": "H2",
+      "implementationLot": 0
+    },
+    {
+      "rgaa": {
+        "id": "9.2",
+        "title": "Dans chaque page web, la structure du document est-elle cohérente (hors cas particuliers) ?",
+        "theme": "Structuration de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "9.3",
+        "title": "Dans chaque page web, chaque liste est-elle correctement structurée ?",
+        "theme": "Structuration de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "9.4",
+        "title": "Dans chaque page web, chaque citation est-elle correctement indiquée ?",
+        "theme": "Structuration de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.1",
+        "title": "Dans le site web, des feuilles de styles sont-elles utilisées pour contrôler la présentation de l’information ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H0",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.2",
+        "title": "Dans chaque page web, le contenu visible porteur d’information reste-t-il présent lorsque les feuilles de styles sont désactivées ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.3",
+        "title": "Dans chaque page web, l’information reste-t-elle compréhensible lorsque les feuilles de styles sont désactivées ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.4",
+        "title": "Dans chaque page web, le texte reste-t-il lisible lorsque la taille des caractères est augmentée jusqu’à 200 %, au moins (hors cas particuliers) ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.5",
+        "title": "Dans chaque page web, les déclarations CSS de couleurs de fond d’élément et de police sont-elles correctement utilisées ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.6",
+        "title": "Dans chaque page web, chaque lien dont la nature n’est pas évidente est-il visible par rapport au texte environnant ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.7",
+        "title": "Dans chaque page web, pour chaque élément recevant le focus, la prise de focus est-elle visible ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.8",
+        "title": "Pour chaque page web, les contenus cachés ont-ils vocation à être ignorés par les technologies d’assistance ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.9",
+        "title": "Dans chaque page web, l’information ne doit pas être donnée uniquement par la forme, taille ou position. Cette règle est-elle respectée ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.10",
+        "title": "Dans chaque page web, l’information ne doit pas être donnée par la forme, taille ou position uniquement. Cette règle est-elle implémentée de façon pertinente ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.11",
+        "title": "Pour chaque page web, les contenus peuvent-ils être présentés sans perte d’information ou de fonctionnalité et sans avoir recours soit à un défilement vertical pour une fenêtre ayant une hauteur de 256 px, soit à un défilement horizontal pour une fenêtre ayant une largeur de 320 px (hors cas particuliers) ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.12",
+        "title": "Dans chaque page web, les propriétés d’espacement du texte peuvent-elles être redéfinies par l’utilisateur sans perte de contenu ou de fonctionnalité (hors cas particuliers) ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.13",
+        "title": "Dans chaque page web, les contenus additionnels apparaissant à la prise de focus ou au survol d’un composant d’interface sont-ils contrôlables par l’utilisateur (hors cas particuliers) ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "10.14",
+        "title": "Dans chaque page web, les contenus additionnels apparaissant via les styles CSS uniquement peuvent-ils être rendus visibles au clavier et par tout dispositif de pointage ?",
+        "theme": "Présentation de l’information"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.1",
+        "title": "Chaque champ de formulaire a-t-il une étiquette ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.2",
+        "title": "Chaque étiquette associée à un champ de formulaire est-elle pertinente (hors cas particuliers) ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.3",
+        "title": "Dans chaque formulaire, chaque étiquette associée à un champ de formulaire ayant la même fonction et répétée plusieurs fois dans une même page ou dans un ensemble de pages est-elle cohérente ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.4",
+        "title": "Dans chaque formulaire, chaque étiquette de champ et son champ associé sont-ils accolés (hors cas particuliers) ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.5",
+        "title": "Dans chaque formulaire, les champs de même nature sont-ils regroupés, si nécessaire ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.6",
+        "title": "Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H0",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.7",
+        "title": "Dans chaque formulaire, chaque légende associée à un regroupement de champs de même nature est-elle pertinente ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.8",
+        "title": "Dans chaque formulaire, les items de même nature d’une liste de choix sont-ils regroupés de manière pertinente ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.9",
+        "title": "Dans chaque formulaire, l’intitulé de chaque bouton est-il pertinent (hors cas particuliers) ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.10",
+        "title": "Dans chaque formulaire, le contrôle de saisie est-il utilisé de manière pertinente (hors cas particuliers) ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.11",
+        "title": "Dans chaque formulaire, le contrôle de saisie est-il accompagné, si nécessaire, de suggestions facilitant la correction des erreurs de saisie ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.12",
+        "title": "Pour chaque formulaire qui modifie ou supprime des données, ou qui transmet des réponses à un test ou à un examen, ou dont la validation a des conséquences financières ou juridiques, les données saisies peuvent-elles être modifiées, mises à jour ou récupérées par l’utilisateur ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "11.13",
+        "title": "La finalité d’un champ de saisie peut-elle être déduite pour faciliter le remplissage automatique des champs avec les données de l’utilisateur ?",
+        "theme": "Formulaires"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.1",
+        "title": "Chaque ensemble de pages dispose-t-il de deux systèmes de navigation différents, au moins (hors cas particuliers) ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.2",
+        "title": "Dans chaque ensemble de pages, le menu et les barres de navigation sont-ils toujours à la même place (hors cas particuliers) ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.3",
+        "title": "La page « plan du site » est-elle pertinente ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.4",
+        "title": "Dans chaque ensemble de pages, la page « plan du site » est-elle accessible à partir d’une fonctionnalité identique ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.5",
+        "title": "Dans chaque ensemble de pages, le moteur de recherche est-il atteignable de manière identique ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.6",
+        "title": "Les zones de regroupement de contenus présentes dans plusieurs pages web (zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche) peuvent-elles être atteintes ou évitées ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.7",
+        "title": "Dans chaque page web, un lien d’évitement ou d’accès rapide à la zone de contenu principal est-il présent (hors cas particuliers) ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.8",
+        "title": "Dans chaque page web, l’ordre de tabulation est-il cohérent ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.9",
+        "title": "Dans chaque page web, la navigation ne doit pas contenir de piège au clavier. Cette règle est-elle respectée ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.10",
+        "title": "Dans chaque page web, les raccourcis clavier n’utilisant qu’une seule touche (lettre minuscule ou majuscule, ponctuation, chiffre ou symbole) sont-ils contrôlables par l’utilisateur ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "12.11",
+        "title": "Dans chaque page web, les contenus additionnels apparaissant au survol, à la prise de focus ou à l’activation d’un composant d’interface sont-ils si nécessaire atteignables au clavier ?",
+        "theme": "Navigation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.1",
+        "title": "Pour chaque page web, l’utilisateur a-t-il le contrôle de chaque limite de temps modifiant le contenu (hors cas particuliers) ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.2",
+        "title": "Dans chaque page web, l’ouverture d’une nouvelle fenêtre ne doit pas être déclenchée sans action de l’utilisateur. Cette règle est-elle respectée ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.3",
+        "title": "Dans chaque page web, chaque document bureautique en téléchargement possède-t-il, si nécessaire, une version accessible (hors cas particuliers) ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.4",
+        "title": "Pour chaque document bureautique ayant une version accessible, cette version offre-t-elle la même information ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 5,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.5",
+        "title": "Dans chaque page web, chaque contenu cryptique (art ASCII, émoticône, syntaxe cryptique) a-t-il une alternative ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.6",
+        "title": "Dans chaque page web, pour chaque contenu cryptique (art ASCII, émoticône, syntaxe cryptique) ayant une alternative, cette alternative est-elle pertinente ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 3,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.7",
+        "title": "Dans chaque page web, les changements brusques de luminosité ou les effets de flash sont-ils correctement utilisés ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.8",
+        "title": "Dans chaque page web, chaque contenu en mouvement ou clignotant est-il contrôlable par l’utilisateur ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H2",
+      "implementationLot": 2,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.9",
+        "title": "Dans chaque page web, le contenu proposé est-il consultable quelle que soit l’orientation de l’écran (portrait ou paysage) (hors cas particuliers) ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H1",
+      "implementationLot": 1,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.10",
+        "title": "Dans chaque page web, les fonctionnalités utilisables ou disponibles au moyen d’un geste complexe peuvent-elles être également disponibles au moyen d’un geste simple (hors cas particuliers) ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.11",
+        "title": "Dans chaque page web, les actions déclenchées au moyen d’un dispositif de pointage sur un point unique de l’écran peuvent-elles faire l’objet d’une annulation (hors cas particuliers) ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+    },
+    {
+      "rgaa": {
+        "id": "13.12",
+        "title": "Dans chaque page web, les fonctionnalités qui impliquent un mouvement de l’appareil ou vers l’appareil peuvent-elles être satisfaites de manière alternative (hors cas particuliers) ?",
+        "theme": "Consultation"
+      },
+      "coverage": "manual_shell",
+      "humanLevel": "H3",
+      "implementationLot": 4,
+      "wcag": [],
+      "axeRules": [],
+      "evaluationStrategy": "MANUAL_ONLY",
+      "dataCollectorFlags": [],
+      "heuristicPatterns": {},
+      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     }
   ]
 }

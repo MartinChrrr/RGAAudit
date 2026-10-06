@@ -13,6 +13,12 @@ export interface RgaaCriterion {
   heuristicPatterns: Record<string, string[]>;
   altMaxLength?: number;
   limits: string;
+  /** Niveau de couverture réellement fourni par le moteur. */
+  coverage: 'full' | 'partial' | 'manual_shell';
+  /** Niveau de validation humaine encore nécessaire. */
+  humanLevel: 'H0' | 'H1' | 'H2' | 'H3';
+  /** Lot du backlog dans lequel le critère est intégré (0 = socle actuel). */
+  implementationLot: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
 export interface UncoveredTheme {
@@ -36,8 +42,39 @@ export function loadMapping(): RgaaMapping {
   if (cached) return cached;
   const filePath = resolve(__dirname, 'rgaa-4.1.json');
   const raw = readFileSync(filePath, 'utf-8');
-  cached = JSON.parse(raw) as RgaaMapping;
+  const parsed = JSON.parse(raw) as RgaaMapping;
+  validateMapping(parsed);
+  cached = parsed;
   return cached;
+}
+
+function validateMapping(mapping: RgaaMapping): void {
+  if (!Number.isInteger(mapping.totalCriteria) || mapping.totalCriteria <= 0) {
+    throw new Error('Mapping invalide : totalCriteria doit être un entier positif');
+  }
+  if (!Array.isArray(mapping.criteria) || mapping.criteria.length !== mapping.totalCriteria) {
+    throw new Error(`Mapping invalide : ${mapping.totalCriteria} critères attendus, ${mapping.criteria?.length ?? 0} trouvés`);
+  }
+
+  const ids = mapping.criteria.map((criterion) => criterion.rgaa?.id);
+  if (ids.some((id) => !/^\d+\.\d+$/.test(id))) {
+    throw new Error('Mapping invalide : chaque critère doit avoir un identifiant RGAA');
+  }
+  if (new Set(ids).size !== ids.length) {
+    throw new Error('Mapping invalide : identifiants RGAA dupliqués');
+  }
+
+  for (const criterion of mapping.criteria) {
+    if (!['full', 'partial', 'manual_shell'].includes(criterion.coverage)) {
+      throw new Error(`Mapping invalide : couverture inconnue pour ${criterion.rgaa.id}`);
+    }
+    if (!['H0', 'H1', 'H2', 'H3'].includes(criterion.humanLevel)) {
+      throw new Error(`Mapping invalide : niveau humain inconnu pour ${criterion.rgaa.id}`);
+    }
+    if (![0, 1, 2, 3, 4, 5].includes(criterion.implementationLot)) {
+      throw new Error(`Mapping invalide : lot d'implémentation inconnu pour ${criterion.rgaa.id}`);
+    }
+  }
 }
 
 export function getCriterion(id: string): RgaaCriterion | undefined {

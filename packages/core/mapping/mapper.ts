@@ -123,6 +123,24 @@ export function loadMapping(): RgaaMapping {
   if (!Array.isArray(parsed.criteria) || parsed.criteria.length === 0) {
     throw new Error('Mapping invalide : criteria absent ou vide');
   }
+  if (parsed.criteria.length !== parsed.totalCriteria) {
+    throw new Error(`Mapping invalide : ${parsed.totalCriteria} critères attendus, ${parsed.criteria.length} trouvés`);
+  }
+  const ids = parsed.criteria.map((criterion) => criterion.rgaa?.id);
+  if (ids.some((id) => !/^\d+\.\d+$/.test(id)) || new Set(ids).size !== ids.length) {
+    throw new Error('Mapping invalide : identifiants RGAA absents, invalides ou dupliqués');
+  }
+  for (const criterion of parsed.criteria) {
+    if (!['full', 'partial', 'manual_shell'].includes(criterion.coverage)) {
+      throw new Error(`Mapping invalide : couverture inconnue pour ${criterion.rgaa.id}`);
+    }
+    if (!['H0', 'H1', 'H2', 'H3'].includes(criterion.humanLevel)) {
+      throw new Error(`Mapping invalide : niveau humain inconnu pour ${criterion.rgaa.id}`);
+    }
+    if (![0, 1, 2, 3, 4, 5].includes(criterion.implementationLot)) {
+      throw new Error(`Mapping invalide : lot d'implémentation inconnu pour ${criterion.rgaa.id}`);
+    }
+  }
 
   cachedMapping = parsed;
   return cachedMapping;
@@ -520,7 +538,9 @@ export function buildReport(
   const overlaysDetected: string[] = [];
 
   // Limit banner from locale
-  const coveredCriteria = mapping.criteria.length;
+  // Le registre contient les 106 critères, mais seuls les critères du lot 0
+  // sont réellement intégrés au parcours actuel.
+  const coveredCriteria = mapping.criteria.filter((criterion) => criterion.implementationLot === 0).length;
   const limitBanner = locale.report.limitBanner
     .replace('{covered}', String(coveredCriteria))
     .replace('{total}', String(mapping.totalCriteria))
