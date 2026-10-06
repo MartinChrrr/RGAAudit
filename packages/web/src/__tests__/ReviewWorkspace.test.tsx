@@ -19,6 +19,9 @@ const review: ReviewData = {
       rgaaId: '1.1',
       title: 'Chaque image porteuse d’information a-t-elle une alternative textuelle ?',
       theme: 'Images',
+      coverage: 'partial',
+      humanLevel: 'H2',
+      implementationLot: 0,
       wcag: ['1.1.1'],
       machineStatus: 'needs_review',
       humanStatus: 'not_tested',
@@ -73,6 +76,13 @@ describe('ReviewWorkspace', () => {
     render(<ReviewWorkspace sessionId="session-1" review={reviewWithViolation} />);
 
     expect(screen.getByText('Anomalies détectées')).toBeInTheDocument();
+  });
+
+  it('affiche la couverture partielle séparément du signal machine', () => {
+    render(<ReviewWorkspace sessionId="session-1" review={review} />);
+
+    expect(screen.getByText('Couverture partielle')).toBeInTheDocument();
+    expect(screen.getByText('À vérifier')).toBeInTheDocument();
   });
 
   it('met la décision humaine au premier plan après validation', () => {

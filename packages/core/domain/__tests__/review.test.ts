@@ -8,6 +8,8 @@ describe('machineStatusFromLegacyStatus', () => {
 
   it('présente un passage automatique comme une absence d’anomalie détectée', () => {
     expect(machineStatusFromLegacyStatus('pass')).toBe('no_issue_detected');
+    expect(machineStatusFromLegacyStatus('pass', 'partial')).toBe('needs_review');
+    expect(machineStatusFromLegacyStatus('pass', 'manual_shell')).toBe('needs_review');
   });
 
   it('demande une revue pour les résultats manuels ou incomplets', () => {

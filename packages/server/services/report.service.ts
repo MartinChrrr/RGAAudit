@@ -8,6 +8,11 @@ import {
   type MappedPage,
 } from '@rgaaudit/core/mapping/mapper';
 import { getCriterion } from '@rgaaudit/core/mapping';
+import type {
+  CriterionCoverage,
+  HumanLevel,
+  ImplementationLot,
+} from '@rgaaudit/core/mapping';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
 import type { CollectedData } from '@rgaaudit/core/analyzer/data-collector';
 import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
@@ -52,6 +57,9 @@ export interface ReviewCriterion {
   rgaaId: string;
   title: string;
   theme: string;
+  coverage: CriterionCoverage;
+  humanLevel: HumanLevel;
+  implementationLot: ImplementationLot;
   wcag: string[];
   machineStatus: MachineStatus;
   humanStatus: HumanStatus;
@@ -135,8 +143,11 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
         rgaaId: criterion.rgaaId,
         title: criterion.title,
         theme: criterion.theme,
+        coverage: criterion.coverage,
+        humanLevel: criterion.humanLevel,
+        implementationLot: criterion.implementationLot,
         wcag: getCriterion(criterion.rgaaId)?.wcag ?? [],
-        machineStatus: machineStatusFromLegacyStatus(criterion.status),
+        machineStatus: machineStatusFromLegacyStatus(criterion.status, criterion.coverage),
         humanStatus: decision?.status ?? 'not_tested',
         comment: decision?.comment ?? '',
         reviewedAt: decision?.reviewedAt ?? null,

@@ -4,6 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+export type CriterionCoverage = 'full' | 'partial' | 'manual_shell';
+export type HumanLevel = 'H0' | 'H1' | 'H2' | 'H3';
+export type ImplementationLot = 0 | 1 | 2 | 3 | 4 | 5;
+
 export interface RgaaCriterion {
   rgaa: { id: string; title: string; theme: string };
   wcag: string[];
@@ -14,11 +18,11 @@ export interface RgaaCriterion {
   altMaxLength?: number;
   limits: string;
   /** Niveau de couverture réellement fourni par le moteur. */
-  coverage: 'full' | 'partial' | 'manual_shell';
+  coverage: CriterionCoverage;
   /** Niveau de validation humaine encore nécessaire. */
-  humanLevel: 'H0' | 'H1' | 'H2' | 'H3';
+  humanLevel: HumanLevel;
   /** Lot du backlog dans lequel le critère est intégré (0 = socle actuel). */
-  implementationLot: 0 | 1 | 2 | 3 | 4 | 5;
+  implementationLot: ImplementationLot;
 }
 
 export interface UncoveredTheme {

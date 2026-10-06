@@ -1,3 +1,5 @@
+import type { CriterionCoverage } from '../mapping';
+
 export const REVIEW_SCHEMA_VERSION = 1 as const;
 
 /** A machine signal is evidence for the auditor, never the final verdict. */
@@ -47,9 +49,10 @@ export interface AuditReviewState {
 
 export function machineStatusFromLegacyStatus(
   status: 'violation' | 'pass' | 'manual' | 'incomplete',
+  coverage: CriterionCoverage = 'full',
 ): MachineStatus {
   if (status === 'violation') return 'probable_issue';
-  if (status === 'pass') return 'no_issue_detected';
+  if (status === 'pass' && coverage === 'full') return 'no_issue_detected';
   return 'needs_review';
 }
 

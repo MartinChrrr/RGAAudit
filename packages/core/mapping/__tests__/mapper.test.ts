@@ -152,7 +152,7 @@ describe('mapPageResults — ANY_VIOLATION', () => {
     ]);
   });
 
-  it('"pass" si aucune violation', () => {
+  it('"manual" si aucune violation pour un critère partiel', () => {
     const axeResults = makeAxeResult({
       passes: [
         {
@@ -168,8 +168,17 @@ describe('mapPageResults — ANY_VIOLATION', () => {
     const criterion11 = result.criteria.find((c) => c.rgaaId === '1.1');
 
     expect(criterion11).toBeDefined();
-    expect(criterion11!.status).toBe('pass');
+    expect(criterion11!.status).toBe('manual');
     expect(criterion11!.violations).toHaveLength(0);
+  });
+
+  it('ne présente pas l’absence de violation comme une conformité pour un critère partiel', () => {
+    const result = mapPageResults(makeAxeResult({
+      passes: [{ rule: 'image-alt', description: 'ok', elements: [] }],
+    }), makeCollectedData(), 'http://example.com');
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '1.1')?.status).toBe('manual');
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '2.1')?.status).toBe('pass');
   });
 });
 
@@ -219,20 +228,18 @@ describe('mapPageResults — contraste', () => {
 // ---------------------------------------------------------------------------
 
 describe('mapPageResults — ALL_PASS', () => {
-  it('"pass" uniquement si toutes les règles passent', () => {
-    // No criteria in current mapping use ALL_PASS, so we test the logic
-    // by verifying that ANY_VIOLATION criteria with all passes return 'pass'
+  it('"pass" uniquement si toutes les règles passent et la couverture est complète', () => {
+    // No criteria in current mapping use ALL_PASS, so use a full-coverage
+    // ANY_VIOLATION criterion to verify the positive automatic verdict.
     const axeResults = makeAxeResult({
       passes: [
-        { rule: 'heading-order', description: 'ok', elements: [] },
-        { rule: 'page-has-heading-one', description: 'ok', elements: [] },
-        { rule: 'empty-heading', description: 'ok', elements: [] },
+        { rule: 'frame-title', description: 'ok', elements: [] },
       ],
     });
     const collected = makeCollectedData();
 
     const result = mapPageResults(axeResults, collected, 'http://example.com');
-    const criterion91 = result.criteria.find((c) => c.rgaaId === '9.1');
+    const criterion91 = result.criteria.find((c) => c.rgaaId === '2.1');
 
     expect(criterion91).toBeDefined();
     expect(criterion91!.status).toBe('pass');
@@ -356,7 +363,7 @@ describe('aggregateResults', () => {
     expect(criterion11).toBeDefined();
     expect(criterion11!.status).toBe('violation');
     expect(criterion11!.pagesViolating).toContain('http://example.com/page1');
-    expect(criterion11!.pagesPass).toContain('http://example.com/page2');
+    expect(criterion11!.pagesManual).toContain('http://example.com/page2');
   });
 
   it('détecte les DUPLICATE_LABEL cross-pages', () => {

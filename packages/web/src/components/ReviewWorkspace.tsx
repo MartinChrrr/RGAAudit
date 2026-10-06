@@ -2,11 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 
 export type MachineStatus = 'probable_issue' | 'needs_review' | 'no_issue_detected';
 export type HumanStatus = 'not_tested' | 'compliant' | 'non_compliant' | 'not_applicable';
+export type CriterionCoverage = 'full' | 'partial' | 'manual_shell';
+export type HumanLevel = 'H0' | 'H1' | 'H2' | 'H3';
 
 export interface ReviewCriterion {
   rgaaId: string;
   title: string;
   theme: string;
+  coverage: CriterionCoverage;
+  humanLevel: HumanLevel;
+  implementationLot: number;
   wcag: string[];
   machineStatus: MachineStatus;
   humanStatus: HumanStatus;
@@ -80,6 +85,18 @@ const humanLabels: Record<HumanStatus, string> = {
   compliant: 'Conforme',
   non_compliant: 'Non conforme',
   not_applicable: 'Non applicable',
+};
+
+const coverageLabels: Record<CriterionCoverage, string> = {
+  full: 'Couverture complète',
+  partial: 'Couverture partielle',
+  manual_shell: 'Revue manuelle',
+};
+
+const coverageColors: Record<CriterionCoverage, string> = {
+  full: 'bg-blue-50 text-blue-800',
+  partial: 'bg-amber-50 text-amber-900',
+  manual_shell: 'bg-gray-100 text-gray-700',
 };
 
 function decisionKey(pageUrl: string, criterionId: string): string {
@@ -197,6 +214,9 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-sm font-semibold text-gray-800">{criterion.rgaaId}</span>
+                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${coverageColors[criterion.coverage]}`}>
+                      {coverageLabels[criterion.coverage]}
+                    </span>
                     {criterion.humanStatus === 'not_tested' ? (
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${machineColors[criterion.machineStatus]}`}>
                         {machineLabels[criterion.machineStatus]}

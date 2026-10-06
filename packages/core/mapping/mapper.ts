@@ -6,7 +6,13 @@ import type { EngineResult, AxeViolation, AxeIncomplete } from '../engines/engin
 import type { AnalyzeResult } from '../engines';
 import type { CollectedData } from '../analyzer/data-collector';
 import type { HeuristicResult, HeuristicFinding } from '../analyzer/heuristics/heuristic.interface';
-import type { RgaaCriterion, RgaaMapping } from './index';
+import type {
+  CriterionCoverage,
+  HumanLevel,
+  ImplementationLot,
+  RgaaCriterion,
+  RgaaMapping,
+} from './index';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +30,9 @@ export interface MappedCriterion {
   rgaaId: string;
   title: string;
   theme: string;
+  coverage: CriterionCoverage;
+  humanLevel: HumanLevel;
+  implementationLot: ImplementationLot;
   status: CriterionStatus;
   violations: AxeViolation[];
   incompletes: AxeIncomplete[];
@@ -217,12 +226,15 @@ function mapCriterion(
     rgaaId: criterion.rgaa.id,
     title: criterion.rgaa.title,
     theme: criterion.rgaa.theme,
+    coverage: criterion.coverage,
+    humanLevel: criterion.humanLevel,
+    implementationLot: criterion.implementationLot,
     notes: criterion.limits,
     manualChecks: criterion.dataCollectorFlags,
   };
 
-  // MANUAL_ONLY — always manual regardless of axeResults
-  if (criterion.evaluationStrategy === 'MANUAL_ONLY') {
+  // Manual shells and MANUAL_ONLY criteria never produce a machine verdict.
+  if (criterion.coverage === 'manual_shell' || criterion.evaluationStrategy === 'MANUAL_ONLY') {
     const elements = extractElements(criterion, collectedData);
     return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
   }
@@ -262,6 +274,10 @@ function mapAnyViolation(
     status = 'violation';
   } else if (incompletes.length > 0) {
     status = 'incomplete';
+  } else if (criterion.coverage !== 'full') {
+    // Absence of an axe violation is not equivalent to RGAA compliance when
+    // the criterion is only partially covered by the current implementation.
+    status = 'manual';
   } else {
     status = 'pass';
   }
@@ -286,11 +302,18 @@ function mapAllPass(
   const passedRules = new Set(result.passes.map((p) => p.rule));
   const allPass = criterion.axeRules.every((rule) => passedRules.has(rule));
 
-  if (allPass) {
+  if (allPass && criterion.coverage === 'full') {
     return { ...base, status: 'pass', violations: [], incompletes, elements, heuristicFindings: [] };
   }
 
-  return { ...base, status: 'incomplete', violations: [], incompletes, elements, heuristicFindings: [] };
+  return {
+    ...base,
+    status: criterion.coverage === 'full' ? 'incomplete' : 'manual',
+    violations: [],
+    incompletes,
+    elements,
+    heuristicFindings: [],
+  };
 }
 
 function extractElements(
