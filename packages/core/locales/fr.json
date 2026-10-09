@@ -218,8 +218,16 @@
     "htmlAnnexeHeadings": "Annexe — Titres",
     "htmlColId": "ID",
     "htmlColCriterion": "Critère",
+    "htmlColCoverage": "Couverture",
     "htmlColStatus": "Statut",
     "htmlColPages": "Pages",
+    "coverageSection": "Périmètre des 106 critères",
+    "coverageIntegrated": "Critères intégrés",
+    "coverageIntegratedHint": "sur {total} au registre",
+    "coverageMachineSignal": "Signal automatique",
+    "coverageMachineSignalHint": "détection disponible, sans verdict de conformité",
+    "coverageHumanReview": "Revue humaine requise",
+    "coverageHumanReviewHint": "couverture partielle ou manuelle",
     "htmlManualChecklist": "Points de contrôle manuel",
     "htmlFooter": "Rapport généré par RGAAudit — outil open-source d'aide à l'audit RGAA 4.1.2",
     "contrastDetail": "Détail des contrastes",
@@ -240,6 +248,11 @@
     "pass": "Aucune anomalie détectée",
     "manual": "Vérification manuelle requise",
     "incomplete": "Analyse à confirmer"
+  },
+  "coverage": {
+    "full": "Couverture complète",
+    "partial": "Couverture partielle",
+    "manual_shell": "Revue manuelle"
   },
   "heuristics": {
     "confidence": {

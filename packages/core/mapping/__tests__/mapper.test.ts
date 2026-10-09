@@ -493,6 +493,16 @@ describe('buildReport', () => {
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
     expect(report.metadata.coveredCriteria).toBe(12);
+    expect(report.coverage).toMatchObject({
+      total: 106,
+      integrated: 12,
+      machineSignal: 11,
+      humanReview: 103,
+      full: 3,
+      partial: 8,
+      manualShell: 95,
+    });
+    expect(summary.coverage).toEqual(report.coverage);
 
     // limitBanner comes from locale, not hardcoded
     expect(report.limitBanner).toContain('9');

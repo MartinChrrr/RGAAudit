@@ -35,6 +35,9 @@ function makeReport(overrides?: Partial<Report>): Report {
           rgaaId: '1.1',
           title: 'Image a un texte alternatif',
           theme: 'Images',
+          coverage: 'partial',
+          humanLevel: 'H2',
+          implementationLot: 0,
           status: 'violation',
           pagesViolating: ['https://example.com/'],
           pagesPass: [],
@@ -45,6 +48,9 @@ function makeReport(overrides?: Partial<Report>): Report {
           rgaaId: '6.1',
           title: 'Chaque lien est-il explicite ?',
           theme: 'Liens',
+          coverage: 'partial',
+          humanLevel: 'H2',
+          implementationLot: 0,
           status: 'pass',
           pagesViolating: [],
           pagesPass: ['https://example.com/'],
@@ -52,6 +58,24 @@ function makeReport(overrides?: Partial<Report>): Report {
           pagesIncomplete: [],
         },
       ],
+      coverage: {
+        total: 106,
+        integrated: 12,
+        machineSignal: 11,
+        humanReview: 103,
+        full: 3,
+        partial: 8,
+        manualShell: 95,
+      },
+    },
+    coverage: {
+      total: 106,
+      integrated: 12,
+      machineSignal: 11,
+      humanReview: 103,
+      full: 3,
+      partial: 8,
+      manualShell: 95,
     },
     uncoveredThemes: [
       {
@@ -118,6 +142,16 @@ describe('renderReportHtml', () => {
 
     expect(html).toContain('data-testid="limit-banner"');
     expect(html).toContain('12 critères RGAA sur 106');
+  });
+
+  it('affiche la séparation entre critères intégrés, signaux machine et revue humaine', () => {
+    const html = renderReportHtml({ report: makeReport() });
+
+    expect(html).toContain('data-testid="coverage-summary"');
+    expect(html).toContain('Critères intégrés');
+    expect(html).toContain('Signal automatique');
+    expect(html).toContain('Revue humaine requise');
+    expect(html).toContain('Couverture partielle');
   });
 
   it('affiche les cartes de synthèse (violations, passes, manual)', () => {

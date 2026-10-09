@@ -70,6 +70,15 @@ function makeReportData() {
     },
     limitBanner: 'Ce rapport ne couvre que 1 critères sur 106.',
     overlaysDetected: [],
+    coverage: {
+      total: 106,
+      integrated: 1,
+      machineSignal: 1,
+      humanReview: 105,
+      full: 1,
+      partial: 0,
+      manualShell: 105,
+    },
     summary: {
       totalCriteria: 1,
       automated: 1,
@@ -79,6 +88,15 @@ function makeReportData() {
       incomplete: 0,
       topIssues: [],
       criteria: [],
+      coverage: {
+        total: 106,
+        integrated: 1,
+        machineSignal: 1,
+        humanReview: 105,
+        full: 1,
+        partial: 0,
+        manualShell: 105,
+      },
     },
     uncoveredThemes: [],
   };

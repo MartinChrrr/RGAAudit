@@ -22,6 +22,16 @@ interface ContrastViolationItem {
   bgColor: string;
 }
 
+interface CriterionCoverageSummary {
+  total: number;
+  integrated: number;
+  machineSignal: number;
+  humanReview: number;
+  full: number;
+  partial: number;
+  manualShell: number;
+}
+
 interface ReportData {
   metadata: {
     url: string;
@@ -32,6 +42,7 @@ interface ReportData {
     coveredCriteria: number;
   };
   limitBanner: string;
+  coverage?: CriterionCoverageSummary;
   summary: {
     totalCriteria: number;
     violations: number;
@@ -40,6 +51,7 @@ interface ReportData {
     criteria: Array<{
       rgaaId: string;
       title: string;
+      coverage?: 'full' | 'partial' | 'manual_shell';
       status: string;
       pagesViolating?: string[];
       pagesPass?: string[];
@@ -171,6 +183,17 @@ export default function Results() {
     incomplete: 'bg-gray-100 text-gray-800',
   };
 
+  const coverageLabels: Record<string, string> = {
+    full: 'Couverture complète',
+    partial: 'Couverture partielle',
+    manual_shell: 'Revue manuelle',
+  };
+  const coverageColors: Record<string, string> = {
+    full: 'bg-blue-50 text-blue-800',
+    partial: 'bg-amber-50 text-amber-900',
+    manual_shell: 'bg-gray-100 text-gray-700',
+  };
+
   // Group criteria by theme (first digit of rgaaId)
   const byTheme = new Map<string, typeof report.summary.criteria>();
   for (const c of report.summary.criteria) {
@@ -281,6 +304,31 @@ export default function Results() {
           <SummaryCard label={t('report.criteriaManual')} value={report.summary.manual} className="text-amber-900" />
         </div>
 
+        {report.coverage && (
+          <section className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-4" data-testid="coverage-summary">
+            <h2 className="text-sm font-semibold text-blue-950">Périmètre du registre RGAA</h2>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <SummaryCard
+                label="Critères intégrés"
+                value={report.coverage.integrated}
+                hint={`sur ${report.coverage.total}`}
+              />
+              <SummaryCard
+                label="Signal automatique"
+                value={report.coverage.machineSignal}
+                hint="sans verdict de conformité"
+                className="text-blue-800"
+              />
+              <SummaryCard
+                label="Revue humaine requise"
+                value={report.coverage.humanReview}
+                hint="couverture partielle ou manuelle"
+                className="text-amber-900"
+              />
+            </div>
+          </section>
+        )}
+
         <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="note">
           Le rouge, l’orange et le vert décrivent uniquement la suggestion de la machine. La conformité RGAA doit toujours être confirmée par une décision humaine.
         </div>
@@ -341,6 +389,11 @@ export default function Results() {
                     <li key={c.rgaaId} className="px-4 py-3 flex items-center gap-3">
                       <span className="font-mono text-xs text-gray-700 w-10">{c.rgaaId}</span>
                       <span className="text-sm text-gray-700 flex-1">{c.title}</span>
+                      {c.coverage && (
+                        <span className={`hidden rounded-full px-2 py-0.5 text-[11px] font-medium sm:inline-flex ${coverageColors[c.coverage] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {coverageLabels[c.coverage] ?? c.coverage}
+                        </span>
+                      )}
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor[c.status] ?? 'bg-gray-100 text-gray-800'}`}>
                         {t(`status.${c.status}`)}
                       </span>
@@ -508,11 +561,12 @@ export default function Results() {
   );
 }
 
-function SummaryCard({ label, value, className = '' }: { label: string; value: number; className?: string }) {
+function SummaryCard({ label, value, hint, className = '' }: { label: string; value: number; hint?: string; className?: string }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
       <p className="text-xs text-gray-600 mb-1">{label}</p>
       <p className={`text-2xl font-bold ${className || 'text-gray-900'}`}>{value}</p>
+      {hint && <p className="text-xs text-gray-500">{hint}</p>}
     </div>
   );
 }

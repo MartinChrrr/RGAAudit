@@ -13,6 +13,15 @@ const mockReport = {
     coveredCriteria: 7,
   },
   limitBanner: 'Ce rapport ne couvre que 7 critères RGAA sur 106.',
+  coverage: {
+    total: 106,
+    integrated: 12,
+    machineSignal: 11,
+    humanReview: 103,
+    full: 3,
+    partial: 8,
+    manualShell: 95,
+  },
   summary: {
     totalCriteria: 7,
     violations: 2,
@@ -94,6 +103,22 @@ describe('Results', () => {
       expect(screen.getByText('7')).toBeInTheDocument(); // totalCriteria
       expect(screen.getByText('2')).toBeInTheDocument(); // violations
       expect(screen.getByText('4')).toBeInTheDocument(); // passes
+    });
+  });
+
+  it('affiche la séparation de couverture des 106 critères', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockReport),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => {
+      const coverage = screen.getByTestId('coverage-summary');
+      expect(coverage).toHaveTextContent('Critères intégrés');
+      expect(coverage).toHaveTextContent('Signal automatique');
+      expect(coverage).toHaveTextContent('Revue humaine requise');
     });
   });
 

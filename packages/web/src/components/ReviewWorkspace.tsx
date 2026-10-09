@@ -5,6 +5,16 @@ export type HumanStatus = 'not_tested' | 'compliant' | 'non_compliant' | 'not_ap
 export type CriterionCoverage = 'full' | 'partial' | 'manual_shell';
 export type HumanLevel = 'H0' | 'H1' | 'H2' | 'H3';
 
+export interface CriterionCoverageSummary {
+  total: number;
+  integrated: number;
+  machineSignal: number;
+  humanReview: number;
+  full: number;
+  partial: number;
+  manualShell: number;
+}
+
 export interface ReviewCriterion {
   rgaaId: string;
   title: string;
@@ -25,6 +35,7 @@ export interface ReviewCriterion {
 
 export interface ReviewData {
   updatedAt: string;
+  coverage?: CriterionCoverageSummary;
   summary: {
     total: number;
     reviewed: number;
@@ -201,6 +212,29 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
           </label>
         )}
       </div>
+
+      {review.coverage && (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4" data-testid="review-coverage-summary">
+          <h3 className="text-sm font-semibold text-blue-950">Périmètre du registre RGAA</h3>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-white p-3 shadow-sm">
+              <p className="text-xs text-gray-600">Critères intégrés</p>
+              <p className="text-xl font-bold text-gray-900">{review.coverage.integrated}</p>
+              <p className="text-xs text-gray-500">sur {review.coverage.total}</p>
+            </div>
+            <div className="rounded-lg bg-white p-3 shadow-sm">
+              <p className="text-xs text-gray-600">Signal automatique</p>
+              <p className="text-xl font-bold text-blue-800">{review.coverage.machineSignal}</p>
+              <p className="text-xs text-gray-500">sans verdict de conformité</p>
+            </div>
+            <div className="rounded-lg bg-white p-3 shadow-sm">
+              <p className="text-xs text-gray-600">Revue humaine requise</p>
+              <p className="text-xl font-bold text-amber-800">{review.coverage.humanReview}</p>
+              <p className="text-xs text-gray-500">couverture partielle ou manuelle</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
 

@@ -51,11 +51,29 @@ export interface AggregatedCriterion {
   rgaaId: string;
   title: string;
   theme: string;
+  coverage: CriterionCoverage;
+  humanLevel: HumanLevel;
+  implementationLot: ImplementationLot;
   status: CriterionStatus;
   pagesViolating: string[];
   pagesPass: string[];
   pagesManual: string[];
   pagesIncomplete: string[];
+}
+
+/** Coverage counts for the complete 106-criterion register.
+ *
+ * The counters intentionally overlap: a criterion can be integrated and have
+ * a machine signal, while partial criteria also remain subject to human review.
+ */
+export interface CriterionCoverageSummary {
+  total: number;
+  integrated: number;
+  machineSignal: number;
+  humanReview: number;
+  full: number;
+  partial: number;
+  manualShell: number;
 }
 
 export interface TopIssue {
@@ -73,6 +91,7 @@ export interface AuditReportSummary {
   incomplete: number;
   topIssues: TopIssue[];
   criteria: AggregatedCriterion[];
+  coverage: CriterionCoverageSummary;
 }
 
 export interface AuditConfig {
@@ -93,6 +112,7 @@ export interface Report {
     coveredCriteria: number;
   };
   limitBanner: string;
+  coverage: CriterionCoverageSummary;
   overlaysDetected: string[];
   summary: AuditReportSummary;
   uncoveredThemes: Array<{
@@ -100,6 +120,27 @@ export interface Report {
     name: string;
     manualChecklist: string[];
   }>;
+}
+
+export function summarizeCoverage(criteria: RgaaCriterion[]): CriterionCoverageSummary {
+  return criteria.reduce<CriterionCoverageSummary>((summary, criterion) => {
+    summary.total++;
+    if (criterion.implementationLot === 0) summary.integrated++;
+    if (criterion.coverage !== 'manual_shell') summary.machineSignal++;
+    if (criterion.coverage !== 'full') summary.humanReview++;
+    if (criterion.coverage === 'full') summary.full++;
+    if (criterion.coverage === 'partial') summary.partial++;
+    if (criterion.coverage === 'manual_shell') summary.manualShell++;
+    return summary;
+  }, {
+    total: 0,
+    integrated: 0,
+    machineSignal: 0,
+    humanReview: 0,
+    full: 0,
+    partial: 0,
+    manualShell: 0,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -394,6 +435,9 @@ export function aggregateResults(
       rgaaId: criterion.rgaa.id,
       title: criterion.rgaa.title,
       theme: criterion.rgaa.theme,
+      coverage: criterion.coverage,
+      humanLevel: criterion.humanLevel,
+      implementationLot: criterion.implementationLot,
       status: 'pass',
       pagesViolating: [],
       pagesPass: [],
@@ -477,6 +521,7 @@ export function aggregateResults(
     incomplete,
     topIssues,
     criteria,
+    coverage: summarizeCoverage(mapping.criteria),
   };
 }
 
@@ -564,6 +609,7 @@ export function buildReport(
   // Le registre contient les 106 critères, mais seuls les critères du lot 0
   // sont réellement intégrés au parcours actuel.
   const coveredCriteria = mapping.criteria.filter((criterion) => criterion.implementationLot === 0).length;
+  const coverage = summarizeCoverage(mapping.criteria);
   const limitBanner = locale.report.limitBanner
     .replace('{covered}', String(coveredCriteria))
     .replace('{total}', String(mapping.totalCriteria))
@@ -580,6 +626,7 @@ export function buildReport(
       coveredCriteria,
     },
     limitBanner,
+    coverage,
     overlaysDetected,
     summary,
     uncoveredThemes: mapping.uncoveredThemes,

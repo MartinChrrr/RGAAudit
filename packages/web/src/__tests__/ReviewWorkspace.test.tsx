@@ -5,6 +5,15 @@ import ReviewWorkspace, { type ReviewData } from '../components/ReviewWorkspace'
 
 const review: ReviewData = {
   updatedAt: '2026-09-11T00:00:00.000Z',
+  coverage: {
+    total: 106,
+    integrated: 12,
+    machineSignal: 11,
+    humanReview: 103,
+    full: 3,
+    partial: 8,
+    manualShell: 95,
+  },
   summary: {
     total: 1,
     reviewed: 0,
@@ -83,6 +92,14 @@ describe('ReviewWorkspace', () => {
 
     expect(screen.getByText('Couverture partielle')).toBeInTheDocument();
     expect(screen.getByText('À vérifier')).toBeInTheDocument();
+  });
+
+  it('affiche le périmètre des 106 critères', () => {
+    render(<ReviewWorkspace sessionId="session-1" review={review} />);
+
+    expect(screen.getByTestId('review-coverage-summary')).toHaveTextContent('Critères intégrés');
+    expect(screen.getByTestId('review-coverage-summary')).toHaveTextContent('106');
+    expect(screen.getByTestId('review-coverage-summary')).toHaveTextContent('Revue humaine requise');
   });
 
   it('met la décision humaine au premier plan après validation', () => {

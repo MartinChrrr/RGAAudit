@@ -5,9 +5,11 @@ import {
   mapPageResults,
   aggregateResults,
   buildReport,
+  summarizeCoverage,
+  type CriterionCoverageSummary,
   type MappedPage,
 } from '@rgaaudit/core/mapping/mapper';
-import { getCriterion } from '@rgaaudit/core/mapping';
+import { getCriterion, loadMapping } from '@rgaaudit/core/mapping';
 import type {
   CriterionCoverage,
   HumanLevel,
@@ -73,6 +75,7 @@ export interface ReviewCriterion {
 
 export interface ReviewData {
   updatedAt: string;
+  coverage: CriterionCoverageSummary;
   summary: {
     total: number;
     reviewed: number;
@@ -165,6 +168,7 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
 
   return {
     updatedAt: state?.updatedAt ?? new Date(0).toISOString(),
+    coverage: summarizeCoverage(loadMapping().criteria),
     summary: {
       total: allCriteria.length,
       reviewed: reviewed.length,

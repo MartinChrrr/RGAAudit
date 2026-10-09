@@ -70,6 +70,7 @@ export interface RenderOptions {
 
 export function renderReportHtml({ report, allCollected, contrastViolations }: RenderOptions): string {
   const { metadata, limitBanner, summary, uncoveredThemes } = report;
+  const coverage = report.coverage ?? summary.coverage;
 
   const statusLabel = (status: string): string => t(`status.${status}`);
   const statusClass = (status: string): string => {
@@ -78,6 +79,15 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
       case 'pass': return 'bg-green-100 text-green-800';
       case 'manual': return 'bg-amber-100 text-amber-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const coverageLabel = (value: string): string => t(`coverage.${value}`);
+  const coverageClass = (value: string): string => {
+    switch (value) {
+      case 'full': return 'bg-blue-100 text-blue-800';
+      case 'partial': return 'bg-amber-100 text-amber-800';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -95,6 +105,11 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
           <tr>
             <td class="px-3 py-2 font-mono text-xs text-gray-500">${escapeHtml(c.rgaaId)}</td>
             <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(c.title)}</td>
+            <td class="px-3 py-2">
+              <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${coverageClass(c.coverage)}">
+                ${escapeHtml(coverageLabel(c.coverage))}
+              </span>
+            </td>
             <td class="px-3 py-2">
               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(c.status)}">
                 ${escapeHtml(statusLabel(c.status))}
@@ -116,6 +131,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
               <tr>
                 <th class="px-3 py-2">${escapeHtml(t('report.htmlColId'))}</th>
                 <th class="px-3 py-2">${escapeHtml(t('report.htmlColCriterion'))}</th>
+                <th class="px-3 py-2">${escapeHtml(t('report.htmlColCoverage'))}</th>
                 <th class="px-3 py-2">${escapeHtml(t('report.htmlColStatus'))}</th>
                 <th class="px-3 py-2">${escapeHtml(t('report.htmlColPages'))}</th>
               </tr>
@@ -138,6 +154,29 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
               </div>
               <span class="text-xs text-gray-500">${escapeHtml(t('report.topIssuePages', { count: issue.pagesAffected }))}</span>
             </div>`).join('')}
+        </div>
+    </section>`
+    : '';
+
+  const coverageSection = coverage
+    ? `<section class="mb-8" data-testid="coverage-summary">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.coverageSection'))}</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <p class="text-xs text-gray-500 mb-1">${escapeHtml(t('report.coverageIntegrated'))}</p>
+            <p class="text-2xl font-bold text-gray-900">${coverage.integrated}</p>
+            <p class="text-xs text-gray-500">${escapeHtml(t('report.coverageIntegratedHint', { total: coverage.total }))}</p>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <p class="text-xs text-gray-500 mb-1">${escapeHtml(t('report.coverageMachineSignal'))}</p>
+            <p class="text-2xl font-bold text-blue-800">${coverage.machineSignal}</p>
+            <p class="text-xs text-gray-500">${escapeHtml(t('report.coverageMachineSignalHint'))}</p>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <p class="text-xs text-gray-500 mb-1">${escapeHtml(t('report.coverageHumanReview'))}</p>
+            <p class="text-2xl font-bold text-amber-800">${coverage.humanReview}</p>
+            <p class="text-xs text-gray-500">${escapeHtml(t('report.coverageHumanReviewHint'))}</p>
+          </div>
         </div>
       </section>`
     : '';
@@ -182,6 +221,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
     .bg-gray-50 { background: #f9fafb; }
     .bg-red-50, .bg-red-100 { background: #fee2e2; }
     .bg-green-100 { background: #dcfce7; }
+    .bg-blue-100 { background: #dbeafe; }
     .bg-amber-50, .bg-amber-100 { background: #fef3c7; }
     .rounded-lg, .rounded-xl { border-radius: .75rem; }
     .rounded-full { border-radius: 9999px; }
@@ -203,6 +243,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
     .font-mono { font-family: ui-monospace, monospace; }
     .text-red-700, .text-red-800 { color: #991b1b; }
     .text-green-700, .text-green-800 { color: #166534; }
+    .text-blue-800 { color: #1e40af; }
     .text-amber-700, .text-amber-800, .text-amber-900 { color: #92400e; }
     .text-gray-400, .text-gray-500, .text-gray-600 { color: #4b5563; }
     .contrast-result { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 10rem; margin-bottom: .25rem; }
@@ -233,8 +274,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
   <main class="max-w-4xl mx-auto py-8 px-4">
     <!-- Limit banner -->
     <div role="alert" class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" data-testid="limit-banner">
-      ${escapeHtml(limitBanner)}
-    </div>
+    ${escapeHtml(limitBanner)}
+  </div>
 
     <h1 class="text-2xl font-bold text-gray-900 mb-2">${escapeHtml(t('report.title'))}</h1>
 
@@ -244,6 +285,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
       <p><strong>${escapeHtml(t('report.generatedAt'))} :</strong> ${escapeHtml(metadata.date)}</p>
       <p><strong>${escapeHtml(t('report.pagesAudited'))} :</strong> ${metadata.pagesAudited}</p>
     </div>
+
+    ${coverageSection}
 
     <!-- Summary cards -->
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
