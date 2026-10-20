@@ -153,4 +153,33 @@ describe('ReviewWorkspace', () => {
 
     fetchMock.mockRestore();
   });
+
+  it('autorise une décision humaine sans commentaire', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ review }),
+    } as Response);
+
+    render(<ReviewWorkspace sessionId="session-1" review={review} />);
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Décision humaine pour le critère 1.1' }),
+      'compliant',
+    );
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/audit/session-1/decision', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({
+        pageUrl: 'https://example.com/',
+        criterionId: '1.1',
+        status: 'compliant',
+        comment: '',
+      }),
+    }));
+    expect(await screen.findByRole('button', { name: 'Enregistré' })).toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
 });
