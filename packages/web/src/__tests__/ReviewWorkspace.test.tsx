@@ -123,4 +123,34 @@ describe('ReviewWorkspace', () => {
     expect(screen.getByText('Auditeur : Non conforme')).toBeInTheDocument();
     expect(screen.getByText('Signal automatique : Aucune anomalie détectée')).toBeInTheDocument();
   });
+
+  it('enregistre une décision humaine et son commentaire depuis le résultat', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ review }),
+    } as Response);
+
+    render(<ReviewWorkspace sessionId="session-1" review={review} />);
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Décision humaine pour le critère 1.1' }),
+      'non_compliant',
+    );
+    await user.type(screen.getByLabelText('Commentaire ou preuve'), 'Alt à corriger sur le logo.');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/audit/session-1/decision', expect.objectContaining({
+      method: 'PATCH',
+      body: JSON.stringify({
+        pageUrl: 'https://example.com/',
+        criterionId: '1.1',
+        status: 'non_compliant',
+        comment: 'Alt à corriger sur le logo.',
+      }),
+    }));
+    expect(await screen.findByRole('button', { name: 'Enregistré' })).toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
 });
