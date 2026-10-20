@@ -280,14 +280,25 @@ function mapCriterion(
     return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
   }
 
+  const elements = extractElements(criterion, collectedData);
+
   // If no axe results (error page), return manual
   if (!axeResults || axeResults.error) {
-    const elements = extractElements(criterion, collectedData);
     return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
   }
 
+  if (criterion.evaluationStrategy === 'COLLECTOR_FLAGS') {
+    return {
+      ...base,
+      status: elements.length > 0 ? 'violation' : criterion.coverage === 'full' ? 'pass' : 'manual',
+      violations: [],
+      incompletes: [],
+      elements,
+      heuristicFindings: [],
+    };
+  }
+
   const engineResult = axeResults as EngineResult;
-  const elements = extractElements(criterion, collectedData);
 
   if (criterion.evaluationStrategy === 'ANY_VIOLATION') {
     return mapAnyViolation(criterion, engineResult, elements, base);
@@ -407,6 +418,14 @@ function extractElements(
       if (!alreadyAdded) {
         elements.push({ selector: 'document', flags: [flag] });
       }
+    }
+  }
+
+  // Figure captions
+  for (const caption of collectedData.figcaptions ?? []) {
+    const matchingFlags = caption.flags.filter((flag) => relevantFlags.has(flag));
+    if (matchingFlags.length > 0) {
+      elements.push({ selector: caption.selector, flags: matchingFlags });
     }
   }
 

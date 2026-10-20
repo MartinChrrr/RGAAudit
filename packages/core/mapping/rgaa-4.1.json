@@ -287,15 +287,15 @@
         "title": "Chaque légende d’image est-elle, si nécessaire, correctement reliée à l’image correspondante ?",
         "theme": "Images"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
+      "implementationLot": 0,
       "wcag": [],
       "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
+      "evaluationStrategy": "COLLECTOR_FLAGS",
+      "dataCollectorFlags": ["FIGCAPTION_ORPHAN"],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "Contrôle déterministe des légendes orphelines. La pertinence de la relation entre la légende et l’image reste à confirmer manuellement."
     },
     {
       "rgaa": {
@@ -908,15 +908,15 @@
         "title": "Chaque page web est-elle définie par un type de document ?",
         "theme": "Éléments obligatoires"
       },
-      "coverage": "manual_shell",
+      "coverage": "full",
       "humanLevel": "H0",
-      "implementationLot": 1,
+      "implementationLot": 0,
       "wcag": [],
       "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
+      "evaluationStrategy": "COLLECTOR_FLAGS",
+      "dataCollectorFlags": ["DOCTYPE_ABSENT", "DOCTYPE_INVALID"],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "Contrôle la présence d’un <!DOCTYPE html> HTML5. La validité complète du code source reste couverte par le critère 8.2."
     },
     {
       "rgaa": {
@@ -940,15 +940,15 @@
         "title": "Dans chaque page web, la langue par défaut est-elle présente ?",
         "theme": "Éléments obligatoires"
       },
-      "coverage": "manual_shell",
+      "coverage": "full",
       "humanLevel": "H0",
-      "implementationLot": 1,
+      "implementationLot": 0,
       "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "axeRules": ["html-has-lang"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core vérifie la présence de lang sur l’élément html. La pertinence de la langue déclarée relève du critère 8.4."
     },
     {
       "rgaa": {
@@ -956,15 +956,15 @@
         "title": "Pour chaque page web ayant une langue par défaut, le code de langue est-il pertinent ?",
         "theme": "Éléments obligatoires"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
+      "implementationLot": 0,
       "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "axeRules": ["html-lang-valid", "html-xml-lang-mismatch"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core vérifie la syntaxe du code de langue, mais pas sa correspondance avec le contenu réel."
     },
     {
       "rgaa": {
@@ -1050,15 +1050,15 @@
         "title": "Dans chaque page web, le code de langue de chaque changement de langue est-il valide et pertinent ?",
         "theme": "Éléments obligatoires"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
+      "implementationLot": 0,
       "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "axeRules": ["valid-lang"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core vérifie les codes de langue présents ; la détection des changements de langue non balisés et leur pertinence restent humaines."
     },
     {
       "rgaa": {
@@ -1158,15 +1158,15 @@
         "title": "Dans chaque page web, chaque liste est-elle correctement structurée ?",
         "theme": "Structuration de l’information"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
+      "implementationLot": 0,
       "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "axeRules": ["list", "listitem", "definition-list"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core vérifie la structure des listes natives ; les listes visuelles non balisées restent à examiner manuellement."
     },
     {
       "rgaa": {

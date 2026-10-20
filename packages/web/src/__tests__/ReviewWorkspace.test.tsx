@@ -7,12 +7,12 @@ const review: ReviewData = {
   updatedAt: '2026-09-11T00:00:00.000Z',
   coverage: {
     total: 106,
-    integrated: 12,
-    machineSignal: 11,
-    humanReview: 103,
-    full: 3,
-    partial: 8,
-    manualShell: 95,
+    integrated: 18,
+    machineSignal: 17,
+    humanReview: 101,
+    full: 5,
+    partial: 12,
+    manualShell: 89,
   },
   summary: {
     total: 1,

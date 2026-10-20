@@ -3,7 +3,14 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { collectImages, collectFrames, collectLinks, collectHeadings, collectAll } from '../data-collector';
+import {
+  collectImages,
+  collectFrames,
+  collectLinks,
+  collectHeadings,
+  collectFigureCaptions,
+  collectAll,
+} from '../data-collector';
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites');
 
@@ -348,6 +355,20 @@ describe('collectHeadings', () => {
     expect(result.flags).toContain('TITLE_ABSENT');
   });
 
+  it('signale un doctype absent sans confondre ce contrôle avec la validité HTML complète', async () => {
+    const result = await withPage(`${baseUrl}/structure/without-doctype.html`, collectHeadings);
+
+    expect(result.flags).toContain('DOCTYPE_ABSENT');
+    expect(result.flags).not.toContain('DOCTYPE_INVALID');
+  });
+
+  it('signale un doctype qui ne déclare pas HTML', async () => {
+    const result = await withPage(`${baseUrl}/structure/invalid-doctype.html`, collectHeadings);
+
+    expect(result.flags).toContain('DOCTYPE_INVALID');
+    expect(result.flags).not.toContain('DOCTYPE_ABSENT');
+  });
+
   it('retourne le documentTitle et la liste des headings', async () => {
     const result = await withPage(`${baseUrl}/headings/level-skip.html`, collectHeadings);
 
@@ -366,22 +387,42 @@ describe('collectHeadings', () => {
 });
 
 // ───────────────────────────────────────────────────────────────
+// collectFigureCaptions
+// ───────────────────────────────────────────────────────────────
+
+describe('collectFigureCaptions', () => {
+  it('relie les légendes aux images et signale les légendes orphelines', async () => {
+    const captions = await withPage(`${baseUrl}/images/orphan-caption.html`, collectFigureCaptions);
+
+    expect(captions).toHaveLength(2);
+    expect(captions.find((caption) => caption.text === 'Légende sans image')?.flags)
+      .toContain('FIGCAPTION_ORPHAN');
+
+    const linkedCaption = captions.find((caption) => caption.text === 'Légende associée');
+    expect(linkedCaption?.flags).toEqual([]);
+    expect(linkedCaption?.imageSelectors).toHaveLength(1);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────
 // collectAll
 // ───────────────────────────────────────────────────────────────
 
 describe('collectAll', () => {
-  it('retourne { images, frames, links, headings }', async () => {
+  it('retourne les collectes images, cadres, liens, titres et légendes', async () => {
     const result = await withPage(`${baseUrl}/images/img-in-link.html`, collectAll);
 
     expect(result).toHaveProperty('images');
     expect(result).toHaveProperty('frames');
     expect(result).toHaveProperty('links');
     expect(result).toHaveProperty('headings');
+    expect(result).toHaveProperty('figcaptions');
     expect(Array.isArray(result.images)).toBe(true);
     expect(Array.isArray(result.frames)).toBe(true);
     expect(Array.isArray(result.links)).toBe(true);
     expect(result.headings).toHaveProperty('documentTitle');
     expect(result.headings).toHaveProperty('headings');
     expect(result.headings).toHaveProperty('flags');
+    expect(Array.isArray(result.figcaptions)).toBe(true);
   });
 });

@@ -205,6 +205,61 @@ describe('AxeCoreAdapter', () => {
     });
   });
 
+  it('couvre html-lang-valid sur une fixture invalide', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/structure/invalid-language.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+      const rules = new Set(violations.map((violation) => violation.rule));
+
+      expect(rules.has('html-lang-valid')).toBe(true);
+      expect(violations.find((violation) => violation.rule === 'html-lang-valid')?.elements[0]?.target.length)
+        .toBeGreaterThan(0);
+    });
+  });
+
+  it('couvre html-has-lang sur une page sans langue par défaut', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/structure/missing-language.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+
+      expect(violations.find((violation) => violation.rule === 'html-has-lang')?.elements[0]?.target.length)
+        .toBeGreaterThan(0);
+    });
+  });
+
+  it('couvre html-xml-lang-mismatch et valid-lang sur des fixtures dédiées', async () => {
+    const adapter = new AxeCoreAdapter();
+
+    await withPage(`${baseUrl}/structure/mismatched-language.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+      expect(violations.find((violation) => violation.rule === 'html-xml-lang-mismatch')?.elements[0]?.target.length)
+        .toBeGreaterThan(0);
+    });
+
+    await withPage(`${baseUrl}/structure/invalid-inline-language.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+      expect(violations.find((violation) => violation.rule === 'valid-lang')?.elements[0]?.target.length)
+        .toBeGreaterThan(0);
+    });
+  });
+
+  it('couvre les règles de structure des listes de US-04', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/structure/invalid-lists.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+      const rules = new Set(violations.map((violation) => violation.rule));
+
+      expect(rules.has('list')).toBe(true);
+      expect(rules.has('listitem')).toBe(true);
+      expect(rules.has('definition-list')).toBe(true);
+    });
+  });
+
   it('ne signale pas frame-title pour un cadre correctement titré', async () => {
     const adapter = new AxeCoreAdapter();
     await withPage(`${baseUrl}/frames/with-title.html`, async (page) => {

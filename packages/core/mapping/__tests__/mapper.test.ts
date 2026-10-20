@@ -58,7 +58,7 @@ describe('loadMapping', () => {
     expect(mapping.coveredThemes).toContain('Couleurs');
 
     const implemented = mapping.criteria.filter((criterion) => criterion.implementationLot === 0);
-    expect(implemented).toHaveLength(12);
+    expect(implemented).toHaveLength(18);
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.1')).toMatchObject({
       coverage: 'partial',
       humanLevel: 'H2',
@@ -68,6 +68,16 @@ describe('loadMapping', () => {
       coverage: 'manual_shell',
       evaluationStrategy: 'MANUAL_ONLY',
       implementationLot: 5,
+    });
+    expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '8.1')).toMatchObject({
+      coverage: 'full',
+      evaluationStrategy: 'COLLECTOR_FLAGS',
+      implementationLot: 0,
+    });
+    expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '8.2')).toMatchObject({
+      coverage: 'manual_shell',
+      evaluationStrategy: 'MANUAL_ONLY',
+      implementationLot: 1,
     });
     expect(mapping.criteria.every((criterion) => (
       ['full', 'partial', 'manual_shell'].includes(criterion.coverage)
@@ -307,6 +317,49 @@ describe('mapPageResults — MANUAL_ONLY', () => {
   });
 });
 
+describe('mapPageResults — contrôles DOM déterministes', () => {
+  it('signale un doctype absent et distingue une page sans signal', () => {
+    const withoutDoctype = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        headings: {
+          documentTitle: 'Test Page',
+          headings: [{ level: 1, text: 'Title', selector: 'h1', flags: [] }],
+          flags: ['DOCTYPE_ABSENT'],
+        },
+      }),
+      'http://example.com/without-doctype',
+    );
+    const valid = mapPageResults(makeAxeResult(), makeCollectedData(), 'http://example.com/valid');
+
+    expect(withoutDoctype.criteria.find((criterion) => criterion.rgaaId === '8.1')).toMatchObject({
+      status: 'violation',
+      elements: [{ selector: 'document', flags: ['DOCTYPE_ABSENT'] }],
+    });
+    expect(valid.criteria.find((criterion) => criterion.rgaaId === '8.1')?.status).toBe('pass');
+  });
+
+  it('signale une légende figure sans image associée', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        figcaptions: [{
+          selector: 'figure > figcaption',
+          text: 'Légende orpheline',
+          imageSelectors: [],
+          flags: ['FIGCAPTION_ORPHAN'],
+        }],
+      }),
+      'http://example.com/caption',
+    );
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '1.9')).toMatchObject({
+      status: 'violation',
+      elements: [{ selector: 'figure > figcaption', flags: ['FIGCAPTION_ORPHAN'] }],
+    });
+  });
+});
+
 // ---------------------------------------------------------------------------
 // mapPageResults — missing axe rule
 // ---------------------------------------------------------------------------
@@ -349,9 +402,9 @@ describe('aggregateResults', () => {
     expect(summary.coverage).toEqual(summarizeCoverage(loadMapping().criteria));
     expect(summary.coverage).toMatchObject({
       total: 106,
-      integrated: 12,
-      machineSignal: 11,
-      humanReview: 103,
+      integrated: 18,
+      machineSignal: 17,
+      humanReview: 101,
     });
   });
 
@@ -527,20 +580,20 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(12);
+    expect(report.metadata.coveredCriteria).toBe(18);
     expect(report.coverage).toMatchObject({
       total: 106,
-      integrated: 12,
-      machineSignal: 11,
-      humanReview: 103,
-      full: 3,
-      partial: 8,
-      manualShell: 95,
+      integrated: 18,
+      machineSignal: 17,
+      humanReview: 101,
+      full: 5,
+      partial: 12,
+      manualShell: 89,
     });
     expect(summary.coverage).toEqual(report.coverage);
 
     // limitBanner comes from locale, not hardcoded
-    expect(report.limitBanner).toContain('9');
+    expect(report.limitBanner).toContain('88');
     expect(report.limitBanner).toContain('106');
     expect(report.limitBanner).not.toBe('');
 

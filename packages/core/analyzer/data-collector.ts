@@ -57,11 +57,20 @@ export interface HeadingTree {
   flags: string[];
 }
 
+export interface FigureCaptionData {
+  selector: string;
+  text: string;
+  imageSelectors: string[];
+  flags: string[];
+}
+
 export interface CollectedData {
   images: ImageData[];
   frames: FrameData[];
   links: LinkData[];
   headings: HeadingTree;
+  /** Optional for backwards-compatible persisted sessions. */
+  figcaptions?: FigureCaptionData[];
 }
 
 // ---------------------------------------------------------------------------
@@ -434,6 +443,12 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
 
   const rawData = await page.evaluate(() => {
     const documentTitle = document.title?.trim() ?? '';
+    const documentFlags: string[] = [];
+    if (!document.doctype) {
+      documentFlags.push('DOCTYPE_ABSENT');
+    } else if (document.doctype.name.toLowerCase() !== 'html') {
+      documentFlags.push('DOCTYPE_INVALID');
+    }
     const headingEls = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
 
     const headings = [...headingEls].map((el) => {
@@ -450,11 +465,11 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
       return { level, text, selector };
     });
 
-    return { documentTitle, headings };
+    return { documentTitle, headings, documentFlags };
   });
 
   // Compute page-level flags
-  const pageFlags: string[] = [];
+  const pageFlags: string[] = [...rawData.documentFlags];
   const h1Count = rawData.headings.filter((h) => h.level === 1).length;
 
   if (h1Count === 0) {
@@ -494,16 +509,74 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
 }
 
 // ---------------------------------------------------------------------------
+// collectFigureCaptions
+// ---------------------------------------------------------------------------
+
+export async function collectFigureCaptions(page: Page): Promise<FigureCaptionData[]> {
+  const captions = await page.evaluate(() => {
+    const getUniqueSelector = (element: Element): string => {
+      const parts: string[] = [];
+      let current: Element | null = element;
+
+      while (current && current !== document.documentElement) {
+        const tag = current.tagName.toLowerCase();
+        const id = current.getAttribute('id');
+        const idSelector = id ? `${tag}#${CSS.escape(id)}` : null;
+        if (idSelector && document.querySelectorAll(idSelector).length === 1) {
+          parts.unshift(idSelector);
+          break;
+        }
+
+        const parentElement: Element | null = current.parentElement;
+        if (!parentElement) {
+          parts.unshift(tag);
+          break;
+        }
+        const sameTagSiblings = [...parentElement.children]
+          .filter((sibling) => sibling.tagName === current!.tagName);
+        const suffix = sameTagSiblings.length > 1
+          ? `:nth-of-type(${sameTagSiblings.indexOf(current) + 1})`
+          : '';
+        parts.unshift(`${tag}${suffix}`);
+        current = parentElement;
+      }
+
+      return parts.join(' > ');
+    };
+
+    return [...document.querySelectorAll('figcaption')].map((caption) => {
+      const figure = caption.closest('figure');
+      const imageSelectors = figure
+        ? [...figure.querySelectorAll('img, svg[role="img"], input[type="image"]')]
+          .map((image) => getUniqueSelector(image))
+        : [];
+
+      return {
+        selector: getUniqueSelector(caption),
+        text: caption.textContent?.trim() ?? '',
+        imageSelectors,
+      };
+    });
+  });
+
+  return captions.map((caption) => ({
+    ...caption,
+    flags: caption.imageSelectors.length === 0 ? ['FIGCAPTION_ORPHAN'] : [],
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // collectAll
 // ---------------------------------------------------------------------------
 
 export async function collectAll(page: Page): Promise<CollectedData> {
-  const [images, frames, links, headings] = await Promise.all([
+  const [images, frames, links, headings, figcaptions] = await Promise.all([
     collectImages(page),
     collectFrames(page),
     collectLinks(page),
     collectHeadings(page),
+    collectFigureCaptions(page),
   ]);
 
-  return { images, frames, links, headings };
+  return { images, frames, links, headings, figcaptions };
 }
