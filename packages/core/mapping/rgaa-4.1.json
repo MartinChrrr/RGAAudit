@@ -652,15 +652,15 @@
         "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
         "theme": "Tableaux"
       },
-      "coverage": "manual_shell",
-      "humanLevel": "H0",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "coverage": "partial",
+      "humanLevel": "H1",
+      "implementationLot": 0,
+      "wcag": ["1.3.1"],
+      "axeRules": ["table-fake-caption"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core signale les tableaux qui utilisent des cellules comme faux titre ; les autres formes d’association du titre restent à confirmer manuellement."
     },
     {
       "rgaa": {
@@ -1270,15 +1270,15 @@
         "title": "Dans chaque page web, chaque lien dont la nature n’est pas évidente est-il visible par rapport au texte environnant ?",
         "theme": "Présentation de l’information"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["1.4.1"],
+      "axeRules": ["link-in-text-block"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core contrôle la distinction visuelle dans le bloc de texte ; les états au survol et au focus restent à confirmer manuellement."
     },
     {
       "rgaa": {
@@ -1366,15 +1366,15 @@
         "title": "Dans chaque page web, les propriétés d’espacement du texte peuvent-elles être redéfinies par l’utilisateur sans perte de contenu ou de fonctionnalité (hors cas particuliers) ?",
         "theme": "Présentation de l’information"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["1.4.12"],
+      "axeRules": ["avoid-inline-spacing"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core signale les espacements déclarés en ligne qui empêchent leur redéfinition ; la vérification complète reste à confirmer manuellement."
     },
     {
       "rgaa": {
@@ -1414,15 +1414,15 @@
         "title": "Chaque champ de formulaire a-t-il une étiquette ?",
         "theme": "Formulaires"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["4.1.2"],
+      "axeRules": ["label", "select-name", "aria-input-field-name"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core contrôle le nom accessible des principaux champs ; les cas particuliers et la pertinence des étiquettes restent à vérifier."
     },
     {
       "rgaa": {
@@ -1606,15 +1606,15 @@
         "title": "La finalité d’un champ de saisie peut-elle être déduite pour faciliter le remplissage automatique des champs avec les données de l’utilisateur ?",
         "theme": "Formulaires"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["1.3.5"],
+      "axeRules": ["autocomplete-valid"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core vérifie la syntaxe et la valeur de l’attribut autocomplete ; la finalité métier du champ reste à confirmer."
     },
     {
       "rgaa": {
@@ -1718,15 +1718,15 @@
         "title": "Dans chaque page web, un lien d’évitement ou d’accès rapide à la zone de contenu principal est-il présent (hors cas particuliers) ?",
         "theme": "Navigation"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["2.4.1"],
+      "axeRules": ["bypass", "skip-link"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core vérifie la présence d’un mécanisme d’évitement et la cible des skip-links ; sa visibilité et son fonctionnement au clavier restent à confirmer."
     },
     {
       "rgaa": {
@@ -1766,15 +1766,15 @@
         "title": "Dans chaque page web, les raccourcis clavier n’utilisant qu’une seule touche (lettre minuscule ou majuscule, ponctuation, chiffre ou symbole) sont-ils contrôlables par l’utilisateur ?",
         "theme": "Navigation"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["2.1.4"],
+      "axeRules": ["accesskeys"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core signale uniquement les valeurs accesskey dupliquées ; la possibilité de désactiver ou remapper les raccourcis reste manuelle."
     },
     {
       "rgaa": {
@@ -1926,15 +1926,15 @@
         "title": "Dans chaque page web, le contenu proposé est-il consultable quelle que soit l’orientation de l’écran (portrait ou paysage) (hors cas particuliers) ?",
         "theme": "Consultation"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["1.3.4"],
+      "axeRules": ["css-orientation-lock"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core signale les verrouillages d’orientation CSS ; la consultation effective dans les deux orientations reste à tester."
     },
     {
       "rgaa": {

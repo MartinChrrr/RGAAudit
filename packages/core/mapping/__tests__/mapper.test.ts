@@ -58,7 +58,7 @@ describe('loadMapping', () => {
     expect(mapping.coveredThemes).toContain('Couleurs');
 
     const implemented = mapping.criteria.filter((criterion) => criterion.implementationLot === 0);
-    expect(implemented).toHaveLength(18);
+    expect(implemented).toHaveLength(26);
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.1')).toMatchObject({
       coverage: 'partial',
       humanLevel: 'H2',
@@ -358,6 +358,40 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
       elements: [{ selector: 'figure > figcaption', flags: ['FIGCAPTION_ORPHAN'] }],
     });
   });
+
+  it('mappe les signaux déterministes de US-06 sans transformer un critère partiel en conformité', () => {
+    const axeResults = makeAxeResult({
+      violations: [
+        {
+          rule: 'label',
+          impact: 'critical',
+          description: 'Form elements must have labels',
+          helpUrl: '',
+          elements: [{ html: '<input id="email">', target: ['#email'] }],
+        },
+        {
+          rule: 'skip-link',
+          impact: 'serious',
+          description: 'The skip-link target should exist and be focusable',
+          helpUrl: '',
+          elements: [{ html: '<a href="#missing">', target: ['a[href="#missing"]'] }],
+        },
+      ],
+    });
+
+    const result = mapPageResults(axeResults, makeCollectedData(), 'http://example.com/us-06');
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.1')).toMatchObject({
+      status: 'violation',
+      violations: [{ rule: 'label', elements: [{ target: ['#email'] }] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '12.7')).toMatchObject({
+      status: 'violation',
+      violations: [{ rule: 'skip-link', elements: [{ target: ['a[href="#missing"]'] }] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '10.6')?.status).toBe('manual');
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.13')?.status).toBe('manual');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -402,8 +436,8 @@ describe('aggregateResults', () => {
     expect(summary.coverage).toEqual(summarizeCoverage(loadMapping().criteria));
     expect(summary.coverage).toMatchObject({
       total: 106,
-      integrated: 18,
-      machineSignal: 17,
+      integrated: 26,
+      machineSignal: 25,
       humanReview: 101,
     });
   });
@@ -580,20 +614,20 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(18);
+    expect(report.metadata.coveredCriteria).toBe(26);
     expect(report.coverage).toMatchObject({
       total: 106,
-      integrated: 18,
-      machineSignal: 17,
+      integrated: 26,
+      machineSignal: 25,
       humanReview: 101,
       full: 5,
-      partial: 12,
-      manualShell: 89,
+      partial: 20,
+      manualShell: 81,
     });
     expect(summary.coverage).toEqual(report.coverage);
 
     // limitBanner comes from locale, not hardcoded
-    expect(report.limitBanner).toContain('88');
+    expect(report.limitBanner).toContain('80');
     expect(report.limitBanner).toContain('106');
     expect(report.limitBanner).not.toBe('');
 

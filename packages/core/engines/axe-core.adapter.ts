@@ -13,6 +13,17 @@ import type {
 
 const DEFAULT_TIMEOUT = 30_000;
 
+// axe-core excludes experimental/best-practice rules from its default run.
+// These rules are mapped to deterministic RGAA signals in the current lot,
+// so they must be explicitly enabled while preserving the regular rule set.
+const ENABLED_DETERMINISTIC_RULES = [
+  'table-fake-caption',
+  'link-in-text-block',
+  'avoid-inline-spacing',
+  'skip-link',
+  'css-orientation-lock',
+] as const;
+
 function flattenTarget(target: NodeResult['target']): string[] {
   return target.map((selector) =>
     Array.isArray(selector) ? selector.join(' > ') : String(selector)
@@ -55,6 +66,11 @@ export class AxeCoreAdapter implements AuditEngine {
   async analyze(page: Page): Promise<AnalyzeResult> {
     try {
       let builder = new AxeBuilder({ page });
+      builder = builder.options({
+        rules: Object.fromEntries(
+          ENABLED_DETERMINISTIC_RULES.map((rule) => [rule, { enabled: true }]),
+        ),
+      });
       if (this.disableRules.length > 0) {
         builder = builder.disableRules(this.disableRules);
       }

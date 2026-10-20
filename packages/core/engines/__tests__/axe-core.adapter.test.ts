@@ -260,6 +260,88 @@ describe('AxeCoreAdapter', () => {
     });
   });
 
+  it('couvre les règles déterministes de US-06 sur tableaux, liens, formulaires, navigation et orientation', async () => {
+    const adapter = new AxeCoreAdapter();
+
+    await withPage(`${baseUrl}/tables/fake-caption.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'table-fake-caption');
+      expect(violation).toBeDefined();
+      expect(violation!.elements[0].target).toContain('#fake-caption');
+    });
+
+    await withPage(`${baseUrl}/links/ununderlined.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'link-in-text-block');
+      expect(violation).toBeDefined();
+      expect(violation!.elements[0].target).toContain('#subtle-link');
+    });
+
+    await withPage(`${baseUrl}/presentation/inline-spacing.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'avoid-inline-spacing');
+      expect(violation).toBeDefined();
+      expect(violation!.elements[0].target).toContain('#inline-spacing');
+    });
+
+    await withPage(`${baseUrl}/forms/missing-label.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const rules = new Set(result.violations.map((item) => item.rule));
+      expect(rules.has('label')).toBe(true);
+      expect(rules.has('select-name')).toBe(true);
+    });
+
+    await withPage(`${baseUrl}/forms/invalid-autocomplete.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'autocomplete-valid');
+      expect(violation).toBeDefined();
+      expect(violation!.elements[0].target).toContain('#email');
+    });
+
+    await withPage(`${baseUrl}/navigation/broken-skip-link.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'skip-link');
+      expect(violation).toBeDefined();
+      expect(violation!.elements[0].target).toContain('#broken-skip');
+    });
+
+    await withPage(`${baseUrl}/navigation/duplicate-accesskeys.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'accesskeys');
+      expect(violation).toBeDefined();
+      expect(violation!.elements.length).toBeGreaterThanOrEqual(1);
+    });
+
+    await withPage(`${baseUrl}/orientation/locked.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const violation = result.violations.find((item) => item.rule === 'css-orientation-lock');
+      expect(violation).toBeDefined();
+      expect(violation!.elements.length).toBeGreaterThan(0);
+    });
+  }, 30_000);
+
+  it('ne signale pas les fixtures conformes de US-06', async () => {
+    const adapter = new AxeCoreAdapter();
+    const cases: Array<[string, string]> = [
+      ['/tables/with-caption.html', 'table-fake-caption'],
+      ['/links/underlined.html', 'link-in-text-block'],
+      ['/presentation/external-spacing.html', 'avoid-inline-spacing'],
+      ['/forms/valid.html', 'label'],
+      ['/forms/valid.html', 'select-name'],
+      ['/forms/valid.html', 'autocomplete-valid'],
+      ['/navigation/with-skip-link.html', 'skip-link'],
+      ['/navigation/unique-accesskeys.html', 'accesskeys'],
+      ['/orientation/unlocked.html', 'css-orientation-lock'],
+    ];
+
+    for (const [path, rule] of cases) {
+      await withPage(`${baseUrl}${path}`, async (page) => {
+        const result = await adapter.analyze(page) as EngineResult;
+        expect(result.violations.find((item) => item.rule === rule), `${path} should pass ${rule}`).toBeUndefined();
+      });
+    }
+  }, 30_000);
+
   it('ne signale pas frame-title pour un cadre correctement titré', async () => {
     const adapter = new AxeCoreAdapter();
     await withPage(`${baseUrl}/frames/with-title.html`, async (page) => {
