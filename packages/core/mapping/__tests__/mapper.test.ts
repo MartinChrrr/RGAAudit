@@ -7,6 +7,7 @@ import {
   mapPageResults,
   aggregateResults,
   buildReport,
+  summarizeCoverage,
   type MappedPage,
   type AuditConfig,
 } from '../mapper';
@@ -68,6 +69,11 @@ describe('loadMapping', () => {
       evaluationStrategy: 'MANUAL_ONLY',
       implementationLot: 5,
     });
+    expect(mapping.criteria.every((criterion) => (
+      ['full', 'partial', 'manual_shell'].includes(criterion.coverage)
+      && ['H0', 'H1', 'H2', 'H3'].includes(criterion.humanLevel)
+      && [0, 1, 2, 3, 4, 5].includes(criterion.implementationLot)
+    ))).toBe(true);
   });
 });
 
@@ -283,6 +289,22 @@ describe('mapPageResults — MANUAL_ONLY', () => {
     const titleElement = criterion86!.elements.find((e) => e.flags.includes('TITLE_GENERIC'));
     expect(titleElement).toBeDefined();
   });
+
+  it('garde un critère manual_shell en revue manuelle', () => {
+    const result = mapPageResults(
+      makeAxeResult({
+        passes: [{ rule: 'color-contrast-enhanced', description: 'ok', elements: [] }],
+      }),
+      makeCollectedData(),
+      'http://example.com',
+    );
+    const criterion33 = result.criteria.find((criterion) => criterion.rgaaId === '3.3');
+
+    expect(criterion33).toMatchObject({
+      coverage: 'manual_shell',
+      status: 'manual',
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -320,6 +342,19 @@ describe('mapPageResults — robustesse', () => {
 // ---------------------------------------------------------------------------
 
 describe('aggregateResults', () => {
+  it('conserve les compteurs de couverture du registre complet', () => {
+    const summary = aggregateResults([]);
+
+    expect(summary.totalCriteria).toBe(106);
+    expect(summary.coverage).toEqual(summarizeCoverage(loadMapping().criteria));
+    expect(summary.coverage).toMatchObject({
+      total: 106,
+      integrated: 12,
+      machineSignal: 11,
+      humanReview: 103,
+    });
+  });
+
   it('critère "violation" si >= 1 page le viole', () => {
     const page1: MappedPage = mapPageResults(
       makeAxeResult({
