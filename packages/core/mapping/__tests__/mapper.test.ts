@@ -314,6 +314,7 @@ describe('mapPageResults — MANUAL_ONLY', () => {
       coverage: 'manual_shell',
       status: 'manual',
     });
+    expect(criterion33!.manualChecks.length).toBeGreaterThan(0);
   });
 });
 

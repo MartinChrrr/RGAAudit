@@ -59,6 +59,7 @@ export interface AggregatedCriterion {
   pagesPass: string[];
   pagesManual: string[];
   pagesIncomplete: string[];
+  manualChecks?: string[];
 }
 
 /** Coverage counts for the complete 106-criterion register.
@@ -258,6 +259,15 @@ export function mapPageResults(
   return { url, criteria };
 }
 
+function getManualChecks(criterion: RgaaCriterion): string[] {
+  const configured = criterion.heuristicPatterns.manualChecks;
+  if (configured && configured.length > 0) return configured;
+  if (criterion.coverage === 'manual_shell' || criterion.evaluationStrategy === 'MANUAL_ONLY') {
+    return [`Vérifier manuellement le critère ${criterion.rgaa.id} : ${criterion.rgaa.title}`];
+  }
+  return [];
+}
+
 function mapCriterion(
   criterion: RgaaCriterion,
   axeResults: AnalyzeResult | null,
@@ -271,7 +281,7 @@ function mapCriterion(
     humanLevel: criterion.humanLevel,
     implementationLot: criterion.implementationLot,
     notes: criterion.limits,
-    manualChecks: criterion.dataCollectorFlags,
+    manualChecks: getManualChecks(criterion),
   };
 
   // Manual shells and MANUAL_ONLY criteria never produce a machine verdict.
@@ -482,6 +492,7 @@ export function aggregateResults(
       pagesPass: [],
       pagesManual: [],
       pagesIncomplete: [],
+      manualChecks: getManualChecks(criterion),
     });
   }
 

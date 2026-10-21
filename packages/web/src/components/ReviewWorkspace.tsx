@@ -290,6 +290,14 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                     ))}
                   </div>
                   <h3 className="mt-2 text-sm font-medium text-gray-900">{criterion.title}</h3>
+                  {criterion.manualChecks.length > 0 && (
+                    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                      <p className="font-semibold">Action de vérification humaine</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-4">
+                        {criterion.manualChecks.map((check) => <li key={check}>{check}</li>)}
+                      </ul>
+                    </div>
+                  )}
                   {criterion.proofStatus === 'missing' && (
                     <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
                       Preuve manquante — revue manuelle requise{criterion.missingProofs?.[0] ? ` : ${criterion.missingProofs[0]}` : '.'}

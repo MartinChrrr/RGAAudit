@@ -239,6 +239,7 @@
     "criteriaViolation": "Anomalies détectées",
     "criteriaPass": "Sans anomalie détectée",
     "criteriaManual": "À vérifier",
+    "manualCheckLabel": "Action de vérification humaine",
     "criteriaIncomplete": "Incomplets",
     "topIssues": "Principaux problèmes détectés",
     "topIssuePages": "{count} page(s) concernée(s)",

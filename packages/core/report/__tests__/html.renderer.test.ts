@@ -56,6 +56,7 @@ function makeReport(overrides?: Partial<Report>): Report {
           pagesPass: ['https://example.com/'],
           pagesManual: [],
           pagesIncomplete: [],
+          manualChecks: ['Vérifier manuellement le critère 6.1'],
         },
       ],
       coverage: {
@@ -182,6 +183,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('>3<'); // violations count
     expect(html).toContain('>5<'); // passes count
     expect(html).toContain('>4<'); // manual count
+    expect(html).toContain('Action de vérification humaine');
+    expect(html).toContain('Vérifier manuellement le critère 6.1');
   });
 
   it('affiche les critères groupés par thématique', () => {

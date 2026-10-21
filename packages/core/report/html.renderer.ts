@@ -104,7 +104,10 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
         .map((c) => `
           <tr>
             <td class="px-3 py-2 font-mono text-xs text-gray-500">${escapeHtml(c.rgaaId)}</td>
-            <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(c.title)}</td>
+            <td class="px-3 py-2 text-sm text-gray-700">
+              <div>${escapeHtml(c.title)}</div>
+              ${(c.manualChecks ?? []).length > 0 ? `<div class="mt-1 text-xs text-amber-800"><strong>${escapeHtml(t('report.manualCheckLabel'))} :</strong> ${escapeHtml((c.manualChecks ?? []).join(' '))}</div>` : ''}
+            </td>
             <td class="px-3 py-2">
               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${coverageClass(c.coverage)}">
                 ${escapeHtml(coverageLabel(c.coverage))}
