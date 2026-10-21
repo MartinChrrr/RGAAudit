@@ -1,5 +1,6 @@
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { randomUUID } from 'node:crypto';
+import { mkdir } from 'node:fs/promises';
 import { analyzeLoadedPage, type PageResult } from '../analyzer/analyzer';
 import { mapPageResults } from '../mapping/mapper';
 
@@ -63,6 +64,29 @@ export interface JourneyKeyboardObservation {
   requiresHumanReview: true;
 }
 
+export interface JourneyDisruptionObservation {
+  kind: 'motion' | 'sound';
+  selector: string;
+  detail: string;
+}
+
+export interface JourneyContextObservation {
+  trigger: {
+    stepId: string;
+    action: JourneyAction;
+    selector?: string;
+    key?: string;
+  };
+  urlBefore: string;
+  urlAfter: string;
+  titleBefore: string;
+  titleAfter: string;
+  changed: boolean;
+  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region'>;
+  disruptions: JourneyDisruptionObservation[];
+  requiresHumanReview: true;
+}
+
 export interface JourneyStepObservation {
   stepId: string;
   action: JourneyAction;
@@ -71,6 +95,8 @@ export interface JourneyStepObservation {
   title: string;
   evidence: JourneyEvidence[];
   keyboard?: JourneyKeyboardObservation;
+  context?: JourneyContextObservation;
+  screenshotPath?: string;
   result: PageResult | null;
   error?: string;
 }
@@ -98,6 +124,8 @@ export interface JourneyRunOptions {
   sessionId?: string;
   timeout?: number;
   isRequestAllowed?: (url: string) => Promise<boolean>;
+  /** Optional directory where context-change screenshots are saved. */
+  screenshotDir?: string;
 }
 
 const MAX_EVIDENCE_LENGTH = 2_000;
@@ -137,10 +165,12 @@ export async function replayJourney(
       try {
         const urlBeforeStep = page.url();
         if (urlBeforeStep !== previousUrl || step.action === 'navigate') focusHistory.length = 0;
+        const beforeSignals = await captureContextSignals(page);
         const beforeFocus = step.action === 'press' && step.selector
           ? await captureFocus(page, step.selector)
           : null;
         await applyStep(page, step, options.timeout ?? 30_000);
+        const afterSignals = await captureContextSignals(page);
         const afterFocus = step.action === 'press' && step.selector
           ? await captureFocus(page, step.selector)
           : null;
@@ -156,6 +186,10 @@ export async function replayJourney(
         const keyboard = step.action === 'press' && step.selector && step.key
           ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory)
           : undefined;
+        const context = buildContextObservation(step, beforeSignals, afterSignals);
+        const screenshotPath = context.changed && options.screenshotDir
+          ? await captureContextScreenshot(page, options.screenshotDir, step.id)
+          : undefined;
         steps.push({
           stepId: step.id,
           action: step.action,
@@ -164,6 +198,8 @@ export async function replayJourney(
           title: await page.title(),
           evidence,
           ...(keyboard ? { keyboard } : {}),
+          context,
+          ...(screenshotPath ? { screenshotPath } : {}),
           result,
           ...(result.error ? { error: result.error } : {}),
         });
@@ -185,6 +221,111 @@ export async function replayJourney(
   } finally {
     await context?.close();
     await browser.close();
+  }
+}
+
+interface JourneyContextSignals {
+  url: string;
+  title: string;
+  dialogs: string[];
+  liveRegions: string[];
+  disruptions: JourneyDisruptionObservation[];
+}
+
+async function captureContextSignals(page: Page): Promise<JourneyContextSignals> {
+  const url = page.url();
+  const title = await page.title().catch(() => '');
+  return page.evaluate(() => {
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+    const visible = (element: Element): boolean => {
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    };
+    const disruptions: JourneyDisruptionObservation[] = [];
+    for (const element of Array.from(document.querySelectorAll('*'))) {
+      if (!visible(element)) continue;
+      const style = window.getComputedStyle(element);
+      if (style.animationName !== 'none' || style.transitionDuration !== '0s') {
+        disruptions.push({
+          kind: 'motion',
+          selector: getUniqueSelector(element),
+          detail: `animation=${style.animationName}; transition=${style.transitionDuration}`.slice(0, 240),
+        });
+      }
+      if ((element instanceof HTMLAudioElement || element instanceof HTMLVideoElement)
+        && (!element.paused || element.autoplay)) {
+        disruptions.push({
+          kind: 'sound',
+          selector: getUniqueSelector(element),
+          detail: `media=${element.tagName.toLowerCase()}; autoplay=${element.autoplay}; paused=${element.paused}`,
+        });
+      }
+      if (disruptions.length >= 50) break;
+    }
+    return {
+      dialogs: Array.from(document.querySelectorAll('[role="dialog"], dialog'))
+        .filter(visible)
+        .map(getUniqueSelector)
+        .slice(0, 20),
+      liveRegions: Array.from(document.querySelectorAll('[aria-live]'))
+        .filter(visible)
+        .map((element) => `${getUniqueSelector(element)}:${(element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)}`)
+        .slice(0, 20),
+      disruptions,
+    };
+  }).then((signals) => ({ url, title, ...signals }));
+}
+
+function buildContextObservation(
+  step: JourneyStep,
+  before: JourneyContextSignals,
+  after: JourneyContextSignals,
+): JourneyContextObservation {
+  const changeTypes: JourneyContextObservation['changeTypes'] = [];
+  if (before.url !== after.url) changeTypes.push('navigation');
+  if (before.title !== after.title) changeTypes.push('title');
+  if (before.dialogs.join('|') !== after.dialogs.join('|')) changeTypes.push('dialog');
+  if (before.liveRegions.join('|') !== after.liveRegions.join('|')) changeTypes.push('live-region');
+  return {
+    trigger: {
+      stepId: step.id,
+      action: step.action,
+      ...(step.selector ? { selector: step.selector } : {}),
+      ...(step.key ? { key: step.key } : {}),
+    },
+    urlBefore: before.url,
+    urlAfter: after.url,
+    titleBefore: before.title,
+    titleAfter: after.title,
+    changed: changeTypes.length > 0,
+    changeTypes,
+    disruptions: after.disruptions,
+    requiresHumanReview: true,
+  };
+}
+
+async function captureContextScreenshot(page: Page, directory: string, stepId: string): Promise<string | undefined> {
+  try {
+    await mkdir(directory, { recursive: true });
+    const safeStepId = stepId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80) || 'step';
+    const screenshotPath = `${directory}/${safeStepId}.png`;
+    await page.screenshot({ path: screenshotPath, fullPage: false, timeout: 5_000 });
+    return screenshotPath;
+  } catch {
+    return undefined;
   }
 }
 

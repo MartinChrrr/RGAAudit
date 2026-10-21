@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import http from 'node:http';
 import fs from 'node:fs';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { replayJourney, type JourneyDefinition } from '../journey';
 
@@ -91,5 +93,36 @@ describe('replayJourney', () => {
       after: expect.objectContaining({ selector: '#blocked', withinComponent: true }),
     });
     expect(run.finishedAt).toBeDefined();
+  }, 30_000);
+
+  it('consigne les changements de contexte et capture une preuve visuelle', async () => {
+    const screenshotDir = await mkdtemp(path.join(os.tmpdir(), 'rgaudit-journey-'));
+    const journey: JourneyDefinition = {
+      id: 'journey-context',
+      name: 'Contexte',
+      startUrl: `${baseUrl}/journey.html`,
+      createdAt: new Date().toISOString(),
+      steps: [{ id: 'context-step', action: 'click', selector: '#context' }],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      screenshotDir,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    const observation = run.steps[0].context;
+    expect(observation).toMatchObject({
+      changed: true,
+      trigger: { stepId: 'context-step', action: 'click', selector: '#context' },
+      changeTypes: expect.arrayContaining(['navigation', 'title', 'live-region']),
+      requiresHumanReview: true,
+    });
+    expect(observation?.disruptions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'motion', selector: '#motion' }),
+    ]));
+    expect(run.steps[0].screenshotPath).toBe(path.join(screenshotDir, 'context-step.png'));
+    const screenshot = await readFile(run.steps[0].screenshotPath!);
+    expect(screenshot.length).toBeGreaterThan(0);
   }, 30_000);
 });

@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import { replayJourney, type JourneyDefinition, type JourneyRunState } from '../../core/journey/journey';
 import { config } from '../config';
 import { isPublicNetworkUrl } from '../security/url.policy';
@@ -24,6 +26,7 @@ export async function startJourneyReplay(journey: JourneyDefinition): Promise<st
     runId,
     sessionId: runId,
     isRequestAllowed: isPublicNetworkUrl,
+    screenshotDir: join(config.dataDir || join(homedir(), '.rgaaudit'), 'journeys', runId, 'screenshots'),
   }).then(async (run) => {
     const hasStepErrors = run.steps.some((step) => step.error);
     await saveJourneyRun({
