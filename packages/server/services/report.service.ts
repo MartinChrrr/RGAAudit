@@ -46,7 +46,7 @@ export interface ContrastViolationItem {
 export interface ReportData {
   report: ReturnType<typeof buildReport>;
   mappedPages: MappedPage[];
-  allCollected: { url: string; collectedData: CollectedData | null }[];
+  allCollected: { url: string; observedAt?: string; collectedData: CollectedData | null }[];
   contrastViolations: ContrastViolationItem[];
   heuristicFindings: Array<HeuristicFinding & {
     heuristicId: string;
@@ -124,7 +124,7 @@ export function buildReportFromSession(
 
   const allCollected = Object.values(session.results)
     .filter((r) => !r.error)
-    .map((r) => ({ url: r.url, collectedData: r.collectedData }));
+    .map((r) => ({ url: r.url, observedAt: r.auditedAt, collectedData: r.collectedData }));
 
   const summary = aggregateResults(mappedPages, allCollected);
 

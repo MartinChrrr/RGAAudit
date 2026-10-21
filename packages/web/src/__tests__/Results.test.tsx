@@ -229,4 +229,30 @@ describe('Results', () => {
     expect(screen.getByText('Le contraste du texte est-il suffisamment élevé ?').parentElement)
       .toHaveTextContent('Anomalies détectées');
   });
+
+  it('affiche les différences horodatées entre observations', async () => {
+    const reportWithComparison = {
+      ...mockReport,
+      comparisons: [{
+        before: { url: 'https://example.com/before', observedAt: '2026-10-21T10:00:00.000Z', available: true, selectors: [] },
+        after: { url: 'https://example.com/after', observedAt: '2026-10-21T10:01:00.000Z', available: true, selectors: [] },
+        changed: true,
+        added: ['link:a#new'],
+        removed: ['link:a#old'],
+      }],
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(reportWithComparison),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => {
+      const section = screen.getByTestId('comparison-summary');
+      expect(section).toHaveTextContent('Différences détectées');
+      expect(section).toHaveTextContent('link:a#new');
+      expect(section).toHaveTextContent('2026-10-21T10:01:00.000Z');
+    });
+  });
 });

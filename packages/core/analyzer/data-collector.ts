@@ -539,13 +539,18 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
 
 const DOCUMENT_EXTENSIONS = /\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|rtf|csv)(?:[?#].*)?$/i;
 const CAPTCHA_HINT = /captcha|recaptcha|hcaptcha|challenge|image[-_ ]?test/i;
+const SPECIALIZED_LIMITS = {
+  items: 100,
+  urlLength: 2_000,
+  textLength: 500,
+} as const;
 
 export async function collectSpecializedContent(
   page: Page,
   media: MediaData[] = [],
   images: ImageData[] = [],
 ): Promise<SpecializedContentData[]> {
-  const raw = await page.evaluate(({ documentExtensions, captchaHint }) => {
+  const raw = await page.evaluate(({ documentExtensions, captchaHint, limits }) => {
     const documentPattern = new RegExp(documentExtensions, 'i');
     const captchaPattern = new RegExp(captchaHint, 'i');
     const getUniqueSelector = (element: Element): string => {
@@ -572,15 +577,19 @@ export async function collectSpecializedContent(
       return parts.join(' > ');
     };
 
-    const normalize = (value: string | null | undefined, max = 300): string =>
-      (value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+    const normalize = (value: string | null | undefined, max = 300, onTruncate?: () => void): string => {
+      const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
+      const limit = Math.min(max, limits.textLength);
+      if (normalized.length > limit) onTruncate?.();
+      return normalized.slice(0, limit);
+    };
 
     const resolveUrl = (value: string | null): string | null => {
       if (!value) return null;
       try {
-        return new URL(value, document.baseURI).href;
+        return new URL(value, document.baseURI).href.slice(0, limits.urlLength);
       } catch {
-        return value;
+        return value.slice(0, limits.urlLength);
       }
     };
 
@@ -590,7 +599,7 @@ export async function collectSpecializedContent(
       return normalize(parent?.textContent);
     };
 
-    const captchaCandidates = Array.from(document.querySelectorAll('img')).filter((element) => {
+    const allCaptchaCandidates = Array.from(document.querySelectorAll('img')).filter((element) => {
       const haystack = [
         element.getAttribute('id'),
         element.getAttribute('class'),
@@ -600,14 +609,22 @@ export async function collectSpecializedContent(
         contextOf(element),
       ].join(' ');
       return captchaPattern.test(haystack);
-    }).map((element) => ({
-      selector: getUniqueSelector(element),
-      source: resolveUrl(element.getAttribute('src')),
-      label: normalize(element.getAttribute('alt') || element.getAttribute('aria-label') || element.getAttribute('title')) || null,
-      context: contextOf(element),
-    }));
+    });
+    const captchaCandidates = allCaptchaCandidates.slice(0, limits.items).map((element) => {
+      let truncated = allCaptchaCandidates.length > limits.items;
+      const label = normalize(element.getAttribute('alt') || element.getAttribute('aria-label') || element.getAttribute('title'), 300, () => { truncated = true; }) || null;
+      const sourceValue = element.getAttribute('src');
+      if (sourceValue && sourceValue.length > limits.urlLength) truncated = true;
+      return {
+        selector: getUniqueSelector(element),
+        source: resolveUrl(sourceValue),
+        label,
+        context: contextOf(element),
+        truncated,
+      };
+    });
 
-    const documentCandidates = Array.from(document.querySelectorAll('a[href], object[data], embed[src]'))
+    const allDocumentCandidates = Array.from(document.querySelectorAll('a[href], object[data], embed[src]'))
       .map((element) => {
         const value = element.getAttribute('href') ?? element.getAttribute('data') ?? element.getAttribute('src');
         const source = resolveUrl(value);
@@ -619,9 +636,13 @@ export async function collectSpecializedContent(
         };
       })
       .filter((candidate) => candidate.source && documentPattern.test(candidate.source));
+    const documentCandidates = allDocumentCandidates.slice(0, limits.items).map((candidate) => ({
+      ...candidate,
+      truncated: allDocumentCandidates.length > limits.items,
+    }));
 
     return { captchaCandidates, documentCandidates };
-  }, { documentExtensions: DOCUMENT_EXTENSIONS.source, captchaHint: CAPTCHA_HINT.source });
+  }, { documentExtensions: DOCUMENT_EXTENSIONS.source, captchaHint: CAPTCHA_HINT.source, limits: SPECIALIZED_LIMITS });
 
   const mediaItems: SpecializedContentData[] = media.map((item) => ({
     kind: 'media',
@@ -642,6 +663,7 @@ export async function collectSpecializedContent(
     const image = images.find((item) => item.selector === candidate.selector);
     const flags = ['CAPTCHA_REQUIRES_HUMAN_REVIEW'];
     if (!candidate.label) flags.push('CAPTCHA_ALTERNATIVE_ABSENT');
+    if (candidate.truncated) flags.push('SPECIALIZED_EVIDENCE_TRUNCATED');
     return {
       kind: 'captcha',
       selector: candidate.selector,
@@ -664,7 +686,11 @@ export async function collectSpecializedContent(
     criterionIds: ['13.3', '13.4'],
     status: 'review_required',
     evidence: candidate.label ? ['label observed'] : [],
-    flags: ['DOCUMENT_REQUIRES_HUMAN_REVIEW', 'DOCUMENT_ACCESSIBLE_VERSION_UNKNOWN'],
+    flags: [
+      'DOCUMENT_REQUIRES_HUMAN_REVIEW',
+      'DOCUMENT_ACCESSIBLE_VERSION_UNKNOWN',
+      ...(candidate.truncated ? ['SPECIALIZED_EVIDENCE_TRUNCATED'] : []),
+    ],
   }));
 
   return [...mediaItems, ...captchaItems, ...documentItems];

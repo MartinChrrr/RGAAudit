@@ -35,6 +35,14 @@ interface CriterionCoverageSummary {
   manualShell: number;
 }
 
+interface PageComparison {
+  before: { url: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
+  after: { url: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
+  changed: boolean;
+  added: string[];
+  removed: string[];
+}
+
 interface ReportData {
   metadata: {
     url: string;
@@ -70,11 +78,13 @@ interface ReportData {
     name: string;
     manualChecklist: string[];
   }>;
+  comparisons?: PageComparison[];
   contrastViolations?: ContrastViolationItem[];
   heuristicFindings?: HeuristicFindingItem[];
   review?: ReviewData;
   allCollected?: Array<{
     url: string;
+    observedAt?: string;
     collectedData: {
       images: ImageItem[];
       media?: MediaItem[];
@@ -488,6 +498,35 @@ export default function Results() {
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {report.comparisons && report.comparisons.length > 0 && (
+          <section className="mb-8" data-testid="comparison-summary">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">{t('results.comparisonTitle')}</h2>
+            <div className="space-y-3">
+              {report.comparisons.map((comparison) => (
+                <article key={`${comparison.before.url}:${comparison.after.url}`} className="rounded-xl border border-gray-200 bg-white p-4">
+                  <h3 className="text-sm font-semibold text-gray-800">{comparison.before.url} → {comparison.after.url}</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Avant : {comparison.before.observedAt ?? 'horodatage absent'} · Après : {comparison.after.observedAt ?? 'horodatage absent'}
+                  </p>
+                  <p className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
+                    {!comparison.before.available || !comparison.after.available
+                      ? t('results.comparisonUnavailable')
+                      : comparison.changed
+                        ? t('results.comparisonChanged')
+                        : t('results.comparisonNoSelectorChange')}
+                  </p>
+                  {comparison.changed && (
+                    <div className="mt-2 grid gap-2 text-xs text-gray-700 sm:grid-cols-2">
+                      <p>{t('results.comparisonAdded')} : {comparison.added.length > 0 ? comparison.added.join(', ') : 'aucun'}</p>
+                      <p>{t('results.comparisonRemoved')} : {comparison.removed.length > 0 ? comparison.removed.join(', ') : 'aucune'}</p>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
           </section>
         )}
 

@@ -297,6 +297,25 @@ describe('renderReportHtml', () => {
     expect(html).toContain('13.3, 13.4');
   });
 
+  it('affiche les différences horodatées entre observations', () => {
+    const html = renderReportHtml({
+      report: {
+        ...makeReport(),
+        comparisons: [{
+          before: { url: 'https://example.com/before', observedAt: '2026-10-21T10:00:00.000Z', available: true, selectors: ['link:a#old'] },
+          after: { url: 'https://example.com/after', observedAt: '2026-10-21T10:01:00.000Z', stepId: 'step-2', available: true, selectors: ['link:a#new'] },
+          changed: true,
+          added: ['link:a#new'],
+          removed: ['link:a#old'],
+        }],
+      },
+    });
+
+    expect(html).toContain('data-testid="comparison-section"');
+    expect(html).toContain('2026-10-21T10:01:00.000Z');
+    expect(html).toContain('link:a#new');
+  });
+
   it('échappe les caractères HTML dangereux dans les données', () => {
     const report = makeReport({
       metadata: {

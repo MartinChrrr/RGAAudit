@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditReviewState, ImageAuditDecision } from '@rgaaudit/core/domain/review';
-import { applyImageDecision, applyImageDecisions } from '../session.store';
+import { appendRevisionHistory, applyImageDecision, applyImageDecisions } from '../session.store';
 
 const pageUrl = 'https://example.com/';
 const reviewedAt = '2026-09-11T12:00:00.000Z';
@@ -88,5 +88,24 @@ describe('applyImageDecisions', () => {
 
     applyImageDecisions(review, [imageDecision(0, 'non_compliant')], selectors, false, reviewedAt);
     expect(review.decisions[0]).toEqual(expect.objectContaining({ status: 'non_compliant' }));
+  });
+});
+
+describe('appendRevisionHistory', () => {
+  it('conserve la décision précédente lorsqu’une décision est révisée', () => {
+    const review = emptyReview();
+    const previous = {
+      pageUrl,
+      criterionId: '4.1',
+      status: 'not_tested' as const,
+      comment: 'À vérifier',
+      reviewedAt: null,
+    };
+    review.decisions.push({ ...previous, status: 'compliant', comment: 'Validé' });
+
+    appendRevisionHistory(review, [previous], []);
+
+    expect(review.decisionHistory).toEqual([previous]);
+    expect(review.decisions[0]?.comment).toBe('Validé');
   });
 });

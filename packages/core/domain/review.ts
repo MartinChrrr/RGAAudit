@@ -43,7 +43,11 @@ export interface AuditReviewState {
   schemaVersion: typeof REVIEW_SCHEMA_VERSION;
   sessionId: string;
   decisions: AuditDecision[];
+  /** Previous criterion decisions, retained when the current decision is revised. */
+  decisionHistory?: AuditDecision[];
   imageDecisions: ImageAuditDecision[];
+  /** Previous annex image decisions, retained for the same audit trail guarantee. */
+  imageDecisionHistory?: ImageAuditDecision[];
   updatedAt: string;
 }
 

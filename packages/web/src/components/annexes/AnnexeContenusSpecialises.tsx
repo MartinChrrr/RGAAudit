@@ -25,6 +25,35 @@ const kindLabels: Record<SpecializedContentItem['kind'], string> = {
   document: 'Document',
 };
 
+const signalLabels: Record<string, string> = {
+  CAPTCHA_REQUIRES_HUMAN_REVIEW: 'Vérification humaine du CAPTCHA à effectuer',
+  CAPTCHA_ALTERNATIVE_ABSENT: 'Alternative du CAPTCHA non observée',
+  DOCUMENT_REQUIRES_HUMAN_REVIEW: 'Accessibilité du document à vérifier',
+  DOCUMENT_ACCESSIBLE_VERSION_UNKNOWN: 'Version accessible non identifiée',
+  MEDIA_REQUIRES_HUMAN_REVIEW: 'Écoute ou visionnage requis',
+  SPECIALIZED_EVIDENCE_TRUNCATED: 'Preuves tronquées pour limiter le volume',
+};
+
+const evidenceLabels: Record<string, string> = {
+  alt: 'attribut alt observé',
+  'aria-label': 'nom aria observé',
+  'aria-labelledby': 'nom aria référencé observé',
+  figcaption: 'légende observée',
+  'link-text': 'texte du lien observé',
+  'surrounding-text': 'texte environnant observé',
+  'fallback-text': 'texte de remplacement observé',
+  title: 'attribut title observé',
+  'label observed': 'libellé observé',
+};
+
+function readableSignal(value: string): string {
+  return signalLabels[value] ?? value;
+}
+
+function readableEvidence(value: string): string {
+  return evidenceLabels[value] ?? value;
+}
+
 export default function AnnexeContenusSpecialises({ items, initialPageUrl }: Props) {
   const pages = [...new Set(items.map((item) => item.pageUrl).filter(Boolean))] as string[];
   const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
@@ -39,6 +68,7 @@ export default function AnnexeContenusSpecialises({ items, initialPageUrl }: Pro
 
   return (
     <div data-testid="annexe-specialized">
+      <h2 className="mb-3 text-lg font-semibold text-gray-900">{t('annexes.specialized.title')}</h2>
       <p className="mb-4 text-sm text-gray-600">{t('annexes.specialized.description')}</p>
       <div className="mb-4 flex flex-wrap gap-2 text-xs" aria-label={t('annexes.specialized.statusSummary')}>
         <span className="rounded-full bg-amber-100 px-2 py-1 text-amber-900">
@@ -89,8 +119,13 @@ export default function AnnexeContenusSpecialises({ items, initialPageUrl }: Pro
                     {item.context && <p className="mt-1 text-gray-500">{item.context}</p>}
                   </td>
                   <td className="max-w-xs px-3 py-3 text-xs text-gray-700">
-                    {item.evidence.length > 0 ? item.evidence.join(', ') : t('annexes.specialized.noEvidence')}
-                    {item.flags.length > 0 && <p className="mt-2 break-words text-amber-900">{item.flags.join(', ')}</p>}
+                    {item.evidence.length > 0 ? item.evidence.map(readableEvidence).join(', ') : t('annexes.specialized.noEvidence')}
+                    {item.flags.length > 0 && (
+                      <details className="mt-2 text-amber-900">
+                        <summary>Signaux techniques</summary>
+                        <span className="break-words">{item.flags.map(readableSignal).join(', ')}</span>
+                      </details>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-700">{item.criterionIds.join(', ')}</td>
                   <td className="px-3 py-3 text-xs text-amber-900">{t('annexes.specialized.reviewRequired')}</td>

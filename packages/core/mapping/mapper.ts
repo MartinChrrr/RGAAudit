@@ -13,6 +13,8 @@ import type {
   RgaaCriterion,
   RgaaMapping,
 } from './index';
+import type { PageComparison } from '../report/comparison';
+import { compareCollectedData } from '../report/comparison';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -121,6 +123,7 @@ export interface Report {
     name: string;
     manualChecklist: string[];
   }>;
+  comparisons?: PageComparison[];
 }
 
 export function summarizeCoverage(criteria: RgaaCriterion[]): CriterionCoverageSummary {
@@ -646,7 +649,7 @@ function detectDuplicateLabels(
 export function buildReport(
   summary: AuditReportSummary,
   config: AuditConfig,
-  _collectedDataList?: Array<{ url: string; collectedData: CollectedData | null }>,
+  collectedDataList?: Array<{ url: string; observedAt?: string; stepId?: string; collectedData: CollectedData | null }>,
 ): Report {
   const mapping = loadMapping();
 
@@ -682,5 +685,6 @@ export function buildReport(
     overlaysDetected,
     summary,
     uncoveredThemes: mapping.uncoveredThemes,
+    comparisons: collectedDataList ? compareCollectedData(collectedDataList) : [],
   };
 }

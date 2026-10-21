@@ -14,6 +14,7 @@ import { config } from '../config';
 
 const DATA_DIR = config.dataDir || join(homedir(), '.rgaaudit');
 const SESSIONS_DIR = join(DATA_DIR, 'sessions');
+const MAX_DECISION_HISTORY = 200;
 
 export interface AuditRepository {
   loadSession(sessionId: string): Promise<SessionState | null>;
@@ -121,6 +122,38 @@ export function applyImageDecisions(
   }
 }
 
+/** Preserve replaced decisions so a later review can reconstruct the audit trail. */
+export function appendRevisionHistory(
+  review: AuditReviewState,
+  previousDecisions: AuditDecision[],
+  previousImageDecisions: ImageAuditDecision[],
+): void {
+  const decisionHistory = review.decisionHistory ?? (review.decisionHistory = []);
+  for (const previous of previousDecisions) {
+    const current = review.decisions.find((item) => (
+      item.pageUrl === previous.pageUrl && item.criterionId === previous.criterionId
+    ));
+    if (current && JSON.stringify(current) !== JSON.stringify(previous)) {
+      decisionHistory.push(previous);
+      if (decisionHistory.length > MAX_DECISION_HISTORY) decisionHistory.splice(0, decisionHistory.length - MAX_DECISION_HISTORY);
+    }
+  }
+
+  const imageDecisionHistory = review.imageDecisionHistory ?? (review.imageDecisionHistory = []);
+  for (const previous of previousImageDecisions) {
+    const current = review.imageDecisions.find((item) => (
+      item.pageUrl === previous.pageUrl
+      && (item.elementIndex !== undefined && previous.elementIndex !== undefined
+        ? item.elementIndex === previous.elementIndex
+        : item.elementIndex === previous.elementIndex && item.selector === previous.selector)
+    ));
+    if (current && JSON.stringify(current) !== JSON.stringify(previous)) {
+      imageDecisionHistory.push(previous);
+      if (imageDecisionHistory.length > MAX_DECISION_HISTORY) imageDecisionHistory.splice(0, imageDecisionHistory.length - MAX_DECISION_HISTORY);
+    }
+  }
+}
+
 function assertSafeSessionId(sessionId: string): void {
   if (!/^[a-zA-Z0-9-]{1,128}$/.test(sessionId)) {
     throw new Error('Identifiant de session invalide.');
@@ -173,8 +206,10 @@ class JsonAuditRepository implements AuditRepository {
               decision: item.decision === 'violation' ? 'informative' : item.decision,
               status: item.status ?? (item.decision === 'violation' ? 'non_compliant' : 'not_tested'),
               correctedAlt: item.correctedAlt ?? '',
-            }))
+              }))
             : [],
+          decisionHistory: Array.isArray(parsed.decisionHistory) ? parsed.decisionHistory : [],
+          imageDecisionHistory: Array.isArray(parsed.imageDecisionHistory) ? parsed.imageDecisionHistory : [],
         };
       }
     } catch {
@@ -185,7 +220,9 @@ class JsonAuditRepository implements AuditRepository {
       schemaVersion: REVIEW_SCHEMA_VERSION,
       sessionId,
       decisions: [],
+      decisionHistory: [],
       imageDecisions: [],
+      imageDecisionHistory: [],
       updatedAt: new Date(0).toISOString(),
     };
   }
@@ -227,7 +264,10 @@ class JsonAuditRepository implements AuditRepository {
   ): Promise<AuditReviewState> {
     const operation = this.reviewWriteQueue.then(async () => {
       const review = await this.loadReviews(sessionId);
+      const previousDecisions = review.decisions.map((item) => ({ ...item }));
+      const previousImageDecisions = review.imageDecisions.map((item) => ({ ...item }));
       update(review);
+      appendRevisionHistory(review, previousDecisions, previousImageDecisions);
       review.updatedAt = new Date().toISOString();
       await atomicJsonWrite(getReviewPath(sessionId), review);
       return review;

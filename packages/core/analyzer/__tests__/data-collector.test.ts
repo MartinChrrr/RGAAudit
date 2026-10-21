@@ -260,6 +260,22 @@ describe('collectMedia', () => {
       expect(specialized.find((item) => item.kind === 'document')?.criterionIds).toEqual(['13.3', '13.4']);
     });
   });
+
+  it('borne le volume des contenus spécialisés et signale la troncature', async () => {
+    await withPage(`${baseUrl}/specialized.html`, async (page) => {
+      await page.evaluate(() => {
+        for (let index = 0; index < 105; index += 1) {
+          const link = document.createElement('a');
+          link.href = `extra-${index}.pdf`;
+          link.textContent = `Document ${index}`;
+          document.body.appendChild(link);
+        }
+      });
+      const specialized = await collectSpecializedContent(page);
+      expect(specialized.filter((item) => item.kind === 'document')).toHaveLength(100);
+      expect(specialized.some((item) => item.flags.includes('SPECIALIZED_EVIDENCE_TRUNCATED'))).toBe(true);
+    });
+  });
 });
 
 // ───────────────────────────────────────────────────────────────
