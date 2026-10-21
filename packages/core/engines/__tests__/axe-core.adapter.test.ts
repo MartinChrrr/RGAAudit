@@ -105,6 +105,21 @@ describe('AxeCoreAdapter', () => {
     });
   });
 
+  it('associe à chaque élément un contexte DOM et son index de correspondance', async () => {
+    const adapter = new AxeCoreAdapter();
+    await withPage(`${baseUrl}/images/alt-missing.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      const { violations } = result as EngineResult;
+      const imageAlt = violations.find((violation) => violation.rule === 'image-alt');
+      const evidence = imageAlt?.elements[0];
+
+      expect(evidence?.context).toContain('Parent HTML:');
+      expect(evidence?.context).toContain('Parent text:');
+      expect(evidence?.elementIndex).toBe(0);
+      expect(evidence?.target.length).toBeGreaterThan(0);
+    });
+  });
+
   it('détecte les images sans alt via la règle image-alt', async () => {
     const adapter = new AxeCoreAdapter();
     await withPage(`${baseUrl}/images/alt-missing.html`, async (page) => {

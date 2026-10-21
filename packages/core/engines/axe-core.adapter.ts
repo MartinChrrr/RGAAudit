@@ -45,16 +45,58 @@ function extractCheckData(node: NodeResult): Record<string, unknown> | undefined
   return undefined;
 }
 
-function mapElements(nodes: NodeResult[]): AxeElement[] {
-  return nodes.map((node) => {
+const MAX_CONTEXT_LENGTH = 2_000;
+
+interface DomEvidence {
+  context?: string;
+  elementIndex?: number;
+}
+
+async function collectDomEvidence(page: Page, target: string[]): Promise<DomEvidence> {
+  if (target.length === 0) return {};
+
+  try {
+    return await page.evaluate((selectors) => {
+      for (const selector of selectors) {
+        let matches: Element[];
+        try {
+          matches = Array.from(document.querySelectorAll(selector));
+        } catch {
+          continue;
+        }
+        const element = matches[0];
+        if (!element) continue;
+
+        const parent = element.parentElement ?? element;
+        const parentHtml = parent.outerHTML.slice(0, 2_000);
+        const text = (parent.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
+        const context = text
+          ? `Parent HTML: ${parentHtml}\nParent text: ${text}`
+          : `Parent HTML: ${parentHtml}`;
+        return { context, elementIndex: matches.indexOf(element) };
+      }
+      return {};
+    }, target);
+  } catch {
+    // Evidence must never make an otherwise valid axe run fail.
+    return {};
+  }
+}
+
+async function mapElements(page: Page, nodes: NodeResult[]): Promise<AxeElement[]> {
+  return Promise.all(nodes.map(async (node) => {
     const checkData = extractCheckData(node);
+    const target = flattenTarget(node.target);
+    const domEvidence = await collectDomEvidence(page, target);
     return {
       html: node.html,
-      target: flattenTarget(node.target),
+      target,
       ...(node.failureSummary ? { failureSummary: node.failureSummary } : {}),
       ...(checkData ? { data: checkData } : {}),
+      ...(domEvidence.context ? { context: domEvidence.context.slice(0, MAX_CONTEXT_LENGTH) } : {}),
+      ...(domEvidence.elementIndex !== undefined ? { elementIndex: domEvidence.elementIndex } : {}),
     };
-  });
+  }));
 }
 
 export class AxeCoreAdapter implements AuditEngine {
@@ -81,26 +123,26 @@ export class AxeCoreAdapter implements AuditEngine {
         ),
       ]);
 
-      const violations: AxeViolation[] = axeResults.violations.map((v) => ({
+      const violations: AxeViolation[] = await Promise.all(axeResults.violations.map(async (v) => ({
         rule: v.id,
         impact: v.impact as AxeViolation['impact'],
         description: v.description,
         helpUrl: v.helpUrl,
-        elements: mapElements(v.nodes),
-      }));
+        elements: await mapElements(page, v.nodes),
+      })));
 
-      const passes: AxePass[] = axeResults.passes.map((p) => ({
+      const passes: AxePass[] = await Promise.all(axeResults.passes.map(async (p) => ({
         rule: p.id,
         description: p.description,
-        elements: mapElements(p.nodes),
-      }));
+        elements: await mapElements(page, p.nodes),
+      })));
 
-      const incomplete: AxeIncomplete[] = axeResults.incomplete.map((i) => ({
+      const incomplete: AxeIncomplete[] = await Promise.all(axeResults.incomplete.map(async (i) => ({
         rule: i.id,
         impact: i.impact as AxeIncomplete['impact'],
         description: i.description,
-        elements: mapElements(i.nodes),
-      }));
+        elements: await mapElements(page, i.nodes),
+      })));
 
       return { violations, passes, incomplete };
     } catch (err) {

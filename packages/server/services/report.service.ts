@@ -16,6 +16,7 @@ import type {
   ImplementationLot,
 } from '@rgaaudit/core/mapping';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
+import type { AxeElement } from '@rgaaudit/core/engines/engine.interface';
 import type { CollectedData } from '@rgaaudit/core/analyzer/data-collector';
 import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
 import {
@@ -70,7 +71,21 @@ export interface ReviewCriterion {
   violationsCount: number;
   incompletesCount: number;
   elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
+  evidence: ReviewEvidence[];
   manualChecks: string[];
+}
+
+export interface ReviewEvidence {
+  kind: 'violation' | 'incomplete';
+  rule: string;
+  impact?: string;
+  description: string;
+  helpUrl?: string;
+  selector: string;
+  target: string[];
+  html: string;
+  context?: string;
+  elementIndex?: number;
 }
 
 export interface ReviewData {
@@ -157,6 +172,10 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
         violationsCount: criterion.violations?.length ?? 0,
         incompletesCount: criterion.incompletes?.length ?? 0,
         elements: criterion.elements ?? [],
+        evidence: [
+          ...criterion.violations.flatMap((violation) => violation.elements.map((element) => toReviewEvidence('violation', violation, element))),
+          ...criterion.incompletes.flatMap((incomplete) => incomplete.elements.map((element) => toReviewEvidence('incomplete', incomplete, element))),
+        ],
         manualChecks: criterion.manualChecks ?? [],
       };
     }),
@@ -192,6 +211,25 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
       };
     }),
     imageDecisions: state?.imageDecisions ?? [],
+  };
+}
+
+function toReviewEvidence(
+  kind: ReviewEvidence['kind'],
+  result: { rule: string; impact?: string; description: string; helpUrl?: string },
+  element: AxeElement,
+): ReviewEvidence {
+  return {
+    kind,
+    rule: result.rule,
+    ...(result.impact ? { impact: result.impact } : {}),
+    description: result.description,
+    ...(result.helpUrl ? { helpUrl: result.helpUrl } : {}),
+    selector: element.target.join(' > '),
+    target: element.target,
+    html: element.html,
+    ...(element.context ? { context: element.context } : {}),
+    ...(element.elementIndex !== undefined ? { elementIndex: element.elementIndex } : {}),
   };
 }
 

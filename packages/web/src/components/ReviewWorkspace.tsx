@@ -30,6 +30,18 @@ export interface ReviewCriterion {
   violationsCount: number;
   incompletesCount: number;
   elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
+  evidence?: Array<{
+    kind: 'violation' | 'incomplete';
+    rule: string;
+    impact?: string;
+    description: string;
+    helpUrl?: string;
+    selector: string;
+    target: string[];
+    html: string;
+    context?: string;
+    elementIndex?: number;
+  }>;
   manualChecks: string[];
 }
 
@@ -274,6 +286,24 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                     <p className="mt-1 text-xs text-gray-600">
                       {criterion.violationsCount} anomalie(s) automatisée(s), {criterion.elements.length} élément(s) à examiner.
                     </p>
+                  )}
+                  {(criterion.evidence?.length ?? 0) > 0 && (
+                    <div className="mt-3 space-y-2" data-testid={`criterion-evidence-${criterion.rgaaId}`}>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700">Preuves automatisées</h4>
+                      {(criterion.evidence ?? []).map((evidence, index) => (
+                        <details key={`${evidence.rule}-${evidence.selector}-${index}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs">
+                          <summary className="cursor-pointer font-medium text-gray-800">
+                            {evidence.rule} · {evidence.kind === 'violation' ? 'anomalie' : 'à vérifier'} · {evidence.selector || evidence.target.join(' > ')}
+                          </summary>
+                          <dl className="mt-2 space-y-2 text-gray-700">
+                            <div><dt className="font-semibold">Description</dt><dd>{evidence.description}</dd></div>
+                            <div><dt className="font-semibold">Cible</dt><dd><code>{evidence.target.join(' > ')}</code></dd></div>
+                            <div><dt className="font-semibold">HTML</dt><dd><code className="block max-h-24 overflow-auto whitespace-pre-wrap">{evidence.html}</code></dd></div>
+                            {evidence.context && <div><dt className="font-semibold">Contexte</dt><dd><code className="block max-h-32 overflow-auto whitespace-pre-wrap">{evidence.context}</code></dd></div>}
+                          </dl>
+                        </details>
+                      ))}
+                    </div>
                   )}
                   {annex && onOpenAnnex && (
                     <button

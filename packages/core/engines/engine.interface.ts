@@ -5,6 +5,10 @@ export interface AxeElement {
   target: string[];
   failureSummary?: string;
   data?: Record<string, unknown>;
+  /** Useful DOM context captured at audit time, when the target can be resolved. */
+  context?: string;
+  /** Zero-based position among elements matching the target selector. */
+  elementIndex?: number;
 }
 
 export interface AxeViolation {

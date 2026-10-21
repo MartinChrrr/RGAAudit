@@ -87,6 +87,35 @@ describe('ReviewWorkspace', () => {
     expect(screen.getByText('Anomalies détectées')).toBeInTheDocument();
   });
 
+  it('affiche la preuve axe liée au critère', () => {
+    render(
+      <ReviewWorkspace
+        sessionId="session-1"
+        review={{
+          ...review,
+          pages: [{
+            ...review.pages[0],
+            criteria: [{
+              ...review.pages[0].criteria[0],
+              evidence: [{
+                kind: 'violation',
+                rule: 'image-alt',
+                description: 'Images must have alternate text',
+                selector: 'img#logo',
+                target: ['img#logo'],
+                html: '<img id="logo">',
+                context: 'Parent HTML: <main>…</main>',
+              }],
+            }],
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('criterion-evidence-1.1')).toHaveTextContent('image-alt');
+    expect(screen.getByTestId('criterion-evidence-1.1')).toHaveTextContent('Parent HTML:');
+  });
+
   it('affiche la couverture partielle séparément du signal machine', () => {
     render(<ReviewWorkspace sessionId="session-1" review={review} />);
 
