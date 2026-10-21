@@ -266,6 +266,10 @@ describe('renderReportHtml', () => {
     expect(html).toContain('video#demo');
     expect(html).toContain('4.1 — Vérifier la transcription');
     expect(html).toContain('captions (fr)');
+    expect(html).toContain('Contrôles : oui · Autoplay : non');
+    expect(html).toContain('Contexte : Présentation');
+    expect(html).toContain('Signaux : MEDIA_REQUIRES_HUMAN_REVIEW');
+    expect(html).toContain('Critères : 4.1, 4.3');
   });
 
   it('échappe les caractères HTML dangereux dans les données', () => {

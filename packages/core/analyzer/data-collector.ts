@@ -29,7 +29,7 @@ export interface ImageData {
   screenshotPath: string | null;
 }
 
-export type MediaKind = 'audio' | 'video';
+export type MediaKind = 'audio' | 'video' | 'canvas' | 'object' | 'embed';
 export type MediaTrackKind = 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata' | 'unknown';
 
 export interface MediaTrackData {
@@ -56,6 +56,8 @@ export interface MediaData {
   manualChecks: string[];
   flags: string[];
   requiresHumanReview: true;
+  /** True when collection caps were reached for this element or its evidence. */
+  truncated?: boolean;
 }
 
 export interface LinkData {
@@ -132,7 +134,7 @@ export interface FigureCaptionData {
 
 export interface CollectedData {
   images: ImageData[];
-  /** Temporal media inventory for the dedicated multimedia review backlog. */
+  /** Temporal and non-temporal media inventory for the dedicated multimedia review backlog. */
   media?: MediaData[];
   frames: FrameData[];
   links: LinkData[];
@@ -144,7 +146,18 @@ export interface CollectedData {
 }
 
 const SPECIALIZED_IMAGE_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
-const SPECIALIZED_MEDIA_CRITERIA = ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.8', '4.9'] as const;
+// US-16 scope: temporal media (4.1–4.6) and non-temporal media (4.8–4.9).
+// Criteria 4.7, 4.10–4.13 remain separate manual/backlog work and are not
+// silently presented as covered by this inventory.
+const TEMPORAL_MEDIA_CRITERIA = ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6'] as const;
+const NON_TEMPORAL_MEDIA_CRITERIA = ['4.8', '4.9'] as const;
+const MEDIA_LIMITS = {
+  items: 100,
+  sources: 20,
+  tracks: 20,
+  urlLength: 2_000,
+  textLength: 500,
+} as const;
 
 function getSpecializedImageChecks(): string[] {
   return SPECIALIZED_IMAGE_CRITERIA.flatMap((id) => {
@@ -153,8 +166,8 @@ function getSpecializedImageChecks(): string[] {
   });
 }
 
-function getSpecializedMediaChecks(): string[] {
-  return SPECIALIZED_MEDIA_CRITERIA.flatMap((id) => {
+function getSpecializedMediaChecks(ids: readonly string[]): string[] {
+  return ids.flatMap((id) => {
     const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
     return checks.map((check) => `${id} — ${check}`);
   });
@@ -253,6 +266,13 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
       const src = el.getAttribute('src') ?? '';
       const ariaLabel = el.getAttribute('aria-label');
       const ariaLabelledby = el.getAttribute('aria-labelledby');
+      const ariaLabelledbyText = (ariaLabelledby ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const role = el.getAttribute('role');
       const rolePresentation = role === 'presentation' || role === 'none';
 
@@ -287,7 +307,7 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
       const alternativeSources: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'> = [];
       if (altAttr !== null) alternativeSources.push('alt');
       if (ariaLabel?.trim()) alternativeSources.push('aria-label');
-      if (ariaLabelledby?.trim()) alternativeSources.push('aria-labelledby');
+      if (ariaLabelledbyText) alternativeSources.push('aria-labelledby');
       if (parentFigcaption) alternativeSources.push('figcaption');
       if (linkText) alternativeSources.push('link-text');
       if (surroundingText) alternativeSources.push('surrounding-text');
@@ -356,21 +376,7 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
 // ---------------------------------------------------------------------------
 
 export async function collectMedia(page: Page): Promise<MediaData[]> {
-  const rawMedia = await page.evaluate(() => {
-    const normalizeText = (value: string | null | undefined, max = 160): string | null => {
-      const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
-      return normalized ? normalized.slice(0, max) : null;
-    };
-
-    const resolveUrl = (value: string | null): string | null => {
-      if (!value) return null;
-      try {
-        return new URL(value, document.baseURI).href;
-      } catch {
-        return value;
-      }
-    };
-
+  const rawMedia = await page.evaluate((limits) => {
     const getUniqueSelector = (element: Element): string => {
       const parts: string[] = [];
       let current: Element | null = element;
@@ -395,8 +401,31 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
       return parts.join(' > ');
     };
 
-    return Array.from(document.querySelectorAll('audio, video')).map((element) => {
-      const media = element as HTMLMediaElement;
+    const elements = Array.from(document.querySelectorAll('audio, video, canvas, object, embed'));
+    const truncatedItems = elements.length > limits.items;
+    return elements.slice(0, limits.items).map((element) => {
+      let truncated = truncatedItems;
+      const normalizeText = (value: string | null | undefined, max = 160): string | null => {
+        const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
+        const limit = Math.min(max, limits.textLength);
+        if (normalized.length > limit) truncated = true;
+        return normalized ? normalized.slice(0, limit) : null;
+      };
+
+      const resolveUrl = (value: string | null): string | null => {
+        if (!value) return null;
+        let resolved: string;
+        try {
+          resolved = new URL(value, document.baseURI).href;
+        } catch {
+          resolved = value;
+        }
+        if (resolved.length > limits.urlLength) truncated = true;
+        return resolved.slice(0, limits.urlLength);
+      };
+
+      const temporal = element instanceof HTMLMediaElement;
+      const media = temporal ? element : null;
       const labelledBy = (element.getAttribute('aria-labelledby') ?? '')
         .split(/\s+/)
         .filter(Boolean)
@@ -412,10 +441,12 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
 
       const parent = element.parentElement;
       const contextClone = parent?.cloneNode(true) as HTMLElement | undefined;
-      contextClone?.querySelectorAll('audio, video').forEach((child) => child.remove());
+      contextClone?.querySelectorAll('audio, video, canvas, object, embed').forEach((child) => child.remove());
       const surroundingText = normalizeText(contextClone?.textContent) ?? '';
 
-      const tracks = Array.from(element.querySelectorAll('track')).map((track) => {
+      const trackElements = Array.from(element.querySelectorAll('track'));
+      if (trackElements.length > limits.tracks) truncated = true;
+      const tracks = temporal ? trackElements.slice(0, limits.tracks).map((track) => {
         const rawKind = track.getAttribute('kind')?.toLowerCase() ?? 'unknown';
         const kind: MediaTrackKind = ['subtitles', 'captions', 'descriptions', 'chapters', 'metadata'].includes(rawKind)
           ? rawKind as MediaTrackKind
@@ -427,12 +458,15 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
           label: normalizeText(track.getAttribute('label')),
           isDefault: track.hasAttribute('default'),
         };
-      });
+      }) : [];
 
-      const sources = [
+      const sourceValues = [
         resolveUrl(element.getAttribute('src')),
+        resolveUrl(element.getAttribute('data')),
         ...Array.from(element.querySelectorAll('source')).map((source) => resolveUrl(source.getAttribute('src'))),
       ].filter((source): source is string => Boolean(source));
+      if (sourceValues.length > limits.sources) truncated = true;
+      const sources = sourceValues.slice(0, limits.sources);
 
       const alternativeSources: MediaData['alternativeSources'] = [];
       if (ariaLabel) alternativeSources.push('aria-label');
@@ -448,18 +482,25 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
         accessibleName,
         fallbackText,
         surroundingText,
-        controls: media.controls,
-        autoplay: media.autoplay,
+        controls: media?.controls ?? false,
+        autoplay: media?.autoplay ?? false,
         tracks,
         alternativeSources,
+        truncated,
       };
     });
-  });
+  }, MEDIA_LIMITS);
 
   return rawMedia.map((media) => {
+    const criterionIds = media.kind === 'audio' || media.kind === 'video'
+      ? [...TEMPORAL_MEDIA_CRITERIA]
+      : [...NON_TEMPORAL_MEDIA_CRITERIA];
     const flags: string[] = ['MEDIA_REQUIRES_HUMAN_REVIEW'];
     if (media.sources.length === 0) flags.push('MEDIA_SOURCE_ABSENT');
-    if (media.alternativeSources.length === 0 && media.tracks.length === 0) {
+    if (media.truncated) flags.push('MEDIA_EVIDENCE_TRUNCATED');
+    // Context, title and accessible names are useful evidence, but are not
+    // themselves a transcript or an audio description.
+    if (!media.fallbackText && media.tracks.length === 0) {
       flags.push('MEDIA_ALTERNATIVE_ABSENT');
     }
     if (media.kind === 'video' && !media.tracks.some((track) => track.kind === 'subtitles' || track.kind === 'captions')) {
@@ -467,8 +508,8 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
     }
     return {
       ...media,
-      criterionIds: [...SPECIALIZED_MEDIA_CRITERIA],
-      manualChecks: getSpecializedMediaChecks(),
+      criterionIds,
+      manualChecks: getSpecializedMediaChecks(criterionIds),
       flags,
       requiresHumanReview: true as const,
     };

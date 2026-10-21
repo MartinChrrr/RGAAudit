@@ -352,9 +352,20 @@ function buildMediaSection(allCollected: Array<{ url: string; collectedData: Col
     <tr>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
       <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(item.sources.join(', ') || 'Source absente')}</td>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.accessibleName ?? item.fallbackText ?? 'Aucune alternative observée')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">
+        <div>${escapeHtml(item.accessibleName ?? item.fallbackText ?? 'Aucune alternative observée')}</div>
+        <div class="text-gray-500">Sources d’alternative : ${escapeHtml(item.alternativeSources.join(', ') || 'aucune')}</div>
+        <div class="text-gray-500">Contexte : ${escapeHtml(item.surroundingText || 'aucun')}</div>
+      </td>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.tracks.map((track) => `${track.kind}${track.srcLang ? ` (${track.srcLang})` : ''}`).join(', ') || 'Aucune piste déclarée')}</td>
-      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(item.manualChecks.join(' '))}<br><span class="text-gray-500">${escapeHtml(url)}</span></td>
+      <td class="px-3 py-2 text-xs text-amber-900">
+        <div>Revue humaine requise</div>
+        <div>Contrôles : ${item.controls ? 'oui' : 'non'} · Autoplay : ${item.autoplay ? 'oui' : 'non'}</div>
+        <div>Critères : ${escapeHtml(item.criterionIds.join(', '))}</div>
+        <div>${escapeHtml(item.manualChecks.join(' '))}</div>
+        <div>Signaux : ${escapeHtml(item.flags.join(', ') || 'aucun')}</div>
+        <span class="text-gray-500">${escapeHtml(url)}</span>
+      </td>
     </tr>`).join('');
 
   return `

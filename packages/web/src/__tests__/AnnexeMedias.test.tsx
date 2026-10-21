@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import AnnexeMedias, { type MediaItem } from '../components/annexes/AnnexeMedias';
 
 const media: MediaItem[] = [{
@@ -29,5 +29,15 @@ describe('AnnexeMedias', () => {
     expect(screen.getByText('https://example.com/demo.mp4')).toBeInTheDocument();
     expect(screen.getByText(/Français · fr · par défaut/)).toBeInTheDocument();
     expect(screen.getByText('4.1 — Vérifier la transcription')).toBeInTheDocument();
+  });
+
+  it('permet de filtrer les médias par page', () => {
+    render(<AnnexeMedias media={[media[0], { ...media[0], selector: 'audio#other', pageUrl: 'https://example.com/other' }]} />);
+
+    const filter = screen.getByLabelText(/Filtrer par page/);
+    fireEvent.change(filter, { target: { value: 'https://example.com/other' } });
+
+    expect(screen.getByText('audio#other')).toBeInTheDocument();
+    expect(screen.queryByText('video#demo')).not.toBeInTheDocument();
   });
 });

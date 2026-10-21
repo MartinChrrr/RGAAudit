@@ -186,14 +186,24 @@ describe('collectImages', () => {
       expect.stringContaining('1.8'),
     ]));
   });
+
+  it('ne considère aria-labelledby comme une alternative que si la référence est résolue', async () => {
+    const images = await withPage(`${baseUrl}/images/aria-labelledby.html`, collectImages);
+    const broken = images.find((image) => image.selector === 'img#broken');
+    const resolved = images.find((image) => image.selector === 'img#resolved');
+
+    expect(broken?.alternativeSources).not.toContain('aria-labelledby');
+    expect(resolved?.alternativeSources).toContain('aria-labelledby');
+  });
 });
 
 describe('collectMedia', () => {
   it('inventorie les sources, les pistes et les alternatives des médias', async () => {
     const media = await withPage(`${baseUrl}/media/tracks.html`, collectMedia);
 
-    expect(media).toHaveLength(2);
-    expect(media.find((item) => item.kind === 'video')).toMatchObject({
+    expect(media).toHaveLength(4);
+    const video = media.find((item) => item.kind === 'video');
+    expect(video).toMatchObject({
       selector: 'video#demo',
       sources: [`${baseUrl}/media/demo.mp4`],
       accessibleName: 'Démonstration produit',
@@ -202,21 +212,35 @@ describe('collectMedia', () => {
         expect.objectContaining({ kind: 'captions', srcLang: 'fr', isDefault: true }),
         expect.objectContaining({ kind: 'descriptions', srcLang: 'fr' }),
       ],
-      criterionIds: expect.arrayContaining(['4.1', '4.3', '4.5', '4.9']),
+      criterionIds: expect.arrayContaining(['4.1', '4.3', '4.5']),
       flags: expect.arrayContaining(['MEDIA_REQUIRES_HUMAN_REVIEW']),
       requiresHumanReview: true,
     });
+    expect(video!.criterionIds).not.toContain('4.8');
+    expect(video!.criterionIds).not.toContain('4.9');
 
     expect(media.find((item) => item.kind === 'audio')).toMatchObject({
       selector: 'audio#podcast',
       sources: [`${baseUrl}/media/podcast.mp3`],
       fallbackText: 'Transcription du podcast disponible sur cette page.',
     });
+
+    expect(media.find((item) => item.kind === 'canvas')).toMatchObject({
+      selector: 'canvas#chart',
+      criterionIds: ['4.8', '4.9'],
+      flags: expect.arrayContaining(['MEDIA_REQUIRES_HUMAN_REVIEW']),
+    });
+
+    expect(media.find((item) => item.kind === 'object')).toMatchObject({
+      selector: 'object#document',
+      sources: [`${baseUrl}/media/document.pdf`],
+      criterionIds: ['4.8', '4.9'],
+    });
   });
 
   it('expose l’inventaire multimédia dans la collecte globale', async () => {
     const collected = await withPage(`${baseUrl}/media/tracks.html`, collectAll);
-    expect(collected.media).toHaveLength(2);
+    expect(collected.media).toHaveLength(4);
   });
 });
 

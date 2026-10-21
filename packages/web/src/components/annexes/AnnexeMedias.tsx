@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { t } from '../../locales';
 
 export interface MediaTrackItem {
@@ -10,7 +11,7 @@ export interface MediaTrackItem {
 
 export interface MediaItem {
   selector: string;
-  kind: 'audio' | 'video';
+  kind: 'audio' | 'video' | 'canvas' | 'object' | 'embed';
   sources: string[];
   accessibleName: string | null;
   fallbackText: string | null;
@@ -40,15 +41,30 @@ function trackLabel(track: MediaTrackItem): string {
 
 export default function AnnexeMedias({ media, initialPageUrl }: Props) {
   const pages = [...new Set(media.map((item) => item.pageUrl).filter(Boolean))] as string[];
-  const visible = initialPageUrl ? media.filter((item) => item.pageUrl === initialPageUrl) : media;
+  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+
+  useEffect(() => {
+    setPageFilter(initialPageUrl ?? '');
+  }, [initialPageUrl]);
+
+  const visible = pageFilter ? media.filter((item) => item.pageUrl === pageFilter) : media;
 
   return (
     <div data-testid="annexe-media">
       <p className="mb-4 text-sm text-gray-600">{t('annexes.media.description')}</p>
       {pages.length > 1 && (
-        <p className="mb-4 text-xs text-gray-600">
-          {t('annexes.media.filterByPage')} : {initialPageUrl ?? t('annexes.media.allPages')}
-        </p>
+        <div className="mb-4 text-xs text-gray-600">
+          <label htmlFor="media-page-filter" className="mr-2">{t('annexes.media.filterByPage')} :</label>
+          <select
+            id="media-page-filter"
+            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs"
+            value={pageFilter}
+            onChange={(event) => setPageFilter(event.target.value)}
+          >
+            <option value="">{t('annexes.media.allPages')}</option>
+            {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+          </select>
+        </div>
       )}
       {visible.length === 0 ? (
         <p className="py-4 text-sm text-gray-600">{t('annexes.media.noResults')}</p>
