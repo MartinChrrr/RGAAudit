@@ -118,6 +118,28 @@ function makeCollectedData(): CollectedData {
       headings: [{ level: 1, text: 'Bienvenue', selector: 'h1', flags: [] }],
       flags: [],
     },
+    forms: [{
+      selector: 'form#account',
+      action: '/account',
+      method: 'post',
+      flags: [],
+      controls: [{
+        selector: '#email',
+        tagName: 'input',
+        type: 'email',
+        id: 'email',
+        name: 'email',
+        label: 'Adresse électronique',
+        labelSource: 'label',
+        required: true,
+        invalid: true,
+        autocomplete: 'email',
+        describedByIds: ['email-help'],
+        helpText: 'Aide email',
+        errorMessage: 'Email invalide',
+        flags: [],
+      }],
+    }],
   };
 }
 
@@ -194,6 +216,17 @@ describe('renderReportHtml', () => {
     expect(html).toContain('id="rgaaudit-data"');
     expect(html).toContain('type="application/json"');
     expect(html).toContain('img#hero');
+  });
+
+  it('affiche l’annexe formulaires dans le rapport HTML', () => {
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: makeCollectedData() }],
+    });
+
+    expect(html).toContain('Annexe — Formulaires');
+    expect(html).toContain('Adresse électronique');
+    expect(html).toContain('Email invalide');
   });
 
   it('échappe les caractères HTML dangereux dans les données', () => {

@@ -65,6 +65,31 @@ export interface HeadingTree {
   flags: string[];
 }
 
+export interface FormControlData {
+  selector: string;
+  tagName: string;
+  type: string;
+  id: string | null;
+  name: string | null;
+  label: string | null;
+  labelSource: 'aria-labelledby' | 'aria-label' | 'label' | null;
+  required: boolean;
+  invalid: boolean;
+  autocomplete: string | null;
+  describedByIds: string[];
+  helpText: string | null;
+  errorMessage: string | null;
+  flags: string[];
+}
+
+export interface FormDataItem {
+  selector: string;
+  action: string | null;
+  method: string;
+  controls: FormControlData[];
+  flags: string[];
+}
+
 export interface FigureCaptionData {
   selector: string;
   text: string;
@@ -77,6 +102,8 @@ export interface CollectedData {
   frames: FrameData[];
   links: LinkData[];
   headings: HeadingTree;
+  /** Form fields, labels, help instructions and observable validation messages. */
+  forms?: FormDataItem[];
   /** Optional for backwards-compatible persisted sessions. */
   figcaptions?: FigureCaptionData[];
 }
@@ -545,6 +572,105 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
 }
 
 // ---------------------------------------------------------------------------
+// collectForms
+// ---------------------------------------------------------------------------
+
+export async function collectForms(page: Page): Promise<FormDataItem[]> {
+  return page.evaluate(() => {
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      const parentSelector = getUniqueSelector(parent);
+      return `${parentSelector} > ${tag}${suffix}`;
+    };
+
+    const getReferencedText = (ids: string[]): string | null => {
+      const text = ids
+        .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return text || null;
+    };
+
+    const controlsFor = (container: Element | Document): FormControlData[] => {
+      const controls = Array.from(container.querySelectorAll('input:not([type="hidden"]), textarea, select'));
+      return controls.map((control) => {
+        const id = control.getAttribute('id');
+        const ariaLabelledbyIds = (control.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+        const describedByIds = (control.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+        const labelledByText = getReferencedText(ariaLabelledbyIds);
+        const ariaLabel = control.getAttribute('aria-label')?.trim() || null;
+        const associatedLabel = id
+          ? document.querySelector(`label[for="${CSS.escape(id)}"]`)?.textContent?.trim() || null
+          : control.closest('label')?.textContent?.trim() || null;
+        const label = labelledByText || ariaLabel || associatedLabel;
+        const labelSource: FormControlData['labelSource'] = labelledByText
+          ? 'aria-labelledby'
+          : ariaLabel
+            ? 'aria-label'
+            : associatedLabel
+              ? 'label'
+              : null;
+        const invalid = control.getAttribute('aria-invalid') === 'true';
+        const helpText = getReferencedText(describedByIds);
+        const errorIds = (control.getAttribute('aria-errormessage') ?? '').split(/\s+/).filter(Boolean);
+        const errorMessage = getReferencedText(errorIds);
+        const flags: string[] = [];
+        if (!label) flags.push('FORM_LABEL_ABSENT');
+        if (invalid && !errorMessage) flags.push('FORM_ERROR_MESSAGE_ABSENT');
+        if (describedByIds.some((ref) => !document.getElementById(ref))) {
+          flags.push('FORM_HELP_REFERENCE_MISSING');
+        }
+
+        return {
+          selector: getUniqueSelector(control),
+          tagName: control.tagName.toLowerCase(),
+          type: control.getAttribute('type') ?? control.tagName.toLowerCase(),
+          id,
+          name: control.getAttribute('name'),
+          label,
+          labelSource,
+          required: control.hasAttribute('required') || control.getAttribute('aria-required') === 'true',
+          invalid,
+          autocomplete: control.getAttribute('autocomplete'),
+          describedByIds,
+          helpText,
+          errorMessage,
+          flags,
+        };
+      });
+    };
+
+    const forms = Array.from(document.querySelectorAll('form')).map((form) => ({
+      selector: getUniqueSelector(form),
+      action: form.getAttribute('action'),
+      method: (form.getAttribute('method') ?? 'get').toLowerCase(),
+      controls: controlsFor(form),
+      flags: [],
+    }));
+
+    const controlsOutsideForms = controlsFor(document).filter((control) => {
+      const element = document.querySelector(control.selector);
+      return !element?.closest('form');
+    });
+    if (controlsOutsideForms.length > 0) {
+      forms.push({ selector: '(contrôles hors formulaire)', action: null, method: 'get', controls: controlsOutsideForms, flags: [] });
+    }
+    return forms;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // collectFigureCaptions
 // ---------------------------------------------------------------------------
 
@@ -606,13 +732,14 @@ export async function collectFigureCaptions(page: Page): Promise<FigureCaptionDa
 // ---------------------------------------------------------------------------
 
 export async function collectAll(page: Page): Promise<CollectedData> {
-  const [images, frames, links, headings, figcaptions] = await Promise.all([
+  const [images, frames, links, headings, forms, figcaptions] = await Promise.all([
     collectImages(page),
     collectFrames(page),
     collectLinks(page),
     collectHeadings(page),
+    collectForms(page),
     collectFigureCaptions(page),
   ]);
 
-  return { images, frames, links, headings, figcaptions };
+  return { images, frames, links, headings, forms, figcaptions };
 }

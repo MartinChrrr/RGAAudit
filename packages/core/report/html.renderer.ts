@@ -196,6 +196,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
       </section>`
     : '';
 
+  const formsSection = buildFormsSection(allCollected ?? []);
+
   const annexeDataJson = allCollected
     ? serializeForHtmlScript(allCollected)
     : '[]';
@@ -320,6 +322,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 
     ${buildContrastSection(contrastViolations ?? [])}
 
+    ${formsSection}
+
     <!-- Footer -->
     <footer class="text-center text-xs text-gray-400 mt-12 py-4 border-t border-gray-200">
       ${escapeHtml(t('report.htmlFooter'))}
@@ -330,6 +334,42 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
   <script id="rgaaudit-data" type="application/json">${annexeDataJson}</script>
 </body>
 </html>`;
+}
+
+function buildFormsSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {
+  const forms = allCollected.flatMap(({ url, collectedData }) => (
+    (collectedData?.forms ?? []).map((form) => ({ url, form }))
+  ));
+  if (forms.length === 0) return '';
+
+  const sections = forms.map(({ url, form }) => {
+    const rows = form.controls.map((control) => `
+      <tr>
+        <td class="px-3 py-2 font-mono text-xs text-gray-700">${escapeHtml(control.selector)}</td>
+        <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.label ?? t('annexes.forms.labelAbsent'))}</td>
+        <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.helpText ?? t('annexes.forms.helpAbsent'))}</td>
+        <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.errorMessage ?? t('annexes.forms.errorAbsent'))}</td>
+      </tr>`).join('');
+    return `
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeForms'))}</h2>
+        <p class="text-xs text-gray-600 mb-2">${escapeHtml(url)} · ${escapeHtml(form.selector)}</p>
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeForms'))} ${escapeHtml(form.selector)}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.htmlFormField'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.htmlFormLabel'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.htmlFormHelp'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.htmlFormError'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </section>`;
+  }).join('');
+
+  return sections;
 }
 
 function buildContrastSection(violations: ContrastViolationItem[]): string {

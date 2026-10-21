@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Formulaire avec aide</title></head>
+<body>
+  <main>
+    <h1>Créer un compte</h1>
+    <form id="account" action="/account" method="post">
+      <label for="email">Adresse électronique</label>
+      <input id="email" name="email" type="email" aria-describedby="email-help" aria-invalid="true" aria-errormessage="email-error" required>
+      <p id="email-help">Utilisez une adresse professionnelle.</p>
+      <p id="email-error" role="alert">Saisissez une adresse électronique valide.</p>
+      <input id="missing-label" name="token" type="text" aria-describedby="missing-help">
+      <p id="missing-help">Cette information est facultative.</p>
+    </form>
+  </main>
+</body>
+</html>

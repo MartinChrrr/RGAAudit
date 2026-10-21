@@ -6,6 +6,7 @@ import AnnexeCadres, { type FrameItem } from '../components/annexes/AnnexeCadres
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
 import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
 import AnnexeHeuristiques, { type HeuristicFindingItem } from '../components/annexes/AnnexeHeuristiques';
+import AnnexeFormulaires, { type FormItem } from '../components/annexes/AnnexeFormulaires';
 import ReviewWorkspace, {
   type AnnexTab,
   type AnnexTarget,
@@ -76,6 +77,7 @@ interface ReportData {
       images: ImageItem[];
       frames: FrameItem[];
       links: LinkItem[];
+      forms?: Omit<FormItem, 'pageUrl'>[];
       headings: {
         documentTitle: string;
         headings: Array<{
@@ -249,6 +251,9 @@ export default function Results() {
   );
   const allLinks: LinkItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.links ?? []).map((link) => ({ ...link, pageUrl: entry.url })),
+  );
+  const allForms: FormItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.forms ?? []).map((form) => ({ ...form, pageUrl: entry.url })),
   );
   const allHeadings: HeadingTreeData[] = (report.allCollected ?? [])
     .filter((entry) => entry.collectedData?.headings)
@@ -479,7 +484,7 @@ export default function Results() {
         {/* Annexes tabs */}
         <section id="annexes" tabIndex={-1} className="mb-8 scroll-mt-4 focus:outline-none">
           <div className="flex border-b border-gray-200 mb-4" role="tablist">
-            {(['images', 'frames', 'links', 'headings', 'heuristics'] as const).map((tab) => (
+            {(['images', 'frames', 'links', 'forms', 'headings', 'heuristics'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -528,6 +533,12 @@ export default function Results() {
                 links={allLinks}
                 sessionId={sessionId!}
                 initialPageUrl={annexTarget?.tab === 'links' ? annexTarget.pageUrl : undefined}
+              />
+            )}
+            {activeTab === 'forms' && (
+              <AnnexeFormulaires
+                forms={allForms}
+                initialPageUrl={annexTarget?.tab === 'forms' ? annexTarget.pageUrl : undefined}
               />
             )}
             {activeTab === 'headings' && (

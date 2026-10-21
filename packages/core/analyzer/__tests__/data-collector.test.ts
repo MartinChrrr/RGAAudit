@@ -9,6 +9,7 @@ import {
   collectLinks,
   collectHeadings,
   collectFigureCaptions,
+  collectForms,
   collectAll,
 } from '../data-collector';
 
@@ -168,6 +169,41 @@ describe('collectImages', () => {
       expect(img.altAttribute).toBeNull();
       expect(img.automatedStatus).toBe('violation');
     }
+  });
+});
+
+// ───────────────────────────────────────────────────────────────
+// collectForms
+// ───────────────────────────────────────────────────────────────
+
+describe('collectForms', () => {
+  it('relie les libellés, aides et messages d’erreur aux champs', async () => {
+    const forms = await withPage(`${baseUrl}/forms/error-and-help.html`, collectForms);
+
+    expect(forms).toHaveLength(1);
+    expect(forms[0]).toMatchObject({ selector: '#account', method: 'post' });
+    expect(forms[0].controls).toHaveLength(2);
+    expect(forms[0].controls[0]).toMatchObject({
+      selector: '#email',
+      label: 'Adresse électronique',
+      labelSource: 'label',
+      invalid: true,
+      required: true,
+      helpText: 'Utilisez une adresse professionnelle.',
+      errorMessage: 'Saisissez une adresse électronique valide.',
+      flags: [],
+    });
+    expect(forms[0].controls[1]).toMatchObject({
+      selector: '#missing-label',
+      label: null,
+      helpText: 'Cette information est facultative.',
+      flags: ['FORM_LABEL_ABSENT'],
+    });
+  });
+
+  it('expose les formulaires dans la collecte globale', async () => {
+    const data = await withPage(`${baseUrl}/forms/error-and-help.html`, collectAll);
+    expect(data.forms).toHaveLength(1);
   });
 });
 

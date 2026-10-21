@@ -55,6 +55,7 @@
     "tabImages": "Images",
     "tabFrames": "Cadres",
     "tabLinks": "Liens",
+    "tabForms": "Formulaires",
     "tabHeadings": "Titres",
     "tabHeuristics": "Sémantique HTML",
     "comingSoon": "Annexes détaillées disponibles à l'étape 9",
@@ -158,6 +159,26 @@
       "copied": "Copié !",
       "filterByPage": "Filtrer par page",
       "allPages": "Toutes les pages"
+    },
+    "forms": {
+        "title": "Annexe Formulaires",
+        "description": "Les champs, leurs libellés, aides et messages d’erreur observés pendant l’audit.",
+        "filterByPage": "Filtrer par page",
+        "allPages": "Toutes les pages",
+        "tableCaption": "Champs du formulaire {form}",
+        "colField": "Champ",
+        "colLabel": "Libellé",
+        "colHelp": "Aide / instruction",
+        "colError": "Message d’erreur",
+        "colStatus": "Statut",
+        "labelAbsent": "Libellé absent",
+        "helpAbsent": "Aucune aide reliée",
+        "errorAbsent": "Aucun message observé",
+        "observed": "Observé",
+        "toReview": "À vérifier",
+        "issueCount": "{count} champ(s) à vérifier",
+        "noIssues": "Les champs observés ne présentent pas de signal automatique.",
+        "noResults": "Aucun formulaire observé"
     }
   },
   "flags": {
@@ -187,7 +208,10 @@
     "SVG_ICON_NO_LABEL": "Icône SVG dans un bouton/lien sans label alternatif",
     "SVG_DECORATIVE_NOT_HIDDEN": "SVG décoratif non masqué aux technologies d'assistance",
     "FRAME_TITLE_ABSENT": "Attribut title du cadre absent",
-    "FRAME_TITLE_EMPTY": "Attribut title du cadre vide"
+    "FRAME_TITLE_EMPTY": "Attribut title du cadre vide",
+    "FORM_LABEL_ABSENT": "Libellé de champ absent",
+    "FORM_ERROR_MESSAGE_ABSENT": "Message d’erreur absent pour un champ invalide",
+    "FORM_HELP_REFERENCE_MISSING": "Référence d’aide introuvable"
   },
   "pdf": {
     "downloadButton": "Télécharger le rapport PDF",
@@ -219,6 +243,11 @@
     "htmlAnnexeImages": "Annexe — Images",
     "htmlAnnexeLinks": "Annexe — Liens",
     "htmlAnnexeHeadings": "Annexe — Titres",
+    "htmlAnnexeForms": "Annexe — Formulaires",
+    "htmlFormField": "Champ",
+    "htmlFormLabel": "Libellé",
+    "htmlFormHelp": "Aide / instruction",
+    "htmlFormError": "Message d’erreur",
     "htmlColId": "ID",
     "htmlColCriterion": "Critère",
     "htmlColCoverage": "Couverture",
