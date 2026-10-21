@@ -101,8 +101,29 @@ export async function auditPage(
 
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout });
+    return analyzeLoadedPage(page, url, _sessionId, options);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      url,
+      auditedAt: new Date().toISOString(),
+      axeResults: null,
+      collectedData: null,
+      heuristicResults: [],
+      error: message,
+    };
+  }
+}
 
-    const engine = getEngine({ disableRules: options?.disableRules });
+/** Analyse la page déjà chargée, sans la recharger. Utilisé par les parcours rejoués. */
+export async function analyzeLoadedPage(
+  page: Page,
+  url: string,
+  _sessionId: string,
+  options?: { timeout?: number; disableRules?: string[] },
+): Promise<PageResult> {
+  try {
+    const engine = getEngine({ timeout: options?.timeout, disableRules: options?.disableRules });
     const [axeResults, collectedData, heuristicResults] = await Promise.all([
       engine.analyze(page),
       collectAll(page),

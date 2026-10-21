@@ -42,4 +42,9 @@ export const config = {
     /** Sitemap fetch timeout (ms) */
     timeoutMs: envInt('CRAWL_TIMEOUT_MS', 30_000),
   },
+
+  /** Browser-heavy journey replays. */
+  journey: {
+    maxRunning: envInt('JOURNEY_MAX_RUNNING', 1),
+  },
 } as const;

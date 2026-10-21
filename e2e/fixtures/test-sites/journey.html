@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Parcours interactif</title>
+</head>
+<body>
+  <main>
+    <h1>Parcours interactif</h1>
+    <button id="next" type="button">Afficher la suite</button>
+    <p id="status" aria-live="polite">Étape initiale</p>
+    <label for="name">Nom</label>
+    <input id="name" name="name" type="text">
+  </main>
+  <script>
+    document.querySelector('#next').addEventListener('click', () => {
+      document.querySelector('#status').textContent = 'Étape suivante';
+    });
+  </script>
+</body>
+</html>

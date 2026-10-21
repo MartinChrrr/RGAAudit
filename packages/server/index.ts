@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 import { crawlRouter } from './routes/crawl.routes';
 import { auditRouter } from './routes/audit.routes';
 import { reportRouter } from './routes/report.routes';
+import { journeyRouter } from './routes/journey.routes';
 import { errorHandler } from './middleware/error.handler';
 import { config } from './config';
 
@@ -36,6 +37,7 @@ app.get('/api/health', (_, res) => {
 app.use(crawlRouter);
 app.use(auditRouter);
 app.use(reportRouter);
+app.use(journeyRouter);
 
 // Serve web frontend in production
 const webDist = resolve(__dirname, '../web/dist');
