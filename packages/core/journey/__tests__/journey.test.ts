@@ -131,4 +131,29 @@ describe('replayJourney', () => {
     const screenshot = await readFile(run.steps[0].screenshotPath!);
     expect(screenshot.length).toBeGreaterThan(0);
   }, 30_000);
+
+  it('désactive les captures après une action sensible échouée', async () => {
+    const screenshotDir = await mkdtemp(path.join(os.tmpdir(), 'rgaudit-sensitive-failure-'));
+    const journey: JourneyDefinition = {
+      id: 'journey-sensitive-failure',
+      name: 'Échec sensible',
+      startUrl: `${baseUrl}/journey.html`,
+      createdAt: new Date().toISOString(),
+      steps: [
+        { id: 'sensitive-failure', action: 'click', selector: '#missing', sensitive: true },
+        { id: 'context-after-failure', action: 'click', selector: '#context' },
+      ],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      screenshotDir,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    expect(run.steps[0].error).toBeDefined();
+    expect(run.steps[1].context?.changed).toBe(true);
+    expect(run.steps[1].screenshotPath).toBeUndefined();
+    expect(run.steps[1].screenshotSkippedReason).toBe('sensitive_step');
+  }, 30_000);
 });

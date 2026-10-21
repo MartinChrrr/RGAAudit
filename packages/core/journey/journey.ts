@@ -171,6 +171,10 @@ export async function replayJourney(
     let previousUrl = page.url();
     for (const [stepIndex, step] of journey.steps.entries()) {
       const observedAt = new Date().toISOString();
+      // Mark the replay as sensitive before executing the action. A failed
+      // sensitive action may still have partially changed the DOM, so later
+      // context captures must remain disabled.
+      if (step.sensitive === true) sensitiveStepObserved = true;
       try {
         const urlBeforeStep = page.url();
         if (urlBeforeStep !== previousUrl || step.action === 'navigate') focusHistory.length = 0;
@@ -196,7 +200,7 @@ export async function replayJourney(
           ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory)
           : undefined;
         const context = buildContextObservation(step, beforeSignals, afterSignals);
-        const screenshotBlockedBySensitiveStep = sensitiveStepObserved || step.sensitive === true;
+        const screenshotBlockedBySensitiveStep = sensitiveStepObserved;
         let screenshotPath: string | undefined;
         let screenshotSkippedReason: JourneyStepObservation['screenshotSkippedReason'];
         if (options.screenshotDir && screenshotBlockedBySensitiveStep) {
@@ -217,7 +221,6 @@ export async function replayJourney(
             }
           }
         }
-        if (step.sensitive === true) sensitiveStepObserved = true;
         steps.push({
           stepId: step.id,
           action: step.action,
