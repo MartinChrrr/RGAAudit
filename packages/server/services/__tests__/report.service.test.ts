@@ -50,8 +50,8 @@ describe('buildReportFromSession', () => {
 
     expect(data.report.coverage).toMatchObject({
       total: 106,
-      integrated: 26,
-      machineSignal: 25,
+      integrated: 27,
+      machineSignal: 26,
       humanReview: 101,
     });
     expect(data.review.coverage).toEqual(data.report.coverage);

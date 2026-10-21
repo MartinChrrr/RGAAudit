@@ -15,12 +15,12 @@ const mockReport = {
   limitBanner: 'Ce rapport ne couvre que 7 critères RGAA sur 106.',
   coverage: {
     total: 106,
-    integrated: 26,
-    machineSignal: 25,
+    integrated: 27,
+    machineSignal: 26,
     humanReview: 101,
     full: 5,
-    partial: 20,
-    manualShell: 81,
+    partial: 21,
+    manualShell: 80,
   },
   summary: {
     totalCriteria: 7,

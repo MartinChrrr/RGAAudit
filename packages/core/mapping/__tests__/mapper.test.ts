@@ -58,7 +58,7 @@ describe('loadMapping', () => {
     expect(mapping.coveredThemes).toContain('Couleurs');
 
     const implemented = mapping.criteria.filter((criterion) => criterion.implementationLot === 0);
-    expect(implemented).toHaveLength(26);
+    expect(implemented).toHaveLength(27);
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.1')).toMatchObject({
       coverage: 'partial',
       humanLevel: 'H2',
@@ -363,6 +363,20 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
     const axeResults = makeAxeResult({
       violations: [
         {
+          rule: 'td-headers-attr',
+          impact: 'serious',
+          description: 'Table cell headers attributes must refer to other th elements',
+          helpUrl: '',
+          elements: [{ html: '<td headers="missing-header">', target: ['#invalid-headers td'] }],
+        },
+        {
+          rule: 'scope-attr-valid',
+          impact: 'moderate',
+          description: 'scope attribute should be used correctly',
+          helpUrl: '',
+          elements: [{ html: '<th scope="invalid">', target: ['#invalid-headers th'] }],
+        },
+        {
           rule: 'label',
           impact: 'critical',
           description: 'Form elements must have labels',
@@ -381,6 +395,10 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
 
     const result = mapPageResults(axeResults, makeCollectedData(), 'http://example.com/us-06');
 
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '5.6')).toMatchObject({
+      status: 'violation',
+      violations: [{ rule: 'td-headers-attr' }, { rule: 'scope-attr-valid' }],
+    });
     expect(result.criteria.find((criterion) => criterion.rgaaId === '11.1')).toMatchObject({
       status: 'violation',
       violations: [{ rule: 'label', elements: [{ target: ['#email'] }] }],
@@ -436,8 +454,8 @@ describe('aggregateResults', () => {
     expect(summary.coverage).toEqual(summarizeCoverage(loadMapping().criteria));
     expect(summary.coverage).toMatchObject({
       total: 106,
-      integrated: 26,
-      machineSignal: 25,
+      integrated: 27,
+      machineSignal: 26,
       humanReview: 101,
     });
   });
@@ -614,20 +632,20 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(26);
+    expect(report.metadata.coveredCriteria).toBe(27);
     expect(report.coverage).toMatchObject({
       total: 106,
-      integrated: 26,
-      machineSignal: 25,
+      integrated: 27,
+      machineSignal: 26,
       humanReview: 101,
       full: 5,
-      partial: 20,
-      manualShell: 81,
+      partial: 21,
+      manualShell: 80,
     });
     expect(summary.coverage).toEqual(report.coverage);
 
     // limitBanner comes from locale, not hardcoded
-    expect(report.limitBanner).toContain('80');
+    expect(report.limitBanner).toContain('79');
     expect(report.limitBanner).toContain('106');
     expect(report.limitBanner).not.toBe('');
 

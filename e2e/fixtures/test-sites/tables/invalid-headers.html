@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><title>En-têtes de tableau invalides</title></head>
+<body>
+  <main>
+    <h1>Résultats</h1>
+    <table id="invalid-headers">
+      <tr><th scope="col">En-tête utilisé</th><th id="orphan-header" scope="col">En-tête isolé</th></tr>
+      <tr><td>Valeur</td></tr>
+      <tr><td headers="missing-header">Valeur</td></tr>
+      <tr><th scope="invalid">Mauvais scope</th><td>Autre valeur</td></tr>
+    </table>
+  </main>
+</body>
+</html>

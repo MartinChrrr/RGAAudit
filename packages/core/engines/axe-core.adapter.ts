@@ -17,6 +17,8 @@ const DEFAULT_TIMEOUT = 30_000;
 // These rules are mapped to deterministic RGAA signals in the current lot,
 // so they must be explicitly enabled while preserving the regular rule set.
 const ENABLED_DETERMINISTIC_RULES = [
+  'td-headers-attr',
+  'scope-attr-valid',
   'table-fake-caption',
   'link-in-text-block',
   'avoid-inline-spacing',

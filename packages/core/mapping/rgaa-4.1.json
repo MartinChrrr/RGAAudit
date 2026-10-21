@@ -684,15 +684,15 @@
         "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
         "theme": "Tableaux"
       },
-      "coverage": "manual_shell",
+      "coverage": "partial",
       "humanLevel": "H1",
-      "implementationLot": 1,
-      "wcag": [],
-      "axeRules": [],
-      "evaluationStrategy": "MANUAL_ONLY",
+      "implementationLot": 0,
+      "wcag": ["1.3.1"],
+      "axeRules": ["td-headers-attr", "scope-attr-valid"],
+      "evaluationStrategy": "ANY_VIOLATION",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "limits": "axe-core contrôle les associations techniques les plus courantes entre en-têtes et cellules ; la pertinence et l’exhaustivité des en-têtes restent à confirmer manuellement."
     },
     {
       "rgaa": {

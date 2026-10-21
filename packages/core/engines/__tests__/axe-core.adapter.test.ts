@@ -263,6 +263,13 @@ describe('AxeCoreAdapter', () => {
   it('couvre les règles déterministes de US-06 sur tableaux, liens, formulaires, navigation et orientation', async () => {
     const adapter = new AxeCoreAdapter();
 
+    await withPage(`${baseUrl}/tables/invalid-headers.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const rules = new Set(result.violations.map((item) => item.rule));
+      expect(rules.has('td-headers-attr')).toBe(true);
+      expect(rules.has('scope-attr-valid')).toBe(true);
+    });
+
     await withPage(`${baseUrl}/tables/fake-caption.html`, async (page) => {
       const result = await adapter.analyze(page) as EngineResult;
       const violation = result.violations.find((item) => item.rule === 'table-fake-caption');
@@ -323,6 +330,8 @@ describe('AxeCoreAdapter', () => {
   it('ne signale pas les fixtures conformes de US-06', async () => {
     const adapter = new AxeCoreAdapter();
     const cases: Array<[string, string]> = [
+      ['/tables/valid-headers.html', 'td-headers-attr'],
+      ['/tables/valid-headers.html', 'scope-attr-valid'],
       ['/tables/with-caption.html', 'table-fake-caption'],
       ['/links/underlined.html', 'link-in-text-block'],
       ['/presentation/external-spacing.html', 'avoid-inline-spacing'],
