@@ -427,7 +427,7 @@ export async function collectFrames(page: Page): Promise<FrameData[]> {
         try {
           const resolved = new URL(rawSrc, document.baseURI);
           sourceUrl = resolved.href;
-          origin = resolved.origin;
+          origin = resolved.origin === 'null' ? null : resolved.origin;
         } catch {
           origin = null;
         }

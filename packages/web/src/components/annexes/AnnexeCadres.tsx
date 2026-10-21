@@ -91,23 +91,24 @@ export default function AnnexeCadres({
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
+              <caption className="sr-only">{t('annexes.frames.title')}</caption>
               <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700">
                 <tr>
-                  <th className="px-3 py-2">{t('annexes.frames.colSelector')}</th>
-                  <th className="px-3 py-2">{t('annexes.frames.colSource')}</th>
-                  <th className="px-3 py-2">{t('annexes.frames.colOrigin')}</th>
-                  <th className="px-3 py-2">{t('annexes.frames.colTitle')}</th>
-                  <th className="px-3 py-2">{t('annexes.frames.colStatus')}</th>
+                  <th scope="col" className="px-3 py-2">{t('annexes.frames.colSelector')}</th>
+                  <th scope="col" className="px-3 py-2">{t('annexes.frames.colSource')}</th>
+                  <th scope="col" className="px-3 py-2">{t('annexes.frames.colOrigin')}</th>
+                  <th scope="col" className="px-3 py-2">{t('annexes.frames.colTitle')}</th>
+                  <th scope="col" className="px-3 py-2">{t('annexes.frames.colStatus')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {visibleFrames.map((frame) => (
                   <tr key={`${frame.pageUrl ?? ''}-${frame.selector}`} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs text-gray-700">{frame.selector}</td>
-                    <td className="max-w-64 truncate px-3 py-2 text-xs text-gray-700" title={frame.sourceUrl ?? frame.src ?? ''}>
+                    <td className="max-w-64 break-all px-3 py-2 text-xs text-gray-700">
                       {frame.sourceUrl || frame.src || t('annexes.frames.sourceAbsent')}
                     </td>
-                    <td className="max-w-48 truncate px-3 py-2 text-xs text-gray-700" title={frame.origin ?? ''}>
+                    <td className="max-w-48 break-all px-3 py-2 text-xs text-gray-700">
                       {frame.origin || t('annexes.frames.originAbsent')}
                     </td>
                     <td className="px-3 py-2 text-gray-800">

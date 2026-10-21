@@ -52,11 +52,13 @@ interface DomEvidence {
   elementIndex?: number;
 }
 
-async function collectDomEvidence(page: Page, target: string[]): Promise<DomEvidence> {
+export async function collectDomEvidence(page: Page, target: string[], expectedHtml: string): Promise<DomEvidence> {
   if (target.length === 0) return {};
 
   try {
-    return await page.evaluate((selectors) => {
+    return await page.evaluate(({ selectors, expected }) => {
+      const normalizeHtml = (html: string) => html.replace(/\s+/g, ' ').trim();
+      const normalizedExpected = normalizeHtml(expected);
       for (const selector of selectors) {
         let matches: Element[];
         try {
@@ -64,7 +66,15 @@ async function collectDomEvidence(page: Page, target: string[]): Promise<DomEvid
         } catch {
           continue;
         }
-        const element = matches[0];
+        const matchingIndexes = matches
+          .map((candidate, index) => normalizeHtml(candidate.outerHTML) === normalizedExpected ? index : -1)
+          .filter((index) => index >= 0);
+        const elementIndex = matchingIndexes.length === 1
+          ? matchingIndexes[0]
+          : matches.length === 1
+            ? 0
+            : -1;
+        const element = elementIndex >= 0 ? matches[elementIndex] : null;
         if (!element) continue;
 
         const parent = element.parentElement ?? element;
@@ -73,21 +83,21 @@ async function collectDomEvidence(page: Page, target: string[]): Promise<DomEvid
         const context = text
           ? `Parent HTML: ${parentHtml}\nParent text: ${text}`
           : `Parent HTML: ${parentHtml}`;
-        return { context, elementIndex: matches.indexOf(element) };
+        return { context, elementIndex };
       }
       return {};
-    }, target);
+    }, { selectors: target, expected: expectedHtml });
   } catch {
     // Evidence must never make an otherwise valid axe run fail.
     return {};
   }
 }
 
-async function mapElements(page: Page, nodes: NodeResult[]): Promise<AxeElement[]> {
+async function mapElements(nodes: NodeResult[], page?: Page): Promise<AxeElement[]> {
   return Promise.all(nodes.map(async (node) => {
     const checkData = extractCheckData(node);
     const target = flattenTarget(node.target);
-    const domEvidence = await collectDomEvidence(page, target);
+    const domEvidence = page ? await collectDomEvidence(page, target, node.html) : {};
     return {
       html: node.html,
       target,
@@ -128,20 +138,20 @@ export class AxeCoreAdapter implements AuditEngine {
         impact: v.impact as AxeViolation['impact'],
         description: v.description,
         helpUrl: v.helpUrl,
-        elements: await mapElements(page, v.nodes),
+        elements: await mapElements(v.nodes, page),
       })));
 
       const passes: AxePass[] = await Promise.all(axeResults.passes.map(async (p) => ({
         rule: p.id,
         description: p.description,
-        elements: await mapElements(page, p.nodes),
+        elements: await mapElements(p.nodes),
       })));
 
       const incomplete: AxeIncomplete[] = await Promise.all(axeResults.incomplete.map(async (i) => ({
         rule: i.id,
         impact: i.impact as AxeIncomplete['impact'],
         description: i.description,
-        elements: await mapElements(page, i.nodes),
+        elements: await mapElements(i.nodes, page),
       })));
 
       return { violations, passes, incomplete };

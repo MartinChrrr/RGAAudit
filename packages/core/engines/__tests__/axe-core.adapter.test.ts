@@ -3,7 +3,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { AxeCoreAdapter } from '../axe-core.adapter';
+import { AxeCoreAdapter, collectDomEvidence } from '../axe-core.adapter';
 import type { EngineResult } from '../engine.interface';
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites');
@@ -117,6 +117,15 @@ describe('AxeCoreAdapter', () => {
       expect(evidence?.context).toContain('Parent text:');
       expect(evidence?.elementIndex).toBe(0);
       expect(evidence?.target.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('retrouve le bon élément quand plusieurs nœuds partagent le même sélecteur', async () => {
+    await withPage(`${baseUrl}/images/alt-missing.html`, async (page) => {
+      const evidence = await collectDomEvidence(page, ['img'], '<img src="banner.png" width="600" height="200">');
+
+      expect(evidence.elementIndex).toBe(1);
+      expect(evidence.context).toContain('banner.png');
     });
   });
 

@@ -63,5 +63,7 @@ describe('AnnexeCadres', () => {
 
     expect(screen.getByText('Preuve illisible — à vérifier')).toBeInTheDocument();
     expect(screen.getByText('https://other.example')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveAccessibleName('Annexe Cadres');
+    expect(screen.getAllByRole('columnheader')).toHaveLength(5);
   });
 });
