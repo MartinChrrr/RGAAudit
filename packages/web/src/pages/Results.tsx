@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { t } from '../locales';
 import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
 import AnnexeMedias, { type MediaItem } from '../components/annexes/AnnexeMedias';
+import AnnexeContenusSpecialises, { type SpecializedContentItem } from '../components/annexes/AnnexeContenusSpecialises';
 import AnnexeCadres, { type FrameItem } from '../components/annexes/AnnexeCadres';
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
 import AnnexeTitres, { type HeadingTreeData } from '../components/annexes/AnnexeTitres';
@@ -77,6 +78,7 @@ interface ReportData {
     collectedData: {
       images: ImageItem[];
       media?: MediaItem[];
+      specializedContent?: SpecializedContentItem[];
       frames: FrameItem[];
       links: LinkItem[];
       forms?: Omit<FormItem, 'pageUrl'>[];
@@ -250,6 +252,9 @@ export default function Results() {
   );
   const allMedia: MediaItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.media ?? []).map((media) => ({ ...media, pageUrl: entry.url })),
+  );
+  const allSpecialized: SpecializedContentItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.specializedContent ?? []).map((item) => ({ ...item, pageUrl: entry.url })),
   );
   const allFrames: FrameItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.frames ?? []).map((frame) => ({ ...frame, pageUrl: entry.url })),
@@ -489,7 +494,7 @@ export default function Results() {
         {/* Annexes tabs */}
         <section id="annexes" tabIndex={-1} className="mb-8 scroll-mt-4 focus:outline-none">
           <div className="flex border-b border-gray-200 mb-4" role="tablist">
-            {(['images', 'media', 'frames', 'links', 'forms', 'headings', 'heuristics'] as const).map((tab) => (
+            {(['images', 'media', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -528,6 +533,12 @@ export default function Results() {
               <AnnexeMedias
                 media={allMedia}
                 initialPageUrl={annexTarget?.tab === 'media' ? annexTarget.pageUrl : undefined}
+              />
+            )}
+            {activeTab === 'specialized' && (
+              <AnnexeContenusSpecialises
+                items={allSpecialized}
+                initialPageUrl={annexTarget?.tab === 'specialized' ? annexTarget.pageUrl : undefined}
               />
             )}
             {activeTab === 'frames' && (

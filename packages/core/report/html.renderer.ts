@@ -201,6 +201,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 
   const formsSection = buildFormsSection(allCollected ?? []);
   const mediaSection = buildMediaSection(allCollected ?? []);
+  const specializedSection = buildSpecializedContentSection(allCollected ?? []);
 
   const annexeDataJson = allCollected
     ? serializeForHtmlScript(allCollected)
@@ -328,6 +329,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 
     ${mediaSection}
 
+    ${specializedSection}
+
     ${formsSection}
 
     <!-- Footer -->
@@ -382,6 +385,45 @@ function buildMediaSection(allCollected: Array<{ url: string; collectedData: Col
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colAlternatives'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colTracks'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.manualChecks'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function buildSpecializedContentSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {
+  const items = allCollected.flatMap(({ url, collectedData }) => (
+    (collectedData?.specializedContent ?? []).map((item) => ({ url, item }))
+  ));
+  if (items.length === 0) return '';
+
+  const reviewCount = items.filter(({ item }) => item.status === 'review_required').length;
+  const rows = items.map(({ url, item }) => `
+    <tr>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(item.source ?? 'Source absente')}<br>${escapeHtml(item.label ?? (item.context || 'Aucun libellé observé'))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.evidence.join(', ') || 'Aucune preuve complémentaire observée')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.criterionIds.join(', '))}</td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(t('annexes.specialized.reviewRequired'))}<br>${escapeHtml(item.flags.join(', ') || 'aucun signal')}<br><span class="text-gray-500">${escapeHtml(url)}</span></td>
+    </tr>`).join('');
+
+  return `
+    <section class="mb-8" data-testid="specialized-content-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeSpecialized'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('annexes.specialized.description'))}</p>
+      <p class="text-xs text-amber-900 mb-3">${escapeHtml(t('annexes.specialized.reviewRequired'))}: ${reviewCount}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeSpecialized'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.specialized.colType'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.specialized.colSource'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.specialized.colEvidence'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.specialized.colCriteria'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.specialized.colStatus'))}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">${rows}</tbody>

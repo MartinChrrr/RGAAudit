@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   collectImages,
   collectMedia,
+  collectSpecializedContent,
   collectFrames,
   collectLinks,
   collectHeadings,
@@ -241,6 +242,23 @@ describe('collectMedia', () => {
   it('expose l’inventaire multimédia dans la collecte globale', async () => {
     const collected = await withPage(`${baseUrl}/media/tracks.html`, collectAll);
     expect(collected.media).toHaveLength(4);
+    expect(collected.specializedContent).toEqual(expect.any(Array));
+  });
+
+  it('regroupe les médias, CAPTCHA et documents dans un bilan de revue humaine', async () => {
+    await withPage(`${baseUrl}/specialized.html`, async (page) => {
+      const images = await collectImages(page);
+      const media = await collectMedia(page);
+      const specialized = await collectSpecializedContent(page, media, images);
+
+      expect(specialized.filter((item) => item.kind === 'captcha')).toHaveLength(1);
+      expect(specialized.filter((item) => item.kind === 'document')).toHaveLength(2);
+      expect(specialized.every((item) => item.status === 'review_required')).toBe(true);
+      expect(specialized.find((item) => item.kind === 'captcha')?.criterionIds).toEqual(
+        expect.arrayContaining(['1.4', '1.8']),
+      );
+      expect(specialized.find((item) => item.kind === 'document')?.criterionIds).toEqual(['13.3', '13.4']);
+    });
   });
 });
 

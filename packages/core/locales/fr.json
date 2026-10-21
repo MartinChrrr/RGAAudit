@@ -59,6 +59,7 @@
     "tabForms": "Formulaires",
     "tabHeadings": "Titres",
     "tabHeuristics": "Sémantique HTML",
+    "tabSpecialized": "Contenus spécialisés",
     "comingSoon": "Annexes détaillées disponibles à l'étape 9",
     "backHome": "Nouvel audit"
   },
@@ -90,7 +91,7 @@
     },
     "media": {
       "title": "Annexe Médias",
-      "description": "Les médias temporels, leurs pistes et leurs alternatives observées. La présence et la pertinence restent à confirmer manuellement.",
+      "description": "Les médias temporels et non temporels, leurs pistes et leurs alternatives observées. La présence et la pertinence restent à confirmer manuellement.",
       "filterByPage": "Filtrer par page",
       "allPages": "Toutes les pages",
       "colType": "Type",
@@ -102,6 +103,22 @@
       "noTracks": "Aucune piste déclarée",
       "noAlternative": "Aucune alternative observée",
       "noResults": "Aucun média à afficher"
+    },
+    "specialized": {
+      "title": "Annexe Contenus spécialisés",
+      "description": "Les médias, CAPTCHA et documents détectés sont regroupés ici. Chaque élément nécessite une vérification humaine avant toute décision RGAA.",
+      "statusSummary": "Synthèse des statuts des contenus spécialisés",
+      "reviewRequired": "Revue humaine requise",
+      "filterByPage": "Filtrer par page",
+      "allPages": "Toutes les pages",
+      "colType": "Type",
+      "colSource": "Source et contexte",
+      "colEvidence": "Preuves observées",
+      "colCriteria": "Critères",
+      "colStatus": "Statut",
+      "sourceAbsent": "Source absente",
+      "noEvidence": "Aucune preuve complémentaire observée",
+      "noResults": "Aucun contenu spécialisé détecté"
     },
     "frames": {
       "title": "Annexe Cadres",
@@ -268,6 +285,7 @@
     "htmlAnnexeHeadings": "Annexe — Titres",
     "htmlAnnexeForms": "Annexe — Formulaires",
     "htmlAnnexeMedia": "Annexe — Médias",
+    "htmlAnnexeSpecialized": "Annexe — Contenus spécialisés",
     "htmlFormField": "Champ",
     "htmlFormLabel": "Libellé",
     "htmlFormHelp": "Aide / instruction",

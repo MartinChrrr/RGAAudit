@@ -272,6 +272,31 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Critères : 4.1, 4.3');
   });
 
+  it('affiche le bilan des contenus spécialisés avec le statut de revue', () => {
+    const collected = makeCollectedData();
+    collected.specializedContent = [{
+      kind: 'document',
+      selector: 'a[href="guide.pdf"]',
+      source: 'https://example.com/guide.pdf',
+      label: 'Guide accessible',
+      context: 'Télécharger le guide',
+      criterionIds: ['13.3', '13.4'],
+      status: 'review_required',
+      evidence: ['label observed'],
+      flags: ['DOCUMENT_REQUIRES_HUMAN_REVIEW'],
+    }];
+
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
+    });
+
+    expect(html).toContain('Annexe — Contenus spécialisés');
+    expect(html).toContain('a[href=&quot;guide.pdf&quot;]');
+    expect(html).toContain('Revue humaine requise: 1');
+    expect(html).toContain('13.3, 13.4');
+  });
+
   it('échappe les caractères HTML dangereux dans les données', () => {
     const report = makeReport({
       metadata: {

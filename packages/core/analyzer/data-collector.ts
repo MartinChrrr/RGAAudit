@@ -60,6 +60,21 @@ export interface MediaData {
   truncated?: boolean;
 }
 
+export type SpecializedContentKind = 'media' | 'captcha' | 'document';
+
+/** Cross-theme inventory used by US-17; every entry remains a human review shell. */
+export interface SpecializedContentData {
+  kind: SpecializedContentKind;
+  selector: string;
+  source: string | null;
+  label: string | null;
+  context: string;
+  criterionIds: string[];
+  status: 'review_required';
+  evidence: string[];
+  flags: string[];
+}
+
 export interface LinkData {
   selector: string;
   tagName: string;
@@ -136,6 +151,8 @@ export interface CollectedData {
   images: ImageData[];
   /** Temporal and non-temporal media inventory for the dedicated multimedia review backlog. */
   media?: MediaData[];
+  /** Cross-theme inventory for media, CAPTCHA candidates and downloadable documents. */
+  specializedContent?: SpecializedContentData[];
   frames: FrameData[];
   links: LinkData[];
   headings: HeadingTree;
@@ -514,6 +531,143 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
       requiresHumanReview: true as const,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// collectSpecializedContent — US-17
+// ---------------------------------------------------------------------------
+
+const DOCUMENT_EXTENSIONS = /\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|rtf|csv)(?:[?#].*)?$/i;
+const CAPTCHA_HINT = /captcha|recaptcha|hcaptcha|challenge|image[-_ ]?test/i;
+
+export async function collectSpecializedContent(
+  page: Page,
+  media: MediaData[] = [],
+  images: ImageData[] = [],
+): Promise<SpecializedContentData[]> {
+  const raw = await page.evaluate(({ documentExtensions, captchaHint }) => {
+    const documentPattern = new RegExp(documentExtensions, 'i');
+    const captchaPattern = new RegExp(captchaHint, 'i');
+    const getUniqueSelector = (element: Element): string => {
+      const parts: string[] = [];
+      let current: Element | null = element;
+      while (current && current !== document.documentElement) {
+        const tag = current.tagName.toLowerCase();
+        const id = current.getAttribute('id');
+        const idSelector = id ? `${tag}#${CSS.escape(id)}` : null;
+        if (idSelector && document.querySelectorAll(idSelector).length === 1) {
+          parts.unshift(idSelector);
+          break;
+        }
+        const parent: Element | null = current.parentElement;
+        if (!parent) {
+          parts.unshift(tag);
+          break;
+        }
+        const siblings = (Array.from(parent.children) as Element[]).filter((child) => child.tagName === current!.tagName);
+        const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(current) + 1})` : '';
+        parts.unshift(`${tag}${suffix}`);
+        current = parent;
+      }
+      return parts.join(' > ');
+    };
+
+    const normalize = (value: string | null | undefined, max = 300): string =>
+      (value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+    const resolveUrl = (value: string | null): string | null => {
+      if (!value) return null;
+      try {
+        return new URL(value, document.baseURI).href;
+      } catch {
+        return value;
+      }
+    };
+
+    const contextOf = (element: Element): string => {
+      const parent = element.parentElement?.cloneNode(true) as HTMLElement | undefined;
+      parent?.querySelectorAll('img, audio, video, canvas, object, embed').forEach((child) => child.remove());
+      return normalize(parent?.textContent);
+    };
+
+    const captchaCandidates = Array.from(document.querySelectorAll('img')).filter((element) => {
+      const haystack = [
+        element.getAttribute('id'),
+        element.getAttribute('class'),
+        element.getAttribute('alt'),
+        element.getAttribute('aria-label'),
+        element.getAttribute('src'),
+        contextOf(element),
+      ].join(' ');
+      return captchaPattern.test(haystack);
+    }).map((element) => ({
+      selector: getUniqueSelector(element),
+      source: resolveUrl(element.getAttribute('src')),
+      label: normalize(element.getAttribute('alt') || element.getAttribute('aria-label') || element.getAttribute('title')) || null,
+      context: contextOf(element),
+    }));
+
+    const documentCandidates = Array.from(document.querySelectorAll('a[href], object[data], embed[src]'))
+      .map((element) => {
+        const value = element.getAttribute('href') ?? element.getAttribute('data') ?? element.getAttribute('src');
+        const source = resolveUrl(value);
+        return {
+          selector: getUniqueSelector(element),
+          source,
+          label: normalize(element.textContent || element.getAttribute('aria-label') || element.getAttribute('title')) || null,
+          context: contextOf(element),
+        };
+      })
+      .filter((candidate) => candidate.source && documentPattern.test(candidate.source));
+
+    return { captchaCandidates, documentCandidates };
+  }, { documentExtensions: DOCUMENT_EXTENSIONS.source, captchaHint: CAPTCHA_HINT.source });
+
+  const mediaItems: SpecializedContentData[] = media.map((item) => ({
+    kind: 'media',
+    selector: item.selector,
+    source: item.sources[0] ?? null,
+    label: item.accessibleName ?? item.fallbackText,
+    context: item.surroundingText,
+    criterionIds: item.criterionIds,
+    status: 'review_required',
+    evidence: [
+      ...item.tracks.map((track) => `${track.kind}${track.srcLang ? ` (${track.srcLang})` : ''}`),
+      ...item.alternativeSources,
+    ],
+    flags: item.flags,
+  }));
+
+  const captchaItems: SpecializedContentData[] = raw.captchaCandidates.map((candidate) => {
+    const image = images.find((item) => item.selector === candidate.selector);
+    const flags = ['CAPTCHA_REQUIRES_HUMAN_REVIEW'];
+    if (!candidate.label) flags.push('CAPTCHA_ALTERNATIVE_ABSENT');
+    return {
+      kind: 'captcha',
+      selector: candidate.selector,
+      source: candidate.source,
+      label: candidate.label,
+      context: candidate.context,
+      criterionIds: ['1.4', '1.5', '1.6', '1.7', '1.8'],
+      status: 'review_required',
+      evidence: image?.alternativeSources ?? [],
+      flags,
+    };
+  });
+
+  const documentItems: SpecializedContentData[] = raw.documentCandidates.map((candidate) => ({
+    kind: 'document',
+    selector: candidate.selector,
+    source: candidate.source,
+    label: candidate.label,
+    context: candidate.context,
+    criterionIds: ['13.3', '13.4'],
+    status: 'review_required',
+    evidence: candidate.label ? ['label observed'] : [],
+    flags: ['DOCUMENT_REQUIRES_HUMAN_REVIEW', 'DOCUMENT_ACCESSIBLE_VERSION_UNKNOWN'],
+  }));
+
+  return [...mediaItems, ...captchaItems, ...documentItems];
 }
 
 // ---------------------------------------------------------------------------
@@ -976,5 +1130,6 @@ export async function collectAll(page: Page): Promise<CollectedData> {
     collectFigureCaptions(page),
   ]);
 
-  return { images, media, frames, links, headings, forms, figcaptions };
+  const specializedContent = await collectSpecializedContent(page, media, images);
+  return { images, media, specializedContent, frames, links, headings, forms, figcaptions };
 }
