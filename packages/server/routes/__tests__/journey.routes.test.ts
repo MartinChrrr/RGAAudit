@@ -91,6 +91,21 @@ describe('POST /api/journeys', () => {
     expect(response.body.error).toContain('touche');
     expect(mockSaveJourney).not.toHaveBeenCalled();
   });
+
+  it('refuse les identifiants d’étapes dupliqués', async () => {
+    const response = await request(app).post('/api/journeys').send({
+      name: 'Parcours dupliqué',
+      startUrl: 'https://example.com',
+      steps: [
+        { id: 'same-step', action: 'wait', waitMs: 1 },
+        { id: 'same-step', action: 'wait', waitMs: 1 },
+      ],
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('uniques');
+    expect(mockSaveJourney).not.toHaveBeenCalled();
+  });
 });
 
 describe('journey replay and run retrieval', () => {

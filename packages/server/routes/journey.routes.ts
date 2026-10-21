@@ -18,14 +18,17 @@ export const journeyRouter = Router();
 journeyRouter.post('/api/journeys', validateBody(journeyInputSchema), asyncHandler(async (req: Request, res: Response) => {
   const validationError = validateJourneySteps(req.body.steps);
   if (validationError) throw new HttpError(400, validationError);
+  const steps: JourneyStep[] = req.body.steps.map((step: Omit<JourneyStep, 'id'> & { id?: string }, index: number): JourneyStep => ({
+    ...step,
+    id: step.id ?? `step-${index + 1}`,
+  }));
+  const normalizedValidationError = validateJourneySteps(steps);
+  if (normalizedValidationError) throw new HttpError(400, normalizedValidationError);
   const journey: JourneyDefinition = {
     id: randomUUID(),
     name: req.body.name,
     startUrl: req.body.startUrl,
-    steps: req.body.steps.map((step: Omit<JourneyStep, 'id'> & { id?: string }, index: number): JourneyStep => ({
-      ...step,
-      id: step.id ?? `step-${index + 1}`,
-    })),
+    steps,
     createdAt: new Date().toISOString(),
   };
   await saveJourney(journey);

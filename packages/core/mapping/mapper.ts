@@ -263,7 +263,9 @@ function getManualChecks(criterion: RgaaCriterion): string[] {
   const configured = criterion.heuristicPatterns.manualChecks;
   if (configured && configured.length > 0) return configured;
   if (criterion.coverage === 'manual_shell' || criterion.evaluationStrategy === 'MANUAL_ONLY') {
-    return [`Vérifier manuellement le critère ${criterion.rgaa.id} : ${criterion.rgaa.title}`];
+    return [
+      `Vérifier le critère ${criterion.rgaa.id} (« ${criterion.rgaa.title} ») dans le contexte audité, puis consigner le résultat conforme, non conforme ou non applicable, avec la preuve et le contexte observés.`,
+    ];
   }
   return [];
 }

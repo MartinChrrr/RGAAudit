@@ -33,8 +33,13 @@ export const journeyDefinitionSchema = z.object({
   createdAt: z.string().datetime(),
 });
 
-export function validateJourneySteps(steps: Array<Pick<JourneyStep, 'action' | 'url' | 'selector' | 'key'>>): string | null {
+export function validateJourneySteps(steps: Array<Pick<JourneyStep, 'id' | 'action' | 'url' | 'selector' | 'key'>>): string | null {
+  const ids = new Set<string>();
   for (const step of steps) {
+    if (step.id) {
+      if (ids.has(step.id)) return 'Les identifiants d’étapes doivent être uniques.';
+      ids.add(step.id);
+    }
     if (step.action === 'navigate' && !step.url) return 'Une étape navigate doit contenir une URL.';
     if ((step.action === 'click' || step.action === 'fill' || step.action === 'press') && !step.selector) {
       return `Une étape ${step.action} doit contenir un sélecteur.`;
@@ -50,4 +55,3 @@ export function parseJourney(value: unknown): JourneyDefinition | null {
   if (validateJourneySteps(parsed.data.steps)) return null;
   return parsed.data as JourneyDefinition;
 }
-
