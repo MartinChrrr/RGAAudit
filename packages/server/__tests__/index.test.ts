@@ -13,6 +13,7 @@ const {
   mockAuditPages,
   mockMapPageResults,
   mockAggregateResults,
+  mockSummarizeCoverage,
   mockBuildReport,
   mockReadFile,
   mockRenderReportHtml,
@@ -23,6 +24,7 @@ const {
   mockAuditPages: vi.fn(),
   mockMapPageResults: vi.fn(),
   mockAggregateResults: vi.fn(),
+  mockSummarizeCoverage: vi.fn(),
   mockBuildReport: vi.fn(),
   mockReadFile: vi.fn(),
   mockRenderReportHtml: vi.fn(),
@@ -41,6 +43,7 @@ vi.mock('@rgaaudit/core/analyzer/analyzer', () => ({
 vi.mock('@rgaaudit/core/mapping/mapper', () => ({
   mapPageResults: mockMapPageResults,
   aggregateResults: mockAggregateResults,
+  summarizeCoverage: mockSummarizeCoverage,
   buildReport: mockBuildReport,
 }));
 
@@ -66,6 +69,15 @@ import { app } from '../index';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockSummarizeCoverage.mockReturnValue({
+    total: 0,
+    integrated: 0,
+    machineSignal: 0,
+    humanReview: 0,
+    full: 0,
+    partial: 0,
+    manualShell: 0,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -292,7 +304,21 @@ describe('GET /api/report/:sessionId/html', () => {
     mockMapPageResults.mockReturnValue({
       url: 'https://example.com',
       criteria: [
-        { rgaaId: '1.1', title: 'Images', status: 'pass', violations: [], elements: [] },
+        {
+          rgaaId: '1.1',
+          title: 'Images',
+          theme: 'Images',
+          coverage: 'full',
+          humanLevel: 'H1',
+          implementationLot: 0,
+          status: 'pass',
+          violations: [],
+          incompletes: [],
+          elements: [],
+          heuristicFindings: [],
+          notes: '',
+          manualChecks: [],
+        },
       ],
     });
 
