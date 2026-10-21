@@ -577,6 +577,14 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
 
 export async function collectForms(page: Page): Promise<FormDataItem[]> {
   return page.evaluate(() => {
+    const MAX_TEXT_LENGTH = 500;
+    const MAX_FORMS = 100;
+    const MAX_CONTROLS_PER_FORM = 200;
+    const limitText = (value: string | null | undefined): string | null => {
+      const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
+      return normalized ? normalized.slice(0, MAX_TEXT_LENGTH) : null;
+    };
+
     const getUniqueSelector = (element: Element): string => {
       const id = element.getAttribute('id');
       if (id) {
@@ -594,16 +602,15 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
 
     const getReferencedText = (ids: string[]): string | null => {
       const text = ids
-        .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+        .map((id) => document.getElementById(id)?.textContent ?? '')
         .filter(Boolean)
         .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      return text || null;
+      return limitText(text);
     };
 
     const controlsFor = (container: Element | Document): FormControlData[] => {
-      const controls = Array.from(container.querySelectorAll('input:not([type="hidden"]), textarea, select'));
+      const controls = Array.from(container.querySelectorAll('input:not([type="hidden"]), textarea, select'))
+        .slice(0, MAX_CONTROLS_PER_FORM);
       return controls.map((control) => {
         const id = control.getAttribute('id');
         const ariaLabelledbyIds = (control.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
@@ -611,8 +618,8 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
         const labelledByText = getReferencedText(ariaLabelledbyIds);
         const ariaLabel = control.getAttribute('aria-label')?.trim() || null;
         const associatedLabel = id
-          ? document.querySelector(`label[for="${CSS.escape(id)}"]`)?.textContent?.trim() || null
-          : control.closest('label')?.textContent?.trim() || null;
+          ? limitText(document.querySelector(`label[for="${CSS.escape(id)}"]`)?.textContent)
+          : limitText(control.closest('label')?.textContent);
         const label = labelledByText || ariaLabel || associatedLabel;
         const labelSource: FormControlData['labelSource'] = labelledByText
           ? 'aria-labelledby'
@@ -651,7 +658,7 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
       });
     };
 
-    const forms = Array.from(document.querySelectorAll('form')).map((form) => ({
+    const forms = Array.from(document.querySelectorAll('form')).slice(0, MAX_FORMS).map((form) => ({
       selector: getUniqueSelector(form),
       action: form.getAttribute('action'),
       method: (form.getAttribute('method') ?? 'get').toLowerCase(),

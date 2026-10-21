@@ -9,11 +9,13 @@ const {
   mockLoadJourney,
   mockLoadJourneyRun,
   mockRedactJourney,
+  mockGetMissingSensitiveStepIds,
   mockStartJourneyReplay,
 } = vi.hoisted(() => ({
   mockSaveJourney: vi.fn(),
   mockLoadJourney: vi.fn(),
   mockLoadJourneyRun: vi.fn(),
+  mockGetMissingSensitiveStepIds: vi.fn<(journey: JourneyDefinition) => string[]>(() => []),
   mockRedactJourney: vi.fn((journey: JourneyDefinition) => ({
     ...journey,
     steps: journey.steps.map((step) => step.sensitive ? { ...step, value: undefined } : step),
@@ -25,6 +27,7 @@ vi.mock('../../services/journey.store', () => ({
   saveJourney: mockSaveJourney,
   loadJourney: mockLoadJourney,
   loadJourneyRun: mockLoadJourneyRun,
+  getMissingSensitiveStepIds: mockGetMissingSensitiveStepIds,
   redactJourney: mockRedactJourney,
 }));
 
@@ -44,6 +47,7 @@ beforeEach(() => {
   mockSaveJourney.mockResolvedValue(undefined);
   mockLoadJourney.mockResolvedValue(null);
   mockLoadJourneyRun.mockResolvedValue(null);
+  mockGetMissingSensitiveStepIds.mockReturnValue([]);
   mockStartJourneyReplay.mockReturnValue('run-001');
 });
 
@@ -122,6 +126,24 @@ describe('journey replay and run retrieval', () => {
 
     expect(response.status).toBe(429);
     expect(response.body.error).toContain('Trop de rejeux');
+  });
+
+  it('refuse un rejeu quand un secret doit être réinjecté', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-001',
+      name: 'Connexion',
+      startUrl: 'https://example.com',
+      steps: [{ id: 'step-1', action: 'fill', selector: '#password', sensitive: true }],
+      createdAt: new Date().toISOString(),
+    };
+    mockLoadJourney.mockResolvedValue(journey);
+    mockGetMissingSensitiveStepIds.mockReturnValue(['step-1']);
+
+    const response = await request(app).post('/api/journeys/journey-001/replay');
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toContain('secrets à réinjecter');
+    expect(mockStartJourneyReplay).not.toHaveBeenCalled();
   });
 
   it('retourne le statut et les observations d’une exécution', async () => {

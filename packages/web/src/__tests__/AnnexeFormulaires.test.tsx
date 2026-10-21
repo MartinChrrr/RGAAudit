@@ -34,6 +34,9 @@ describe('AnnexeFormulaires', () => {
     expect(screen.getByText('Adresse électronique')).toBeInTheDocument();
     expect(screen.getByText('Utilisez une adresse professionnelle.')).toBeInTheDocument();
     expect(screen.getByText('Saisissez une adresse valide.')).toBeInTheDocument();
+    expect(screen.getByText('Requis')).toBeInTheDocument();
+    expect(screen.getByText('État invalide observé')).toBeInTheDocument();
+    expect(screen.getByText('autocomplete: email')).toBeInTheDocument();
     expect(screen.getByRole('table')).toHaveAccessibleName('Champs du formulaire #account');
   });
 

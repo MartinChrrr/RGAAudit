@@ -97,6 +97,7 @@ export default function AnnexeFormulaires({ forms, initialPageUrl }: Props) {
                       <tr>
                         <th scope="col" className="px-3 py-2">{t('annexes.forms.colField')}</th>
                         <th scope="col" className="px-3 py-2">{t('annexes.forms.colLabel')}</th>
+                        <th scope="col" className="px-3 py-2">{t('annexes.forms.colDetails')}</th>
                         <th scope="col" className="px-3 py-2">{t('annexes.forms.colHelp')}</th>
                         <th scope="col" className="px-3 py-2">{t('annexes.forms.colError')}</th>
                         <th scope="col" className="px-3 py-2">{t('annexes.forms.colStatus')}</th>
@@ -109,6 +110,12 @@ export default function AnnexeFormulaires({ forms, initialPageUrl }: Props) {
                           <tr key={control.selector} className="align-top">
                             <td className="px-3 py-2 font-mono text-xs text-gray-700">{control.selector}</td>
                             <td className="px-3 py-2 text-gray-800">{control.label || t('annexes.forms.labelAbsent')}</td>
+                            <td className="px-3 py-2 text-xs text-gray-700">
+                              <div>{control.labelSource || t('annexes.forms.labelSourceAbsent')}</div>
+                              <div>{control.required ? t('annexes.forms.required') : t('annexes.forms.optional')}</div>
+                              <div>{control.invalid ? t('annexes.forms.invalid') : t('annexes.forms.validityNotObserved')}</div>
+                              {control.autocomplete && <div>autocomplete: {control.autocomplete}</div>}
+                            </td>
                             <td className="px-3 py-2 text-xs text-gray-700">{control.helpText || t('annexes.forms.helpAbsent')}</td>
                             <td className="px-3 py-2 text-xs text-gray-700">{control.errorMessage || t('annexes.forms.errorAbsent')}</td>
                             <td className="px-3 py-2">

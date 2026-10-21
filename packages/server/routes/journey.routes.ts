@@ -4,7 +4,13 @@ import type { JourneyDefinition, JourneyStep } from '../../core/journey/journey'
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
 import { journeyInputSchema, validateJourneySteps } from '../services/journey.validation';
-import { loadJourney, loadJourneyRun, redactJourney, saveJourney } from '../services/journey.store';
+import {
+  getMissingSensitiveStepIds,
+  loadJourney,
+  loadJourneyRun,
+  redactJourney,
+  saveJourney,
+} from '../services/journey.store';
 import { startJourneyReplay } from '../services/journey.service';
 
 export const journeyRouter = Router();
@@ -35,6 +41,10 @@ journeyRouter.get('/api/journeys/:journeyId', asyncHandler(async (req, res) => {
 journeyRouter.post('/api/journeys/:journeyId/replay', asyncHandler(async (req, res) => {
   const journey = await loadJourney(String(req.params.journeyId));
   if (!journey) throw new HttpError(404, 'Parcours introuvable.');
+  const missingSecrets = getMissingSensitiveStepIds(journey);
+  if (missingSecrets.length > 0) {
+    throw new HttpError(409, 'Ce parcours contient des secrets à réinjecter avant le rejeu.');
+  }
   const runId = await startJourneyReplay(journey);
   if (!runId) throw new HttpError(429, 'Trop de rejeux sont déjà en cours. Réessayez plus tard.');
   res.status(202).json({ runId, journeyId: journey.id });

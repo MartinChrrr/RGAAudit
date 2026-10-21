@@ -10,7 +10,7 @@ const fsMock = vi.hoisted(() => ({
 
 vi.mock('node:fs/promises', () => fsMock);
 
-import { redactJourney, saveJourney } from '../journey.store';
+import { getMissingSensitiveStepIds, redactJourney, saveJourney } from '../journey.store';
 
 const journey: JourneyDefinition = {
   id: 'journey-001',
@@ -42,5 +42,13 @@ describe('journey store', () => {
 
     expect(JSON.stringify(publicJourney)).not.toContain('secret-token');
     expect(JSON.stringify(publicJourney)).not.toContain('secret-ref');
+    expect(publicJourney.requiresSecretInput).toBe(false);
+  });
+
+  it('signale une réinjection requise quand une valeur sensible manque', () => {
+    const missing = { ...journey, steps: [{ ...journey.steps[0], value: undefined }] };
+
+    expect(getMissingSensitiveStepIds(missing)).toEqual(['step-1']);
+    expect(redactJourney(missing).requiresSecretInput).toBe(true);
   });
 });

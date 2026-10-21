@@ -8,7 +8,8 @@ import { parseJourney } from './journey.validation';
 
 const DATA_DIR = config.dataDir || join(homedir(), '.rgaaudit');
 const JOURNEYS_DIR = join(DATA_DIR, 'journeys');
-const sensitiveValues = new Map<string, string>();
+const SECRET_TTL_MS = 15 * 60 * 1_000;
+const sensitiveValues = new Map<string, { value: string; expiresAt: number }>();
 
 function assertSafeId(id: string): void {
   if (!/^[a-zA-Z0-9-]{1,128}$/.test(id)) throw new Error('Identifiant de parcours invalide.');
@@ -37,7 +38,7 @@ export async function saveJourney(journey: JourneyDefinition): Promise<void> {
     steps: journey.steps.map((step) => {
       if (!step.sensitive || step.value === undefined) return step;
       const secretRef = step.secretRef ?? randomUUID();
-      sensitiveValues.set(secretRef, step.value);
+      sensitiveValues.set(secretRef, { value: step.value, expiresAt: Date.now() + SECRET_TTL_MS });
       const { value: _value, ...withoutValue } = step;
       return { ...withoutValue, secretRef };
     }),
@@ -53,8 +54,12 @@ export async function loadJourney(journeyId: string): Promise<JourneyDefinition 
       ...parsed,
       steps: parsed.steps.map((step) => {
         if (!step.sensitive || !step.secretRef) return step;
-        const value = sensitiveValues.get(step.secretRef);
-        return value === undefined ? step : { ...step, value };
+        const stored = sensitiveValues.get(step.secretRef);
+        if (!stored || stored.expiresAt <= Date.now()) {
+          sensitiveValues.delete(step.secretRef);
+          return step;
+        }
+        return { ...step, value: stored.value };
       }),
     };
   } catch {
@@ -65,15 +70,24 @@ export async function loadJourney(journeyId: string): Promise<JourneyDefinition 
 /** Removes sensitive fill values before a journey is returned by the API. */
 export function redactJourney(journey: JourneyDefinition): Omit<JourneyDefinition, 'steps'> & {
   steps: Array<Omit<JourneyDefinition['steps'][number], 'value'> & { value?: string }>;
+  requiresSecretInput: boolean;
 } {
   return {
     ...journey,
+    requiresSecretInput: journey.steps.some((step) => step.sensitive && step.value === undefined),
     steps: journey.steps.map((step) => {
       if (!step.sensitive) return step;
       const { value: _value, secretRef: _secretRef, ...safeStep } = step;
       return safeStep;
     }),
   };
+}
+
+/** Returns sensitive steps that cannot be replayed without a new secret injection. */
+export function getMissingSensitiveStepIds(journey: JourneyDefinition): string[] {
+  return journey.steps
+    .filter((step) => step.sensitive && step.value === undefined)
+    .map((step) => step.id);
 }
 
 export async function saveJourneyRun(run: JourneyRunState): Promise<void> {
