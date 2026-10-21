@@ -75,7 +75,7 @@ export interface ReviewData {
   }>;
 }
 
-export type AnnexTab = 'images' | 'frames' | 'links' | 'forms' | 'headings' | 'heuristics';
+export type AnnexTab = 'images' | 'media' | 'frames' | 'links' | 'forms' | 'headings' | 'heuristics';
 
 export interface AnnexTarget {
   tab: AnnexTab;
@@ -135,6 +135,7 @@ function decisionKey(pageUrl: string, criterionId: string): string {
 function annexForCriterion(criterionId: string): AnnexTab | null {
   const theme = criterionId.split('.')[0];
   if (theme === '1') return 'images';
+  if (theme === '4') return 'media';
   if (theme === '2') return 'frames';
   if (theme === '6') return 'links';
   if (theme === '11') return 'forms';
@@ -145,6 +146,7 @@ function annexForCriterion(criterionId: string): AnnexTab | null {
 
 const annexLabels: Record<AnnexTab, string> = {
   images: 'Images',
+  media: 'Médias',
   frames: 'Cadres',
   links: 'Liens',
   forms: 'Formulaires',

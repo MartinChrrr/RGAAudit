@@ -200,6 +200,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
     : '';
 
   const formsSection = buildFormsSection(allCollected ?? []);
+  const mediaSection = buildMediaSection(allCollected ?? []);
 
   const annexeDataJson = allCollected
     ? serializeForHtmlScript(allCollected)
@@ -325,6 +326,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 
     ${buildContrastSection(contrastViolations ?? [])}
 
+    ${mediaSection}
+
     ${formsSection}
 
     <!-- Footer -->
@@ -337,6 +340,43 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
   <script id="rgaaudit-data" type="application/json">${annexeDataJson}</script>
 </body>
 </html>`;
+}
+
+function buildMediaSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {
+  const media = allCollected.flatMap(({ url, collectedData }) => (
+    (collectedData?.media ?? []).map((item) => ({ url, item }))
+  ));
+  if (media.length === 0) return '';
+
+  const rows = media.map(({ url, item }) => `
+    <tr>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(item.sources.join(', ') || 'Source absente')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.accessibleName ?? item.fallbackText ?? 'Aucune alternative observée')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.tracks.map((track) => `${track.kind}${track.srcLang ? ` (${track.srcLang})` : ''}`).join(', ') || 'Aucune piste déclarée')}</td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(item.manualChecks.join(' '))}<br><span class="text-gray-500">${escapeHtml(url)}</span></td>
+    </tr>`).join('');
+
+  return `
+    <section class="mb-8" data-testid="media-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeMedia'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('annexes.media.description'))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeMedia'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colType'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colSource'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colAlternatives'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colTracks'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.manualChecks'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
 }
 
 function buildFormsSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {

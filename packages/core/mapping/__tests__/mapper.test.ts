@@ -73,6 +73,10 @@ describe('loadMapping', () => {
       expect(mapping.criteria.find((criterion) => criterion.rgaa.id === id)?.heuristicPatterns.manualChecks)
         .toHaveLength(1);
     }
+    for (const id of ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.8', '4.9']) {
+      expect(mapping.criteria.find((criterion) => criterion.rgaa.id === id)?.heuristicPatterns.manualChecks)
+        .toHaveLength(1);
+    }
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '8.1')).toMatchObject({
       coverage: 'full',
       evaluationStrategy: 'COLLECTOR_FLAGS',

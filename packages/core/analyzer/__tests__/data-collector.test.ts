@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   collectImages,
+  collectMedia,
   collectFrames,
   collectLinks,
   collectHeadings,
@@ -184,6 +185,38 @@ describe('collectImages', () => {
       expect.stringContaining('1.7'),
       expect.stringContaining('1.8'),
     ]));
+  });
+});
+
+describe('collectMedia', () => {
+  it('inventorie les sources, les pistes et les alternatives des médias', async () => {
+    const media = await withPage(`${baseUrl}/media/tracks.html`, collectMedia);
+
+    expect(media).toHaveLength(2);
+    expect(media.find((item) => item.kind === 'video')).toMatchObject({
+      selector: 'video#demo',
+      sources: [`${baseUrl}/media/demo.mp4`],
+      accessibleName: 'Démonstration produit',
+      alternativeSources: expect.arrayContaining(['aria-label', 'fallback-text', 'surrounding-text']),
+      tracks: [
+        expect.objectContaining({ kind: 'captions', srcLang: 'fr', isDefault: true }),
+        expect.objectContaining({ kind: 'descriptions', srcLang: 'fr' }),
+      ],
+      criterionIds: expect.arrayContaining(['4.1', '4.3', '4.5', '4.9']),
+      flags: expect.arrayContaining(['MEDIA_REQUIRES_HUMAN_REVIEW']),
+      requiresHumanReview: true,
+    });
+
+    expect(media.find((item) => item.kind === 'audio')).toMatchObject({
+      selector: 'audio#podcast',
+      sources: [`${baseUrl}/media/podcast.mp3`],
+      fallbackText: 'Transcription du podcast disponible sur cette page.',
+    });
+  });
+
+  it('expose l’inventaire multimédia dans la collecte globale', async () => {
+    const collected = await withPage(`${baseUrl}/media/tracks.html`, collectAll);
+    expect(collected.media).toHaveLength(2);
   });
 });
 

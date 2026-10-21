@@ -53,6 +53,7 @@
     "criteriaSection": "Critères par thématique",
     "uncoveredThemes": "Thématiques non couvertes",
     "tabImages": "Images",
+    "tabMedia": "Médias",
     "tabFrames": "Cadres",
     "tabLinks": "Liens",
     "tabForms": "Formulaires",
@@ -86,6 +87,21 @@
       "decisionNotes": "Notes",
       "noResults": "Aucune image à afficher",
       "loadingScreenshot": "Chargement…"
+    },
+    "media": {
+      "title": "Annexe Médias",
+      "description": "Les médias temporels, leurs pistes et leurs alternatives observées. La présence et la pertinence restent à confirmer manuellement.",
+      "filterByPage": "Filtrer par page",
+      "allPages": "Toutes les pages",
+      "colType": "Type",
+      "colSource": "Source",
+      "colContext": "Contexte",
+      "colAlternatives": "Alternatives observées",
+      "colTracks": "Pistes",
+      "manualChecks": "Contrôles manuels associés",
+      "noTracks": "Aucune piste déclarée",
+      "noAlternative": "Aucune alternative observée",
+      "noResults": "Aucun média à afficher"
     },
     "frames": {
       "title": "Annexe Cadres",
@@ -251,6 +267,7 @@
     "htmlAnnexeLinks": "Annexe — Liens",
     "htmlAnnexeHeadings": "Annexe — Titres",
     "htmlAnnexeForms": "Annexe — Formulaires",
+    "htmlAnnexeMedia": "Annexe — Médias",
     "htmlFormField": "Champ",
     "htmlFormLabel": "Libellé",
     "htmlFormHelp": "Aide / instruction",

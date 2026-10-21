@@ -29,6 +29,35 @@ export interface ImageData {
   screenshotPath: string | null;
 }
 
+export type MediaKind = 'audio' | 'video';
+export type MediaTrackKind = 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata' | 'unknown';
+
+export interface MediaTrackData {
+  kind: MediaTrackKind;
+  src: string | null;
+  srcLang: string | null;
+  label: string | null;
+  isDefault: boolean;
+}
+
+/** Inventory of a temporal media element; all conformance decisions remain human. */
+export interface MediaData {
+  selector: string;
+  kind: MediaKind;
+  sources: string[];
+  accessibleName: string | null;
+  fallbackText: string | null;
+  surroundingText: string;
+  controls: boolean;
+  autoplay: boolean;
+  tracks: MediaTrackData[];
+  alternativeSources: Array<'aria-label' | 'aria-labelledby' | 'title' | 'fallback-text' | 'surrounding-text'>;
+  criterionIds: string[];
+  manualChecks: string[];
+  flags: string[];
+  requiresHumanReview: true;
+}
+
 export interface LinkData {
   selector: string;
   tagName: string;
@@ -103,6 +132,8 @@ export interface FigureCaptionData {
 
 export interface CollectedData {
   images: ImageData[];
+  /** Temporal media inventory for the dedicated multimedia review backlog. */
+  media?: MediaData[];
   frames: FrameData[];
   links: LinkData[];
   headings: HeadingTree;
@@ -113,9 +144,17 @@ export interface CollectedData {
 }
 
 const SPECIALIZED_IMAGE_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
+const SPECIALIZED_MEDIA_CRITERIA = ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.8', '4.9'] as const;
 
 function getSpecializedImageChecks(): string[] {
   return SPECIALIZED_IMAGE_CRITERIA.flatMap((id) => {
+    const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
+    return checks.map((check) => `${id} — ${check}`);
+  });
+}
+
+function getSpecializedMediaChecks(): string[] {
+  return SPECIALIZED_MEDIA_CRITERIA.flatMap((id) => {
     const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
     return checks.map((check) => `${id} — ${check}`);
   });
@@ -308,6 +347,130 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
       automatedStatus,
       flags,
       screenshotPath: null,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// collectMedia
+// ---------------------------------------------------------------------------
+
+export async function collectMedia(page: Page): Promise<MediaData[]> {
+  const rawMedia = await page.evaluate(() => {
+    const normalizeText = (value: string | null | undefined, max = 160): string | null => {
+      const normalized = (value ?? '').replace(/\s+/g, ' ').trim();
+      return normalized ? normalized.slice(0, max) : null;
+    };
+
+    const resolveUrl = (value: string | null): string | null => {
+      if (!value) return null;
+      try {
+        return new URL(value, document.baseURI).href;
+      } catch {
+        return value;
+      }
+    };
+
+    const getUniqueSelector = (element: Element): string => {
+      const parts: string[] = [];
+      let current: Element | null = element;
+      while (current && current !== document.documentElement) {
+        const tag = current.tagName.toLowerCase();
+        const id = current.getAttribute('id');
+        const idSelector = id ? `${tag}#${CSS.escape(id)}` : null;
+        if (idSelector && document.querySelectorAll(idSelector).length === 1) {
+          parts.unshift(idSelector);
+          break;
+        }
+        const parent: Element | null = current.parentElement;
+        if (!parent) {
+          parts.unshift(tag);
+          break;
+        }
+        const siblings = (Array.from(parent.children) as Element[]).filter((child) => child.tagName === current!.tagName);
+        const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(current) + 1})` : '';
+        parts.unshift(`${tag}${suffix}`);
+        current = parent;
+      }
+      return parts.join(' > ');
+    };
+
+    return Array.from(document.querySelectorAll('audio, video')).map((element) => {
+      const media = element as HTMLMediaElement;
+      const labelledBy = (element.getAttribute('aria-labelledby') ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ');
+      const ariaLabel = normalizeText(element.getAttribute('aria-label'));
+      const title = normalizeText(element.getAttribute('title'));
+      const accessibleName = ariaLabel ?? normalizeText(labelledBy) ?? title;
+
+      const fallbackClone = element.cloneNode(true) as HTMLElement;
+      fallbackClone.querySelectorAll('source, track').forEach((child) => child.remove());
+      const fallbackText = normalizeText(fallbackClone.textContent);
+
+      const parent = element.parentElement;
+      const contextClone = parent?.cloneNode(true) as HTMLElement | undefined;
+      contextClone?.querySelectorAll('audio, video').forEach((child) => child.remove());
+      const surroundingText = normalizeText(contextClone?.textContent) ?? '';
+
+      const tracks = Array.from(element.querySelectorAll('track')).map((track) => {
+        const rawKind = track.getAttribute('kind')?.toLowerCase() ?? 'unknown';
+        const kind: MediaTrackKind = ['subtitles', 'captions', 'descriptions', 'chapters', 'metadata'].includes(rawKind)
+          ? rawKind as MediaTrackKind
+          : 'unknown';
+        return {
+          kind,
+          src: resolveUrl(track.getAttribute('src')),
+          srcLang: track.getAttribute('srclang'),
+          label: normalizeText(track.getAttribute('label')),
+          isDefault: track.hasAttribute('default'),
+        };
+      });
+
+      const sources = [
+        resolveUrl(element.getAttribute('src')),
+        ...Array.from(element.querySelectorAll('source')).map((source) => resolveUrl(source.getAttribute('src'))),
+      ].filter((source): source is string => Boolean(source));
+
+      const alternativeSources: MediaData['alternativeSources'] = [];
+      if (ariaLabel) alternativeSources.push('aria-label');
+      if (normalizeText(labelledBy)) alternativeSources.push('aria-labelledby');
+      if (title) alternativeSources.push('title');
+      if (fallbackText) alternativeSources.push('fallback-text');
+      if (surroundingText) alternativeSources.push('surrounding-text');
+
+      return {
+        selector: getUniqueSelector(element),
+        kind: element.tagName.toLowerCase() as MediaKind,
+        sources,
+        accessibleName,
+        fallbackText,
+        surroundingText,
+        controls: media.controls,
+        autoplay: media.autoplay,
+        tracks,
+        alternativeSources,
+      };
+    });
+  });
+
+  return rawMedia.map((media) => {
+    const flags: string[] = ['MEDIA_REQUIRES_HUMAN_REVIEW'];
+    if (media.sources.length === 0) flags.push('MEDIA_SOURCE_ABSENT');
+    if (media.alternativeSources.length === 0 && media.tracks.length === 0) {
+      flags.push('MEDIA_ALTERNATIVE_ABSENT');
+    }
+    if (media.kind === 'video' && !media.tracks.some((track) => track.kind === 'subtitles' || track.kind === 'captions')) {
+      flags.push('MEDIA_CAPTIONS_TO_VERIFY');
+    }
+    return {
+      ...media,
+      criterionIds: [...SPECIALIZED_MEDIA_CRITERIA],
+      manualChecks: getSpecializedMediaChecks(),
+      flags,
+      requiresHumanReview: true as const,
     };
   });
 }
@@ -762,8 +925,9 @@ export async function collectFigureCaptions(page: Page): Promise<FigureCaptionDa
 // ---------------------------------------------------------------------------
 
 export async function collectAll(page: Page): Promise<CollectedData> {
-  const [images, frames, links, headings, forms, figcaptions] = await Promise.all([
+  const [images, media, frames, links, headings, forms, figcaptions] = await Promise.all([
     collectImages(page),
+    collectMedia(page),
     collectFrames(page),
     collectLinks(page),
     collectHeadings(page),
@@ -771,5 +935,5 @@ export async function collectAll(page: Page): Promise<CollectedData> {
     collectFigureCaptions(page),
   ]);
 
-  return { images, frames, links, headings, forms, figcaptions };
+  return { images, media, frames, links, headings, forms, figcaptions };
 }

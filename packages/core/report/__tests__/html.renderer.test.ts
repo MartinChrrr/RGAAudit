@@ -232,6 +232,42 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Email invalide');
   });
 
+  it('affiche l’inventaire des médias et les contrôles manuels', () => {
+    const collected = makeCollectedData();
+    collected.media = [{
+      selector: 'video#demo',
+      kind: 'video',
+      sources: ['https://example.com/demo.mp4'],
+      accessibleName: 'Démonstration',
+      fallbackText: 'Lecteur vidéo',
+      surroundingText: 'Présentation',
+      controls: true,
+      autoplay: false,
+      tracks: [{
+        kind: 'captions',
+        src: 'https://example.com/captions.vtt',
+        srcLang: 'fr',
+        label: 'Français',
+        isDefault: true,
+      }],
+      alternativeSources: ['aria-label', 'fallback-text'],
+      criterionIds: ['4.1', '4.3'],
+      manualChecks: ['4.1 — Vérifier la transcription'],
+      flags: ['MEDIA_REQUIRES_HUMAN_REVIEW'],
+      requiresHumanReview: true,
+    }];
+
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
+    });
+
+    expect(html).toContain('Annexe — Médias');
+    expect(html).toContain('video#demo');
+    expect(html).toContain('4.1 — Vérifier la transcription');
+    expect(html).toContain('captions (fr)');
+  });
+
   it('échappe les caractères HTML dangereux dans les données', () => {
     const report = makeReport({
       metadata: {

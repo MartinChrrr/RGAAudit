@@ -423,7 +423,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque média temporel pré-enregistré, vérifier la présence d’une transcription textuelle ou d’une audiodescription lorsque nécessaire."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -439,7 +443,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Lorsque le média dispose d’une transcription ou d’une audiodescription synchronisée, vérifier sa pertinence."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -455,7 +463,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque média temporel synchronisé, vérifier la présence de sous-titres synchronisés lorsque nécessaire."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -471,7 +483,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Lorsque le média dispose de sous-titres synchronisés, vérifier leur pertinence et leur fidélité au contenu."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -487,7 +503,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque média temporel pré-enregistré, vérifier la présence d’une audiodescription synchronisée lorsque nécessaire."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -503,7 +523,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Lorsque le média dispose d’une audiodescription synchronisée, vérifier sa pertinence."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -535,7 +559,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque média non temporel, vérifier la présence d’une alternative lorsque nécessaire."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -551,7 +579,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Lorsque le média non temporel dispose d’une alternative, vérifier sa pertinence."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
