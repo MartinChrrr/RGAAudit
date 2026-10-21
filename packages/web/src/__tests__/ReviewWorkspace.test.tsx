@@ -151,6 +151,27 @@ describe('ReviewWorkspace', () => {
     expect(screen.getByText('À vérifier')).toBeInTheDocument();
   });
 
+  it('affiche l’historique quand une décision a été révisée', () => {
+    render(
+      <ReviewWorkspace
+        sessionId="session-1"
+        review={{
+          ...review,
+          decisionHistory: [{
+            pageUrl: 'https://example.com/',
+            criterionId: '1.1',
+            status: 'not_tested',
+            comment: 'Première décision à vérifier',
+            reviewedAt: null,
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('review-history')).toHaveTextContent('Historique des décisions (1)');
+    expect(screen.getByTestId('review-history')).toHaveTextContent('Première décision à vérifier');
+  });
+
   it('affiche le périmètre des 106 critères', () => {
     render(<ReviewWorkspace sessionId="session-1" review={review} />);
 

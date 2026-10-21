@@ -73,6 +73,24 @@ export interface ReviewData {
     notes: string;
     reviewedAt: string | null;
   }>;
+  decisionHistory?: Array<{
+    pageUrl: string;
+    criterionId: string;
+    status: HumanStatus;
+    comment: string;
+    reviewedAt: string | null;
+    source?: 'criterion' | 'annex_images';
+  }>;
+  imageDecisionHistory?: Array<{
+    pageUrl: string;
+    selector: string;
+    elementIndex?: number;
+    decision: 'decorative' | 'informative' | 'violation' | null;
+    status: HumanStatus;
+    correctedAlt: string;
+    notes: string;
+    reviewedAt: string | null;
+  }>;
 }
 
 export type AnnexTab = 'images' | 'media' | 'specialized' | 'frames' | 'links' | 'forms' | 'headings' | 'heuristics';
@@ -258,6 +276,30 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
             </div>
           </div>
         </div>
+      )}
+
+      {((review.decisionHistory?.length ?? 0) > 0 || (review.imageDecisionHistory?.length ?? 0) > 0) && (
+        <details className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4" data-testid="review-history">
+          <summary className="cursor-pointer text-sm font-semibold text-gray-900">
+            Historique des décisions ({(review.decisionHistory?.length ?? 0) + (review.imageDecisionHistory?.length ?? 0)})
+          </summary>
+          <div className="mt-3 space-y-3 text-sm text-gray-700">
+            {(review.decisionHistory ?? []).map((decision, index) => (
+              <article key={`criterion-${decision.pageUrl}-${decision.criterionId}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
+                <p className="font-medium">Critère {decision.criterionId} — {humanLabels[decision.status]}</p>
+                <p className="text-xs text-gray-600">{decision.pageUrl} · {decision.reviewedAt ?? 'date inconnue'}</p>
+                {decision.comment && <p className="mt-1 whitespace-pre-wrap">{decision.comment}</p>}
+              </article>
+            ))}
+            {(review.imageDecisionHistory ?? []).map((decision, index) => (
+              <article key={`image-${decision.pageUrl}-${decision.selector}-${decision.elementIndex ?? 'legacy'}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
+                <p className="font-medium">Image {decision.selector} — {humanLabels[decision.status]}</p>
+                <p className="text-xs text-gray-600">{decision.pageUrl} · {decision.reviewedAt ?? 'date inconnue'}</p>
+                {decision.notes && <p className="mt-1 whitespace-pre-wrap">{decision.notes}</p>}
+              </article>
+            ))}
+          </div>
+        </details>
       )}
 
       {error && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}

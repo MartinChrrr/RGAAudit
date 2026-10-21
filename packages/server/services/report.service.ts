@@ -112,6 +112,8 @@ export interface ReviewData {
     humanStatus: HumanStatus;
   }>;
   imageDecisions: ImageAuditDecision[];
+  decisionHistory: AuditDecision[];
+  imageDecisionHistory: ImageAuditDecision[];
 }
 
 export function buildReportFromSession(
@@ -221,6 +223,8 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
       };
     }),
     imageDecisions: state?.imageDecisions ?? [],
+    decisionHistory: state?.decisionHistory ?? [],
+    imageDecisionHistory: state?.imageDecisionHistory ?? [],
   };
 }
 

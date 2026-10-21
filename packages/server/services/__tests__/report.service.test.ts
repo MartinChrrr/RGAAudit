@@ -14,6 +14,35 @@ describe('formatContrastRatio', () => {
 });
 
 describe('buildReportFromSession', () => {
+  it('expose l’historique des décisions révisées dans la revue', () => {
+    const session: SessionState = {
+      sessionId: 'history-test',
+      startedAt: '2026-10-20T00:00:00.000Z',
+      totalPages: 1,
+      completedPages: ['https://example.com/'],
+      pendingPages: [],
+      results: {},
+    };
+
+    const data = buildReportFromSession(session, {
+      schemaVersion: 1,
+      sessionId: 'history-test',
+      decisions: [],
+      decisionHistory: [{
+        pageUrl: 'https://example.com/',
+        criterionId: '1.1',
+        status: 'not_tested',
+        comment: 'À vérifier',
+        reviewedAt: null,
+      }],
+      imageDecisions: [],
+      imageDecisionHistory: [],
+      updatedAt: '2026-10-20T00:00:02.000Z',
+    });
+
+    expect(data.review.decisionHistory).toEqual([expect.objectContaining({ criterionId: '1.1', comment: 'À vérifier' })]);
+  });
+
   it('ne transforme pas une session sans page exploitable en conformité', () => {
     const session: SessionState = {
       sessionId: 'failed-audit',
