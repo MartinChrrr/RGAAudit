@@ -492,7 +492,9 @@ export function aggregateResults(
       coverage: criterion.coverage,
       humanLevel: criterion.humanLevel,
       implementationLot: criterion.implementationLot,
-      status: 'pass',
+      // A criterion without any page observation is not a conformity signal.
+      // Start from manual so an empty or fully failed audit cannot look compliant.
+      status: 'manual',
       pagesViolating: [],
       pagesPass: [],
       pagesManual: [],

@@ -14,6 +14,32 @@ describe('formatContrastRatio', () => {
 });
 
 describe('buildReportFromSession', () => {
+  it('ne transforme pas une session sans page exploitable en conformité', () => {
+    const session: SessionState = {
+      sessionId: 'failed-audit',
+      startedAt: '2026-10-20T00:00:00.000Z',
+      totalPages: 1,
+      completedPages: [],
+      pendingPages: [],
+      results: {
+        'https://example.com/': {
+          url: 'https://example.com/',
+          auditedAt: '2026-10-20T00:00:01.000Z',
+          axeResults: null,
+          collectedData: null,
+          heuristicResults: [],
+          error: 'Navigation timeout',
+        },
+      },
+    };
+
+    const data = buildReportFromSession(session);
+
+    expect(data.report.summary.passes).toBe(0);
+    expect(data.report.summary.manual).toBe(106);
+    expect(data.report.summary.criteria.every((criterion) => criterion.status === 'manual')).toBe(true);
+  });
+
   it('expose les preuves axe avec leur cible, HTML et contexte dans la revue', () => {
     const session: SessionState = {
       sessionId: 'evidence-test',

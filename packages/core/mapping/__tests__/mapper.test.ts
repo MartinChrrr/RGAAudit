@@ -467,6 +467,15 @@ describe('mapPageResults — robustesse', () => {
 // ---------------------------------------------------------------------------
 
 describe('aggregateResults', () => {
+  it('ne présente pas une absence de pages comme une conformité', () => {
+    const summary = aggregateResults([]);
+
+    expect(summary.passes).toBe(0);
+    expect(summary.manual).toBe(106);
+    expect(summary.criteria).toHaveLength(106);
+    expect(summary.criteria.every((criterion) => criterion.status === 'manual')).toBe(true);
+  });
+
   it('conserve les compteurs de couverture du registre complet', () => {
     const summary = aggregateResults([]);
 
