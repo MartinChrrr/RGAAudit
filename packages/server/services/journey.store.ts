@@ -32,6 +32,14 @@ export function getJourneyRunPath(runId: string): string {
   return join(JOURNEYS_DIR, `run-${runId}.json`);
 }
 
+export function getJourneyScreenshotPath(runId: string, filename: string): string {
+  assertSafeId(runId);
+  if (!/^[a-zA-Z0-9_-]{1,128}\.png$/.test(filename)) {
+    throw new Error('Nom de capture invalide.');
+  }
+  return join(JOURNEYS_DIR, runId, 'screenshots', filename);
+}
+
 export async function saveJourney(journey: JourneyDefinition): Promise<void> {
   const persisted: JourneyDefinition = {
     ...journey,
@@ -99,5 +107,14 @@ export async function loadJourneyRun(runId: string): Promise<JourneyRunState | n
     return JSON.parse(await readFile(getJourneyRunPath(runId), 'utf-8')) as JourneyRunState;
   } catch {
     return null;
+  }
+}
+
+export async function readJourneyScreenshot(runId: string, filename: string): Promise<Buffer | null> {
+  try {
+    return await readFile(getJourneyScreenshotPath(runId, filename));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
 }

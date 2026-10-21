@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
-import type { JourneyDefinition, JourneyStep } from '../../core/journey/journey';
+import { basename } from 'node:path';
+import type { JourneyDefinition, JourneyRunState, JourneyStep } from '../../core/journey/journey';
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
 import { journeyInputSchema, validateJourneySteps } from '../services/journey.validation';
@@ -8,12 +9,32 @@ import {
   getMissingSensitiveStepIds,
   loadJourney,
   loadJourneyRun,
+  readJourneyScreenshot,
   redactJourney,
   saveJourney,
 } from '../services/journey.store';
 import { startJourneyReplay } from '../services/journey.service';
 
 export const journeyRouter = Router();
+
+function exposeJourneyRun(run: JourneyRunState): JourneyRunState {
+  if (!run.run) return run;
+  return {
+    ...run,
+    run: {
+      ...run.run,
+      steps: run.run.steps.map((step) => {
+        if (!step.screenshotPath) return step;
+        const filename = basename(step.screenshotPath);
+        const { screenshotPath: _screenshotPath, ...publicStep } = step;
+        return {
+          ...publicStep,
+          screenshotUrl: `/api/journey-runs/${run.runId}/screenshots/${encodeURIComponent(filename)}`,
+        };
+      }),
+    },
+  };
+}
 
 journeyRouter.post('/api/journeys', validateBody(journeyInputSchema), asyncHandler(async (req: Request, res: Response) => {
   const validationError = validateJourneySteps(req.body.steps);
@@ -56,5 +77,19 @@ journeyRouter.post('/api/journeys/:journeyId/replay', asyncHandler(async (req, r
 journeyRouter.get('/api/journey-runs/:runId', asyncHandler(async (req, res) => {
   const run = await loadJourneyRun(String(req.params.runId));
   if (!run) throw new HttpError(404, 'Exécution de parcours introuvable.');
-  res.json({ run });
+  res.json({ run: exposeJourneyRun(run) });
+}));
+
+journeyRouter.get('/api/journey-runs/:runId/screenshots/:filename', asyncHandler(async (req, res) => {
+  let screenshot: Buffer | null;
+  try {
+    screenshot = await readJourneyScreenshot(String(req.params.runId), String(req.params.filename));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('invalide')) {
+      throw new HttpError(400, error.message);
+    }
+    throw error;
+  }
+  if (!screenshot) throw new HttpError(404, 'Capture introuvable.');
+  res.type('png').setHeader('Cache-Control', 'private, max-age=300').send(screenshot);
 }));

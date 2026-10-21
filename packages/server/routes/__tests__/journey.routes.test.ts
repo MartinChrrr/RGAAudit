@@ -8,6 +8,7 @@ const {
   mockSaveJourney,
   mockLoadJourney,
   mockLoadJourneyRun,
+  mockReadJourneyScreenshot,
   mockRedactJourney,
   mockGetMissingSensitiveStepIds,
   mockStartJourneyReplay,
@@ -15,6 +16,7 @@ const {
   mockSaveJourney: vi.fn(),
   mockLoadJourney: vi.fn(),
   mockLoadJourneyRun: vi.fn(),
+  mockReadJourneyScreenshot: vi.fn(),
   mockGetMissingSensitiveStepIds: vi.fn<(journey: JourneyDefinition) => string[]>(() => []),
   mockRedactJourney: vi.fn((journey: JourneyDefinition) => ({
     ...journey,
@@ -27,6 +29,7 @@ vi.mock('../../services/journey.store', () => ({
   saveJourney: mockSaveJourney,
   loadJourney: mockLoadJourney,
   loadJourneyRun: mockLoadJourneyRun,
+  readJourneyScreenshot: mockReadJourneyScreenshot,
   getMissingSensitiveStepIds: mockGetMissingSensitiveStepIds,
   redactJourney: mockRedactJourney,
 }));
@@ -47,6 +50,7 @@ beforeEach(() => {
   mockSaveJourney.mockResolvedValue(undefined);
   mockLoadJourney.mockResolvedValue(null);
   mockLoadJourneyRun.mockResolvedValue(null);
+  mockReadJourneyScreenshot.mockResolvedValue(null);
   mockGetMissingSensitiveStepIds.mockReturnValue([]);
   mockStartJourneyReplay.mockReturnValue('run-001');
 });
@@ -173,7 +177,16 @@ describe('journey replay and run retrieval', () => {
         journeyId: 'journey-001',
         startedAt: new Date().toISOString(),
         finishedAt: new Date().toISOString(),
-        steps: [],
+        steps: [{
+          stepId: 'step-1',
+          action: 'click',
+          url: 'https://example.com',
+          observedAt: new Date().toISOString(),
+          title: 'Accueil',
+          evidence: [],
+          result: null,
+          screenshotPath: '/var/lib/rgaaudit/journeys/run-001/screenshots/000-context-step.png',
+        }],
       },
     };
     mockLoadJourneyRun.mockResolvedValue(run);
@@ -181,6 +194,34 @@ describe('journey replay and run retrieval', () => {
     const response = await request(app).get('/api/journey-runs/run-001');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ run });
+    expect(response.body.run).toMatchObject({
+      runId: run.runId,
+      run: {
+        steps: [{
+          screenshotUrl: '/api/journey-runs/run-001/screenshots/000-context-step.png',
+        }],
+      },
+    });
+    expect(JSON.stringify(response.body)).not.toContain('screenshotPath');
+  });
+
+  it('sert une capture de contexte sans exposer le chemin serveur', async () => {
+    mockReadJourneyScreenshot.mockResolvedValue(Buffer.from('png-bytes'));
+
+    const response = await request(app)
+      .get('/api/journey-runs/run-001/screenshots/000-context-step.png');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('image/png');
+    expect(response.body).toEqual(Buffer.from('png-bytes'));
+    expect(mockReadJourneyScreenshot).toHaveBeenCalledWith('run-001', '000-context-step.png');
+  });
+
+  it('refuse un nom de capture non borné', async () => {
+    const response = await request(app)
+      .get('/api/journey-runs/run-001/screenshots/../../secrets.txt');
+
+    expect(response.status).toBe(404);
+    expect(mockReadJourneyScreenshot).not.toHaveBeenCalled();
   });
 });

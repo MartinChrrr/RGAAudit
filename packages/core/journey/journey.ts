@@ -98,6 +98,8 @@ export interface JourneyStepObservation {
   keyboard?: JourneyKeyboardObservation;
   context?: JourneyContextObservation;
   screenshotPath?: string;
+  /** Public URL exposed by the server when a context screenshot is available. */
+  screenshotUrl?: string;
   result: PageResult | null;
   error?: string;
 }
