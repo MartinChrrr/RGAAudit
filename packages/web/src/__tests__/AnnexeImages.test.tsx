@@ -66,6 +66,21 @@ describe('AnnexeImages', () => {
     expect(rows.length).toBe(4);
   });
 
+  it('affiche les alternatives détectées et les contrôles manuels spécialisés', () => {
+    render(<AnnexeImages
+      images={[{
+        ...mockImages[1],
+        alternativeSources: ['alt', 'figcaption'],
+        manualChecks: ['1.4 — Vérifier le CAPTCHA', '1.8 — Vérifier le texte dans l’image'],
+      }]}
+      sessionId="test-specialized"
+    />);
+
+    expect(screen.getByText(/Alternatives détectées : alt, figcaption/)).toBeInTheDocument();
+    expect(screen.getByText(/Contrôles manuels associés/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.4 — Vérifier le CAPTCHA/)).toBeInTheDocument();
+  });
+
   it('filtre "Violations" masque les passes', async () => {
     const user = userEvent.setup();
     render(<AnnexeImages images={mockImages} sessionId="test-2" />);

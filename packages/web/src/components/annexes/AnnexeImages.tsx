@@ -14,6 +14,8 @@ export interface ImageItem {
   screenshotPath: string | null;
   isInLink: boolean;
   linkText: string | null;
+  alternativeSources?: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'>;
+  manualChecks?: string[];
   pageUrl?: string;
   elementIndex?: number;
 }
@@ -419,7 +421,7 @@ export default function AnnexeImages({
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tagColors[img.tagName] ?? 'bg-gray-100 text-gray-800'}`}>
                           {img.tagName}
                         </span>
-                        {['1.1', '1.2', '1.6'].map((criterion) => (
+                        {['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8'].map((criterion) => (
                           <a
                             key={criterion}
                             href={`#criterion-${criterion}`}
@@ -441,6 +443,19 @@ export default function AnnexeImages({
                         <p className="mt-1 max-w-72 text-xs text-gray-600" title={img.surroundingText}>
                           Contexte : {img.surroundingText.slice(0, 100)}{img.surroundingText.length > 100 ? '…' : ''}
                         </p>
+                      )}
+                      {img.alternativeSources && img.alternativeSources.length > 0 && (
+                        <p className="mt-1 text-xs text-gray-600">
+                          Alternatives détectées : {img.alternativeSources.join(', ')}
+                        </p>
+                      )}
+                      {(img.manualChecks ?? []).length > 0 && (
+                        <details className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                          <summary className="cursor-pointer font-medium">Contrôles manuels associés (1.4 à 1.8)</summary>
+                          <ul className="mt-1 list-disc space-y-1 pl-4">
+                            {img.manualChecks!.map((check) => <li key={check}>{check}</li>)}
+                          </ul>
+                        </details>
                       )}
                       <div className="mt-2 flex flex-wrap gap-1">
                         {img.flags.map((flag) => (

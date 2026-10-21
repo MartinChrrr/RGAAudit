@@ -19,6 +19,10 @@ export interface ImageData {
   isInLink: boolean;
   linkHref: string | null;
   linkText: string | null;
+  /** Alternative sources discovered around the image, kept as evidence for human review. */
+  alternativeSources?: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'>;
+  /** Explicit checks for the specialized image criteria covered by the backlog. */
+  manualChecks?: string[];
   axeViolations: string[];
   automatedStatus: 'violation' | 'pass' | 'manual';
   flags: string[];
@@ -106,6 +110,15 @@ export interface CollectedData {
   forms?: FormDataItem[];
   /** Optional for backwards-compatible persisted sessions. */
   figcaptions?: FigureCaptionData[];
+}
+
+const SPECIALIZED_IMAGE_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
+
+function getSpecializedImageChecks(): string[] {
+  return SPECIALIZED_IMAGE_CRITERIA.flatMap((id) => {
+    const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
+    return checks.map((check) => `${id} — ${check}`);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -232,6 +245,14 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
       // Keep a valid, unique selector: it identifies the annex row and is reused for screenshots.
       const selector = getUniqueSelector(el);
 
+      const alternativeSources: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'> = [];
+      if (altAttr !== null) alternativeSources.push('alt');
+      if (ariaLabel?.trim()) alternativeSources.push('aria-label');
+      if (ariaLabelledby?.trim()) alternativeSources.push('aria-labelledby');
+      if (parentFigcaption) alternativeSources.push('figcaption');
+      if (linkText) alternativeSources.push('link-text');
+      if (surroundingText) alternativeSources.push('surrounding-text');
+
       return {
         selector,
         tagName,
@@ -245,6 +266,7 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
         isInLink,
         linkHref,
         linkText,
+        alternativeSources,
       };
     });
   });
@@ -280,6 +302,7 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
 
     return {
       ...img,
+      manualChecks: getSpecializedImageChecks(),
       altStatus,
       axeViolations: [],
       automatedStatus,

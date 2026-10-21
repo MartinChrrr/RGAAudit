@@ -214,7 +214,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Repérer les images utilisées comme CAPTCHA ou image-test et vérifier que leur alternative identifie leur nature et leur fonction."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -230,7 +234,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque CAPTCHA identifié, vérifier la présence d’une solution d’accès alternative au contenu ou à la fonction."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -246,7 +254,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque image porteuse d’information, vérifier si une description détaillée est nécessaire et si elle est fournie."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -262,7 +274,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Lorsque l’image dispose d’une description détaillée, vérifier manuellement sa pertinence par rapport à l’information véhiculée."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -278,7 +294,11 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Repérer les images contenant du texte et vérifier si un mécanisme de remplacement par du texte stylé est possible et utilisé."
+        ]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {

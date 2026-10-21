@@ -170,6 +170,21 @@ describe('collectImages', () => {
       expect(img.automatedStatus).toBe('violation');
     }
   });
+
+  it('identifie les sources d’alternative et les contrôles spécialisés 1.4 à 1.8', async () => {
+    const images = await withPage(`${baseUrl}/images/img-in-link.html`, collectImages);
+    const image = images.find((item) => item.altAttribute === 'Voir la photo');
+
+    expect(image).toBeDefined();
+    expect(image!.alternativeSources).toEqual(expect.arrayContaining(['alt']));
+    expect(image!.manualChecks).toEqual(expect.arrayContaining([
+      expect.stringContaining('1.4'),
+      expect.stringContaining('1.5'),
+      expect.stringContaining('1.6'),
+      expect.stringContaining('1.7'),
+      expect.stringContaining('1.8'),
+    ]));
+  });
 });
 
 // ───────────────────────────────────────────────────────────────

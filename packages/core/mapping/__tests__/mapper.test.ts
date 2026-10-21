@@ -69,6 +69,10 @@ describe('loadMapping', () => {
       evaluationStrategy: 'MANUAL_ONLY',
       implementationLot: 5,
     });
+    for (const id of ['1.4', '1.5', '1.6', '1.7', '1.8']) {
+      expect(mapping.criteria.find((criterion) => criterion.rgaa.id === id)?.heuristicPatterns.manualChecks)
+        .toHaveLength(1);
+    }
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '8.1')).toMatchObject({
       coverage: 'full',
       evaluationStrategy: 'COLLECTOR_FLAGS',
