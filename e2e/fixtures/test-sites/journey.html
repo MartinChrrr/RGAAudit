@@ -11,10 +11,14 @@
     <p id="status" aria-live="polite">Étape initiale</p>
     <label for="name">Nom</label>
     <input id="name" name="name" type="text">
+    <button id="blocked" type="button">Focus bloqué</button>
   </main>
   <script>
     document.querySelector('#next').addEventListener('click', () => {
       document.querySelector('#status').textContent = 'Étape suivante';
+    });
+    document.querySelector('#blocked').addEventListener('keydown', (event) => {
+      if (event.key === 'Tab') event.preventDefault();
     });
   </script>
 </body>

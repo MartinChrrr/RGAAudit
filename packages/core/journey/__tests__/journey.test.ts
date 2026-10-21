@@ -37,9 +37,12 @@ describe('replayJourney', () => {
       createdAt: new Date().toISOString(),
       steps: [
         { id: 'step-1', action: 'click', selector: '#next' },
-        { id: 'step-2', action: 'fill', selector: '#name', value: 'Martin', sensitive: true },
-        { id: 'step-3', action: 'press', selector: '#name', key: 'Enter' },
-        { id: 'step-4', action: 'wait', waitMs: 1 },
+        { id: 'step-2', action: 'press', selector: '#next', key: 'Tab' },
+        { id: 'step-3', action: 'fill', selector: '#name', value: 'Martin', sensitive: true },
+        { id: 'step-4', action: 'press', selector: '#name', key: 'Enter' },
+        { id: 'step-5', action: 'click', selector: '#blocked' },
+        { id: 'step-6', action: 'press', selector: '#blocked', key: 'Tab' },
+        { id: 'step-7', action: 'wait', waitMs: 1 },
       ],
     };
 
@@ -48,7 +51,7 @@ describe('replayJourney', () => {
       isRequestAllowed: async (url) => url.startsWith(baseUrl),
     });
 
-    expect(run.steps).toHaveLength(4);
+    expect(run.steps).toHaveLength(7);
     expect(run.steps.every((step) => step.result)).toBe(true);
     expect(run.steps[0]).toMatchObject({
       stepId: 'step-1',
@@ -65,10 +68,28 @@ describe('replayJourney', () => {
         elementIndex: 0,
       }),
     ]));
-    expect(run.steps[1].evidence[0]?.html).toContain('id="name"');
-    expect(run.steps[1].evidence[0]?.html).toContain('data-rgaudit-redacted="true"');
-    expect(run.steps[1].evidence[0]?.html).not.toContain('Martin');
+    expect(run.steps[2].evidence[0]?.html).toContain('id="name"');
+    expect(run.steps[2].evidence[0]?.html).toContain('data-rgaudit-redacted="true"');
+    expect(run.steps[2].evidence[0]?.html).not.toContain('Martin');
     expect(run.steps[0].result?.collectedData).not.toBeNull();
+    expect(run.steps[1].keyboard).toMatchObject({
+      key: 'Tab',
+      componentSelector: '#next',
+      exited: true,
+      blocked: false,
+      requiresHumanReview: true,
+      after: expect.objectContaining({ selector: '#name', withinComponent: false }),
+    });
+    expect(run.steps[1].keyboard?.after?.focusVisible).toEqual(expect.any(Boolean));
+    expect(run.steps[3].keyboard).toMatchObject({ key: 'Enter', componentSelector: '#name' });
+    expect(run.steps[5].keyboard).toMatchObject({
+      key: 'Tab',
+      componentSelector: '#blocked',
+      blocked: true,
+      requiresHumanReview: true,
+      criterionIds: expect.arrayContaining(['7.3', '12.9']),
+      after: expect.objectContaining({ selector: '#blocked', withinComponent: true }),
+    });
     expect(run.finishedAt).toBeDefined();
   }, 30_000);
 });

@@ -38,6 +38,31 @@ export interface JourneyEvidence {
   elementIndex: number;
 }
 
+/** Stable, redacted description of the element that owned focus. */
+export interface JourneyFocusTarget {
+  selector: string;
+  tagName: string;
+  role: string | null;
+  text: string | null;
+  withinComponent: boolean;
+  focusVisible: boolean;
+}
+
+/** Keyboard-specific observation attached to the component targeted by a press step. */
+export interface JourneyKeyboardObservation {
+  key: string;
+  componentSelector: string;
+  before: JourneyFocusTarget | null;
+  after: JourneyFocusTarget | null;
+  entered: boolean;
+  exited: boolean;
+  focusVisible: boolean;
+  blocked: boolean;
+  criterionIds: string[];
+  /** Keyboard and focus heuristics never replace a human RGAA decision. */
+  requiresHumanReview: true;
+}
+
 export interface JourneyStepObservation {
   stepId: string;
   action: JourneyAction;
@@ -45,6 +70,7 @@ export interface JourneyStepObservation {
   observedAt: string;
   title: string;
   evidence: JourneyEvidence[];
+  keyboard?: JourneyKeyboardObservation;
   result: PageResult | null;
   error?: string;
 }
@@ -104,17 +130,32 @@ export async function replayJourney(
     const page = await context.newPage();
     await page.goto(journey.startUrl, { waitUntil: 'networkidle', timeout: options.timeout ?? 30_000 });
     const steps: JourneyStepObservation[] = [];
+    const focusHistory: string[] = [];
+    let previousUrl = page.url();
     for (const step of journey.steps) {
       const observedAt = new Date().toISOString();
       try {
+        const urlBeforeStep = page.url();
+        if (urlBeforeStep !== previousUrl || step.action === 'navigate') focusHistory.length = 0;
+        const beforeFocus = step.action === 'press' && step.selector
+          ? await captureFocus(page, step.selector)
+          : null;
         await applyStep(page, step, options.timeout ?? 30_000);
+        const afterFocus = step.action === 'press' && step.selector
+          ? await captureFocus(page, step.selector)
+          : null;
         const url = page.url();
+        if (url !== urlBeforeStep) focusHistory.length = 0;
+        previousUrl = url;
         const result = await analyzeLoadedPage(page, url, sessionId, { timeout: options.timeout });
         const resultId = `journey-result-${runId}-${step.id}`;
         const mappedCriteria = mapCriteriaForEvidence(result, url);
         const evidence = step.selector
           ? await collectStepEvidence(page, step.selector, resultId, mappedCriteria)
           : [];
+        const keyboard = step.action === 'press' && step.selector && step.key
+          ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory)
+          : undefined;
         steps.push({
           stepId: step.id,
           action: step.action,
@@ -122,6 +163,7 @@ export async function replayJourney(
           observedAt,
           title: await page.title(),
           evidence,
+          ...(keyboard ? { keyboard } : {}),
           result,
           ...(result.error ? { error: result.error } : {}),
         });
@@ -144,6 +186,95 @@ export async function replayJourney(
     await context?.close();
     await browser.close();
   }
+}
+
+function buildKeyboardObservation(
+  step: JourneyStep,
+  before: JourneyFocusTarget | null,
+  after: JourneyFocusTarget | null,
+  focusHistory: string[],
+): JourneyKeyboardObservation {
+  const componentSelector = step.selector!;
+  const key = step.key!;
+  const isTabNavigation = /^(shift\+)?tab$/i.test(key.replace(/\s+/g, ''));
+  const focusChanged = before?.selector !== after?.selector;
+  const isRepeatedCycle = Boolean(
+    after?.selector
+      && focusHistory.length >= 2
+      && focusHistory[focusHistory.length - 2] === after.selector,
+  );
+  const blocked = isTabNavigation && (
+    (!focusChanged && (before !== null || after !== null))
+      || (!before && !after)
+      || isRepeatedCycle
+  );
+
+  if (after) focusHistory.push(after.selector);
+  if (focusHistory.length > 12) focusHistory.splice(0, focusHistory.length - 12);
+
+  return {
+    key,
+    componentSelector,
+    before,
+    after,
+    entered: Boolean(after?.withinComponent && !before?.withinComponent),
+    exited: Boolean(before?.withinComponent && !after?.withinComponent),
+    focusVisible: after?.focusVisible ?? false,
+    blocked,
+    criterionIds: [
+      ...(blocked ? ['7.3', '12.9'] : []),
+      ...(after && !after.focusVisible ? ['10.7'] : []),
+    ],
+    requiresHumanReview: true,
+  };
+}
+
+async function captureFocus(page: Page, componentSelector: string): Promise<JourneyFocusTarget | null> {
+  return page.evaluate((targetSelector) => {
+    const active = document.activeElement;
+    if (!active || active === document.body || active === document.documentElement) return null;
+
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+
+    let component: Element | null = null;
+    try {
+      component = document.querySelector(targetSelector);
+    } catch {
+      component = null;
+    }
+    const style = window.getComputedStyle(active as Element);
+    const hasVisibleOutline = style.outlineStyle !== 'none'
+      && style.outlineWidth !== '0px'
+      && style.outlineColor !== 'transparent';
+    const hasVisibleShadow = style.boxShadow !== 'none';
+    let focusVisible = hasVisibleOutline || hasVisibleShadow;
+    try {
+      focusVisible = focusVisible || active.matches(':focus-visible');
+    } catch {
+      // Older engines may not implement :focus-visible.
+    }
+
+    return {
+      selector: getUniqueSelector(active),
+      tagName: active.tagName.toLowerCase(),
+      role: active.getAttribute('role'),
+      text: (active.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160) || null,
+      withinComponent: Boolean(component && (component === active || component.contains(active))),
+      focusVisible,
+    };
+  }, componentSelector);
 }
 
 async function applyStep(page: Page, step: JourneyStep, timeout: number): Promise<void> {
@@ -220,7 +351,9 @@ async function collectStepEvidence(
       const criterionIds = criteria.flatMap((criterion) => {
         try {
           return element.matches(criterion.selector) && (
-            criterion.elementIndex === undefined || criterion.elementIndex === elementIndex
+            criterion.selector !== target
+              || criterion.elementIndex === undefined
+              || criterion.elementIndex === elementIndex
           ) ? [criterion.rgaaId] : [];
         } catch {
           return [];
