@@ -158,7 +158,7 @@ describe('ReviewWorkspace', () => {
         review={{
           ...review,
           decisionHistory: [{
-            pageUrl: 'https://example.com/',
+            pageUrl: 'https://example.com/audit?token=secret-value',
             criterionId: '1.1',
             status: 'not_tested',
             comment: 'Première décision à vérifier',
@@ -170,6 +170,8 @@ describe('ReviewWorkspace', () => {
 
     expect(screen.getByTestId('review-history')).toHaveTextContent('Historique des décisions (1)');
     expect(screen.getByTestId('review-history')).toHaveTextContent('Première décision à vérifier');
+    expect(screen.getByTestId('review-history')).toHaveTextContent('https://example.com/audit [paramètres masqués]');
+    expect(screen.getByTestId('review-history')).not.toHaveTextContent('secret-value');
   });
 
   it('affiche le périmètre des 106 critères', () => {

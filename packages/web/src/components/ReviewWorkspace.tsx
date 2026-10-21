@@ -150,6 +150,15 @@ function decisionKey(pageUrl: string, criterionId: string): string {
   return `${pageUrl}\u001f${criterionId}`;
 }
 
+function historyUrlLabel(value: string): string {
+  try {
+    const parsed = new URL(value);
+    return parsed.search ? `${parsed.origin}${parsed.pathname} [paramètres masqués]` : value;
+  } catch {
+    return value;
+  }
+}
+
 function annexForCriterion(criterionId: string): AnnexTab | null {
   const theme = criterionId.split('.')[0];
   if (theme === '1') return 'images';
@@ -287,14 +296,14 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
             {(review.decisionHistory ?? []).map((decision, index) => (
               <article key={`criterion-${decision.pageUrl}-${decision.criterionId}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
                 <p className="font-medium">Critère {decision.criterionId} — {humanLabels[decision.status]}</p>
-                <p className="text-xs text-gray-600">{decision.pageUrl} · {decision.reviewedAt ?? 'date inconnue'}</p>
+                <p className="text-xs text-gray-600">{historyUrlLabel(decision.pageUrl)} · {decision.reviewedAt ?? 'date inconnue'}</p>
                 {decision.comment && <p className="mt-1 whitespace-pre-wrap">{decision.comment}</p>}
               </article>
             ))}
             {(review.imageDecisionHistory ?? []).map((decision, index) => (
               <article key={`image-${decision.pageUrl}-${decision.selector}-${decision.elementIndex ?? 'legacy'}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
                 <p className="font-medium">Image {decision.selector} — {humanLabels[decision.status]}</p>
-                <p className="text-xs text-gray-600">{decision.pageUrl} · {decision.reviewedAt ?? 'date inconnue'}</p>
+                <p className="text-xs text-gray-600">{historyUrlLabel(decision.pageUrl)} · {decision.reviewedAt ?? 'date inconnue'}</p>
                 {decision.notes && <p className="mt-1 whitespace-pre-wrap">{decision.notes}</p>}
               </article>
             ))}
