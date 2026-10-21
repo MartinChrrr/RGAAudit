@@ -71,6 +71,63 @@
     "comingSoon": "Annexes détaillées disponibles à l'étape 9",
     "backHome": "Nouvel audit"
   },
+  "journey": {
+    "title": "Exécution du parcours",
+    "loading": "Chargement des observations…",
+    "error": "Impossible de charger cette exécution de parcours.",
+    "backHome": "Retour à l’accueil",
+    "statusLabel": "Statut",
+    "runId": "Identifiant d’exécution",
+    "startedAt": "Démarrée le",
+    "finishedAt": "Terminée le",
+    "unknownDate": "Date inconnue",
+    "status": {
+      "running": "En cours",
+      "completed": "Terminée",
+      "completed_with_errors": "Terminée avec erreurs",
+      "failed": "Échec"
+    },
+    "observationsTitle": "Observations par étape",
+    "observationsDescription": "Les signaux observés sont des éléments de preuve et nécessitent une décision humaine RGAA.",
+    "noSteps": "Aucune observation d’étape n’est disponible.",
+    "stepTitle": "Étape {index} — {id}",
+    "action": "Action",
+    "url": "URL observée",
+    "observedAt": "Observée le",
+    "stepError": "Étape en erreur : {error}",
+    "contextTitle": "Changement de contexte",
+    "contextChanged": "Changement détecté — revue humaine requise.",
+    "contextUnchanged": "Aucun changement de contexte détecté — cela ne constitue pas une preuve de conformité.",
+    "before": "Avant",
+    "after": "Après",
+    "emptyTitle": "Titre absent",
+    "changeTypesTitle": "Types de changement",
+    "changeTypes": {
+      "navigation": "Navigation",
+      "title": "Titre de page",
+      "dialog": "Boîte de dialogue",
+      "liveRegion": "Région live",
+      "disruption": "Mouvement ou son"
+    },
+    "disruptionsTitle": "Mouvements ou sons perturbateurs",
+    "noDisruptions": "Aucun signal détecté — revue humaine requise.",
+    "motion": "Mouvement",
+    "sound": "Son",
+    "criteria": "Critères associés",
+    "humanReview": "Cette observation ne remplace pas une vérification humaine.",
+    "screenshotTitle": "Capture visuelle",
+    "screenshotAvailable": "Capture disponible ; la description textuelle ci-dessus reste la preuve accessible.",
+    "screenshotMissing": "La capture n’est plus disponible ; les observations textuelles restent consultables.",
+    "screenshotAlt": "Capture après l’étape {id}. Les observations textuelles associées sont affichées avant cette image.",
+    "noScreenshot": "Aucune capture visuelle n’est associée à cette étape.",
+    "screenshotSkipped": {
+      "sensitive_step": "Capture désactivée à partir d’une étape sensible pour protéger les données saisies.",
+      "quota": "Capture non conservée : la limite de captures de cette exécution est atteinte.",
+      "too_large": "Capture non conservée : le fichier dépassait la taille maximale autorisée.",
+      "capture_error": "Capture non disponible en raison d’une erreur technique."
+    },
+    "evidenceTitle": "Preuves textuelles"
+  },
   "annexes": {
     "images": {
       "title": "Annexe Images",

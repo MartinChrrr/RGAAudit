@@ -5,12 +5,19 @@ const fsMock = vi.hoisted(() => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
   writeFile: vi.fn().mockResolvedValue(undefined),
   rename: vi.fn().mockResolvedValue(undefined),
+  stat: vi.fn(),
   readFile: vi.fn(),
 }));
 
 vi.mock('node:fs/promises', () => fsMock);
 
-import { getMissingSensitiveStepIds, redactJourney, saveJourney } from '../journey.store';
+import {
+  getMissingSensitiveStepIds,
+  MAX_JOURNEY_SCREENSHOT_BYTES,
+  readJourneyScreenshot,
+  redactJourney,
+  saveJourney,
+} from '../journey.store';
 
 const journey: JourneyDefinition = {
   id: 'journey-001',
@@ -50,5 +57,12 @@ describe('journey store', () => {
 
     expect(getMissingSensitiveStepIds(missing)).toEqual(['step-1']);
     expect(redactJourney(missing).requiresSecretInput).toBe(true);
+  });
+
+  it('refuse une capture qui dépasse la limite de taille', async () => {
+    fsMock.stat.mockResolvedValue({ size: MAX_JOURNEY_SCREENSHOT_BYTES + 1 });
+
+    await expect(readJourneyScreenshot('run-001', 'capture.png')).rejects.toThrow('volumineuse');
+    expect(fsMock.readFile).not.toHaveBeenCalled();
   });
 });

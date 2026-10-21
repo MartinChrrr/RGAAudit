@@ -32,6 +32,7 @@ afterAll(async () => {
 
 describe('replayJourney', () => {
   it('rejoue les actions et conserve une observation avec preuve et audit par étape', async () => {
+    const screenshotDir = await mkdtemp(path.join(os.tmpdir(), 'rgaudit-sensitive-'));
     const journey: JourneyDefinition = {
       id: 'journey-test',
       name: 'Parcours de test',
@@ -50,6 +51,7 @@ describe('replayJourney', () => {
 
     const run = await replayJourney(journey, {
       timeout: 10_000,
+      screenshotDir,
       isRequestAllowed: async (url) => url.startsWith(baseUrl),
     });
 
@@ -73,6 +75,9 @@ describe('replayJourney', () => {
     expect(run.steps[2].evidence[0]?.html).toContain('id="name"');
     expect(run.steps[2].evidence[0]?.html).toContain('data-rgaudit-redacted="true"');
     expect(run.steps[2].evidence[0]?.html).not.toContain('Martin');
+    expect(run.steps[2].screenshotPath).toBeUndefined();
+    expect(run.steps[2].screenshotSkippedReason).toBe('sensitive_step');
+    expect(run.steps.slice(3).every((step) => step.screenshotPath === undefined)).toBe(true);
     expect(run.steps[0].result?.collectedData).not.toBeNull();
     expect(run.steps[1].keyboard).toMatchObject({
       key: 'Tab',

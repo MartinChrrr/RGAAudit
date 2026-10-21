@@ -25,7 +25,14 @@ app.use((_, res, next) => {
 });
 
 if (process.env.NODE_ENV !== 'production' || config.corsOrigin) {
-  app.use(cors({ origin: config.corsOrigin ?? true }));
+  const localOrigin = (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+    if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('Origine CORS non autorisée.'));
+  };
+  app.use(cors({ origin: config.corsOrigin ?? localOrigin }));
 }
 app.use(express.json({ limit: '1mb' }));
 
@@ -55,9 +62,9 @@ app.use('/api', (_, res) => {
 // Error handler (must be last)
 app.use(errorHandler);
 
-export function startServer(port = config.port): ReturnType<typeof app.listen> {
-  return app.listen(port, () => {
-    console.log(`RGAAudit server → http://localhost:${port}`);
+export function startServer(port = config.port, host = config.host): ReturnType<typeof app.listen> {
+  return app.listen(port, host, () => {
+    console.log(`RGAAudit server → http://${host}:${port}`);
   });
 }
 

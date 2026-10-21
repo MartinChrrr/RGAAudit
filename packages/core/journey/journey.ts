@@ -1,6 +1,6 @@
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { randomUUID } from 'node:crypto';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, stat, unlink } from 'node:fs/promises';
 import { analyzeLoadedPage, type PageResult } from '../analyzer/analyzer';
 import { mapPageResults } from '../mapping/mapper';
 
@@ -100,6 +100,8 @@ export interface JourneyStepObservation {
   screenshotPath?: string;
   /** Public URL exposed by the server when a context screenshot is available. */
   screenshotUrl?: string;
+  /** Explains why an optional context screenshot was deliberately not stored. */
+  screenshotSkippedReason?: 'sensitive_step' | 'quota' | 'too_large' | 'capture_error';
   result: PageResult | null;
   error?: string;
 }
@@ -132,6 +134,8 @@ export interface JourneyRunOptions {
 }
 
 const MAX_EVIDENCE_LENGTH = 2_000;
+const MAX_CONTEXT_SCREENSHOTS_PER_RUN = 20;
+const MAX_CONTEXT_SCREENSHOT_BYTES = 2_000_000;
 
 export async function replayJourney(
   journey: JourneyDefinition,
@@ -162,6 +166,8 @@ export async function replayJourney(
     await page.goto(journey.startUrl, { waitUntil: 'networkidle', timeout: options.timeout ?? 30_000 });
     const steps: JourneyStepObservation[] = [];
     const focusHistory: string[] = [];
+    let sensitiveStepObserved = false;
+    let contextScreenshots = 0;
     let previousUrl = page.url();
     for (const [stepIndex, step] of journey.steps.entries()) {
       const observedAt = new Date().toISOString();
@@ -190,9 +196,28 @@ export async function replayJourney(
           ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory)
           : undefined;
         const context = buildContextObservation(step, beforeSignals, afterSignals);
-        const screenshotPath = context.changed && options.screenshotDir
-          ? await captureContextScreenshot(page, options.screenshotDir, step.id, stepIndex)
-          : undefined;
+        const screenshotBlockedBySensitiveStep = sensitiveStepObserved || step.sensitive === true;
+        let screenshotPath: string | undefined;
+        let screenshotSkippedReason: JourneyStepObservation['screenshotSkippedReason'];
+        if (options.screenshotDir && screenshotBlockedBySensitiveStep) {
+          // A replay may still display a secret after the sensitive action. Do not
+          // capture this or any later context, even if the DOM no longer exposes
+          // the sensitive control.
+          screenshotSkippedReason = 'sensitive_step';
+        } else if (context.changed && options.screenshotDir) {
+          if (contextScreenshots >= MAX_CONTEXT_SCREENSHOTS_PER_RUN) {
+            screenshotSkippedReason = 'quota';
+          } else {
+            const capture = await captureContextScreenshot(page, options.screenshotDir, step.id, stepIndex);
+            if (capture.path) {
+              screenshotPath = capture.path;
+              contextScreenshots += 1;
+            } else {
+              screenshotSkippedReason = capture.reason;
+            }
+          }
+        }
+        if (step.sensitive === true) sensitiveStepObserved = true;
         steps.push({
           stepId: step.id,
           action: step.action,
@@ -203,6 +228,7 @@ export async function replayJourney(
           ...(keyboard ? { keyboard } : {}),
           context,
           ...(screenshotPath ? { screenshotPath } : {}),
+          ...(screenshotSkippedReason ? { screenshotSkippedReason } : {}),
           result,
           ...(result.error ? { error: result.error } : {}),
         });
@@ -333,15 +359,25 @@ function buildContextObservation(
   };
 }
 
-async function captureContextScreenshot(page: Page, directory: string, stepId: string, stepIndex: number): Promise<string | undefined> {
+async function captureContextScreenshot(
+  page: Page,
+  directory: string,
+  stepId: string,
+  stepIndex: number,
+): Promise<{ path?: string; reason: 'too_large' | 'capture_error' }> {
   try {
     await mkdir(directory, { recursive: true });
     const safeStepId = stepId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80) || 'step';
     const screenshotPath = `${directory}/${String(stepIndex).padStart(3, '0')}-${safeStepId}.png`;
     await page.screenshot({ path: screenshotPath, fullPage: false, timeout: 5_000 });
-    return screenshotPath;
+    const stats = await stat(screenshotPath);
+    if (stats.size > MAX_CONTEXT_SCREENSHOT_BYTES) {
+      await unlink(screenshotPath).catch(() => undefined);
+      return { reason: 'too_large' };
+    }
+    return { path: screenshotPath, reason: 'capture_error' };
   } catch {
-    return undefined;
+    return { reason: 'capture_error' };
   }
 }
 

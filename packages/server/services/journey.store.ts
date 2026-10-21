@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
@@ -9,6 +9,7 @@ import { parseJourney } from './journey.validation';
 const DATA_DIR = config.dataDir || join(homedir(), '.rgaaudit');
 const JOURNEYS_DIR = join(DATA_DIR, 'journeys');
 const SECRET_TTL_MS = 15 * 60 * 1_000;
+export const MAX_JOURNEY_SCREENSHOT_BYTES = 2_000_000;
 const sensitiveValues = new Map<string, { value: string; expiresAt: number }>();
 
 function assertSafeId(id: string): void {
@@ -112,7 +113,12 @@ export async function loadJourneyRun(runId: string): Promise<JourneyRunState | n
 
 export async function readJourneyScreenshot(runId: string, filename: string): Promise<Buffer | null> {
   try {
-    return await readFile(getJourneyScreenshotPath(runId, filename));
+    const screenshotPath = getJourneyScreenshotPath(runId, filename);
+    const fileStats = await stat(screenshotPath);
+    if (fileStats.size > MAX_JOURNEY_SCREENSHOT_BYTES) {
+      throw new Error('Capture trop volumineuse.');
+    }
+    return await readFile(screenshotPath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
     throw error;

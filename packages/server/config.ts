@@ -19,6 +19,13 @@ export const config = {
   /** Express server port */
   port: envInt('PORT', 3001),
 
+  /**
+   * Bind address. Keep the server local by default because journey captures
+   * can contain personal data. Set RGAAUDIT_HOST explicitly to opt into a
+   * network-facing deployment with its own access control.
+   */
+  host: envString('RGAAUDIT_HOST', '127.0.0.1'),
+
   /** Persistent files. Docker mounts its data volume here. */
   dataDir: envString('RGAAUDIT_DATA_DIR', ''),
 

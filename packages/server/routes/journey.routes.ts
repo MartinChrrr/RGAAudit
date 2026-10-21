@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
-import { basename } from 'node:path';
+import { basename, join, normalize } from 'node:path';
 import type { JourneyDefinition, JourneyRunState, JourneyStep } from '../../core/journey/journey';
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
@@ -27,6 +27,10 @@ function exposeJourneyRun(run: JourneyRunState): JourneyRunState {
         if (!step.screenshotPath) return step;
         const filename = basename(step.screenshotPath);
         const { screenshotPath: _screenshotPath, ...publicStep } = step;
+        const expectedSuffix = join('journeys', run.runId, 'screenshots', filename);
+        if (!normalize(step.screenshotPath).endsWith(expectedSuffix)) {
+          return { ...publicStep, screenshotSkippedReason: 'capture_error' };
+        }
         return {
           ...publicStep,
           screenshotUrl: `/api/journey-runs/${run.runId}/screenshots/${encodeURIComponent(filename)}`,
@@ -87,6 +91,9 @@ journeyRouter.get('/api/journey-runs/:runId/screenshots/:filename', asyncHandler
   } catch (error) {
     if (error instanceof Error && error.message.includes('invalide')) {
       throw new HttpError(400, error.message);
+    }
+    if (error instanceof Error && error.message.includes('volumineuse')) {
+      throw new HttpError(413, error.message);
     }
     throw error;
   }
