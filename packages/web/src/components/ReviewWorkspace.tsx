@@ -155,7 +155,7 @@ function historyUrlLabel(value: string): string {
     const parsed = new URL(value);
     return parsed.search ? `${parsed.origin}${parsed.pathname} [paramètres masqués]` : value;
   } catch {
-    return value;
+    return '[URL masquée]';
   }
 }
 

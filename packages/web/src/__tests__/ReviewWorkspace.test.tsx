@@ -174,6 +174,27 @@ describe('ReviewWorkspace', () => {
     expect(screen.getByTestId('review-history')).not.toHaveTextContent('secret-value');
   });
 
+  it('masque aussi une URL invalide dans l’historique', () => {
+    render(
+      <ReviewWorkspace
+        sessionId="session-1"
+        review={{
+          ...review,
+          decisionHistory: [{
+            pageUrl: 'not-a-url?secret-value',
+            criterionId: '1.1',
+            status: 'not_tested',
+            comment: 'URL invalide',
+            reviewedAt: null,
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('review-history')).toHaveTextContent('[URL masquée]');
+    expect(screen.getByTestId('review-history')).not.toHaveTextContent('secret-value');
+  });
+
   it('affiche le périmètre des 106 critères', () => {
     render(<ReviewWorkspace sessionId="session-1" review={review} />);
 
