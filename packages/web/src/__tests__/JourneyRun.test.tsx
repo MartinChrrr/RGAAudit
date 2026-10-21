@@ -62,6 +62,7 @@ describe('JourneyRun', () => {
     renderJourney();
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Exécution du parcours' })).toBeInTheDocument());
+    expect(screen.getByRole('status')).toHaveTextContent('Terminée');
     expect(screen.getByText('Changement détecté — revue humaine requise.')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
     expect(screen.getByText('Région live')).toBeInTheDocument();

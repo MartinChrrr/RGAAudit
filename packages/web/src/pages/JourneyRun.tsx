@@ -253,7 +253,10 @@ export default function JourneyRun() {
         <header className="mt-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900">{t('journey.title')}</h1>
           <dl className="mt-4 grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
-            <div><dt className="font-medium text-gray-900">{t('journey.statusLabel')}</dt><dd>{statusLabel(run.status)}</dd></div>
+            <div>
+              <dt className="font-medium text-gray-900">{t('journey.statusLabel')}</dt>
+              <dd role="status" aria-live="polite">{statusLabel(run.status)}</dd>
+            </div>
             <div><dt className="font-medium text-gray-900">{t('journey.runId')}</dt><dd className="break-all">{run.runId}</dd></div>
             <div><dt className="font-medium text-gray-900">{t('journey.startedAt')}</dt><dd>{formatDate(run.startedAt)}</dd></div>
             <div><dt className="font-medium text-gray-900">{t('journey.finishedAt')}</dt><dd>{formatDate(run.finishedAt)}</dd></div>
