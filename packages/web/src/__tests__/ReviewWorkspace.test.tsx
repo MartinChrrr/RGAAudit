@@ -98,6 +98,10 @@ describe('ReviewWorkspace', () => {
             criteria: [{
               ...review.pages[0].criteria[0],
               evidence: [{
+                proofId: 'proof-1',
+                resultId: 'result-1',
+                pageUrl: 'https://example.com/',
+                criterionId: '1.1',
                 kind: 'violation',
                 rule: 'image-alt',
                 description: 'Images must have alternate text',
@@ -114,6 +118,30 @@ describe('ReviewWorkspace', () => {
 
     expect(screen.getByTestId('criterion-evidence-1.1')).toHaveTextContent('image-alt');
     expect(screen.getByTestId('criterion-evidence-1.1')).toHaveTextContent('Parent HTML:');
+    expect(screen.getByTestId('criterion-evidence-1.1')).toHaveTextContent('proof-1');
+    expect(screen.getByRole('link', { name: 'ouvrir la page auditée' })).toHaveAttribute('href', 'https://example.com/');
+  });
+
+  it('rend explicite l’absence de preuve automatique', () => {
+    render(
+      <ReviewWorkspace
+        sessionId="session-1"
+        review={{
+          ...review,
+          pages: [{
+            ...review.pages[0],
+            criteria: [{
+              ...review.pages[0].criteria[0],
+              proofStatus: 'missing',
+              missingProofs: ['Aucune preuve rattachée'],
+            }],
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/Preuve manquante — revue manuelle requise/)).toBeInTheDocument();
+    expect(screen.getByText(/Aucune preuve rattachée/)).toBeInTheDocument();
   });
 
   it('affiche la couverture partielle séparément du signal machine', () => {

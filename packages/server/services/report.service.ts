@@ -72,10 +72,16 @@ export interface ReviewCriterion {
   incompletesCount: number;
   elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
   evidence: ReviewEvidence[];
+  proofStatus: 'linked' | 'missing' | 'not_required';
+  missingProofs: string[];
   manualChecks: string[];
 }
 
 export interface ReviewEvidence {
+  proofId: string;
+  resultId: string;
+  pageUrl: string;
+  criterionId: string;
   kind: 'violation' | 'incomplete';
   rule: string;
   impact?: string;
@@ -173,9 +179,13 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
         incompletesCount: criterion.incompletes?.length ?? 0,
         elements: criterion.elements ?? [],
         evidence: [
-          ...criterion.violations.flatMap((violation) => violation.elements.map((element) => toReviewEvidence('violation', violation, element))),
-          ...criterion.incompletes.flatMap((incomplete) => incomplete.elements.map((element) => toReviewEvidence('incomplete', incomplete, element))),
+          ...criterion.violations.flatMap((violation) => violation.elements.map((element, index) => toReviewEvidence(page.url, criterion.rgaaId, 'violation', violation, element, index))),
+          ...criterion.incompletes.flatMap((incomplete) => incomplete.elements.map((element, index) => toReviewEvidence(page.url, criterion.rgaaId, 'incomplete', incomplete, element, index))),
         ],
+        proofStatus: getProofStatus(criterion),
+        missingProofs: getProofStatus(criterion) === 'missing'
+          ? ['Aucune preuve automatique ou élément collecté n’est rattaché à ce résultat. Une vérification humaine est nécessaire.']
+          : [],
         manualChecks: criterion.manualChecks ?? [],
       };
     }),
@@ -215,11 +225,20 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
 }
 
 function toReviewEvidence(
+  pageUrl: string,
+  criterionId: string,
   kind: ReviewEvidence['kind'],
   result: { rule: string; impact?: string; description: string; helpUrl?: string },
   element: AxeElement,
+  elementIndex: number,
 ): ReviewEvidence {
+  const resultId = `result-${encodeURIComponent(pageUrl)}-${criterionId}-${kind}-${result.rule}`;
+  const proofId = `proof-${encodeURIComponent(pageUrl)}-${criterionId}-${kind}-${result.rule}-${elementIndex}`;
   return {
+    proofId,
+    resultId,
+    pageUrl,
+    criterionId,
     kind,
     rule: result.rule,
     ...(result.impact ? { impact: result.impact } : {}),
@@ -231,6 +250,16 @@ function toReviewEvidence(
     ...(element.context ? { context: element.context } : {}),
     ...(element.elementIndex !== undefined ? { elementIndex: element.elementIndex } : {}),
   };
+}
+
+function getProofStatus(criterion: MappedPage['criteria'][number]): ReviewCriterion['proofStatus'] {
+  if (criterion.violations.length > 0 || criterion.incompletes.length > 0 || criterion.elements.length > 0) {
+    return 'linked';
+  }
+  if (criterion.status === 'violation' || criterion.status === 'incomplete' || criterion.coverage !== 'full') {
+    return 'missing';
+  }
+  return 'not_required';
 }
 
 function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolationItem[] {

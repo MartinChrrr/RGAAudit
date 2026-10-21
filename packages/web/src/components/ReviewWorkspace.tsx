@@ -31,6 +31,10 @@ export interface ReviewCriterion {
   incompletesCount: number;
   elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>;
   evidence?: Array<{
+    proofId?: string;
+    resultId?: string;
+    pageUrl?: string;
+    criterionId?: string;
     kind: 'violation' | 'incomplete';
     rule: string;
     impact?: string;
@@ -42,6 +46,8 @@ export interface ReviewCriterion {
     context?: string;
     elementIndex?: number;
   }>;
+  proofStatus?: 'linked' | 'missing' | 'not_required';
+  missingProofs?: string[];
   manualChecks: string[];
 }
 
@@ -282,6 +288,11 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                     ))}
                   </div>
                   <h3 className="mt-2 text-sm font-medium text-gray-900">{criterion.title}</h3>
+                  {criterion.proofStatus === 'missing' && (
+                    <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                      Preuve manquante — revue manuelle requise{criterion.missingProofs?.[0] ? ` : ${criterion.missingProofs[0]}` : '.'}
+                    </p>
+                  )}
                   {(criterion.violationsCount > 0 || criterion.elements.length > 0) && (
                     <p className="mt-1 text-xs text-gray-600">
                       {criterion.violationsCount} anomalie(s) automatisée(s), {criterion.elements.length} élément(s) à examiner.
@@ -300,6 +311,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                             <div><dt className="font-semibold">Cible</dt><dd><code>{evidence.target.join(' > ')}</code></dd></div>
                             <div><dt className="font-semibold">HTML</dt><dd><code className="block max-h-24 overflow-auto whitespace-pre-wrap">{evidence.html}</code></dd></div>
                             {evidence.context && <div><dt className="font-semibold">Contexte</dt><dd><code className="block max-h-32 overflow-auto whitespace-pre-wrap">{evidence.context}</code></dd></div>}
+                            {(evidence.proofId || evidence.resultId || evidence.pageUrl) && <div><dt className="font-semibold">Traçabilité</dt><dd>{evidence.proofId && <><code>{evidence.proofId}</code> · </>}{evidence.resultId && <>résultat <code>{evidence.resultId}</code>{evidence.pageUrl ? ' · ' : ''}</>}{evidence.pageUrl && <a className="text-primary-700 underline" href={evidence.pageUrl} target="_blank" rel="noreferrer">ouvrir la page auditée</a>}</dd></div>}
                           </dl>
                         </details>
                       ))}

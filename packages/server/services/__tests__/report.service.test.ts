@@ -62,6 +62,10 @@ describe('buildReportFromSession', () => {
       html: '<img src="photo.jpg">',
       context: expect.stringContaining('Parent HTML:'),
       elementIndex: 0,
+      proofId: expect.stringContaining('proof-'),
+      resultId: expect.stringContaining('result-'),
+      pageUrl: 'https://example.com/',
+      criterionId: '1.1',
     })]);
   });
 
@@ -111,6 +115,8 @@ describe('buildReportFromSession', () => {
     expect(criterion11).toMatchObject({
       machineStatus: 'needs_review',
       humanStatus: 'not_tested',
+      proofStatus: 'missing',
     });
+    expect(criterion11?.missingProofs).toHaveLength(1);
   });
 });
