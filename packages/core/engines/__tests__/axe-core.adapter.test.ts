@@ -312,6 +312,12 @@ describe('AxeCoreAdapter', () => {
       expect(violation!.elements[0].target).toContain('#broken-skip');
     });
 
+    await withPage(`${baseUrl}/navigation/missing-skip-link.html`, async (page) => {
+      const result = await adapter.analyze(page) as EngineResult;
+      const incomplete = result.incomplete.find((item) => item.rule === 'bypass');
+      expect(incomplete).toBeDefined();
+    });
+
     await withPage(`${baseUrl}/navigation/duplicate-accesskeys.html`, async (page) => {
       const result = await adapter.analyze(page) as EngineResult;
       const violation = result.violations.find((item) => item.rule === 'accesskeys');
@@ -339,6 +345,7 @@ describe('AxeCoreAdapter', () => {
       ['/forms/valid.html', 'select-name'],
       ['/forms/valid.html', 'autocomplete-valid'],
       ['/navigation/with-skip-link.html', 'skip-link'],
+      ['/navigation/with-skip-link.html', 'bypass'],
       ['/navigation/unique-accesskeys.html', 'accesskeys'],
       ['/orientation/unlocked.html', 'css-orientation-lock'],
     ];
@@ -403,6 +410,16 @@ describe('AxeCoreAdapter', () => {
       const { violations } = result as EngineResult;
       const colorContrast = violations.find((v) => v.rule === 'color-contrast');
       expect(colorContrast).toBeUndefined();
+    });
+  });
+
+  it('conserve les contrôles déterministes lorsque le contraste est désactivé', async () => {
+    const adapter = new AxeCoreAdapter({ disableRules: ['color-contrast', 'color-contrast-enhanced'] });
+    await withPage(`${baseUrl}/tables/fake-caption.html`, async (page) => {
+      const result = await adapter.analyze(page);
+      expect(result.error).toBeUndefined();
+      const { violations } = result as EngineResult;
+      expect(violations.find((v) => v.rule === 'table-fake-caption')).toBeDefined();
     });
   });
 });

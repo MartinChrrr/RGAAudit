@@ -304,12 +304,32 @@ function mapCriterion(
     return mapAnyViolation(criterion, engineResult, elements, base);
   }
 
+  if (criterion.evaluationStrategy === 'ANY_VIOLATION_REVIEW') {
+    return mapAnyViolationForReview(criterion, engineResult, elements, base);
+  }
+
   if (criterion.evaluationStrategy === 'ALL_PASS') {
     return mapAllPass(criterion, engineResult, elements, base);
   }
 
   // Unknown strategy — fallback to manual
   return { ...base, status: 'manual', violations: [], incompletes: [], elements, heuristicFindings: [] };
+}
+
+/**
+ * A deterministic signal is retained as evidence but never promoted to an
+ * RGAA violation when the rule only covers a subset of the criterion.
+ */
+function mapAnyViolationForReview(
+  criterion: RgaaCriterion,
+  result: EngineResult,
+  elements: Array<{ selector: string; flags: string[]; elementIndex?: number }>,
+  base: Omit<MappedCriterion, 'status' | 'violations' | 'incompletes' | 'elements' | 'heuristicFindings'>,
+): MappedCriterion {
+  const violations = result.violations.filter((v) => criterion.axeRules.includes(v.rule));
+  const incompletes = result.incomplete.filter((i) => criterion.axeRules.includes(i.rule));
+  const status: CriterionStatus = violations.length > 0 || incompletes.length > 0 ? 'incomplete' : 'manual';
+  return { ...base, status, violations, incompletes, elements, heuristicFindings: [] };
 }
 
 function mapAnyViolation(

@@ -377,6 +377,13 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
           elements: [{ html: '<th scope="invalid">', target: ['#invalid-headers th'] }],
         },
         {
+          rule: 'accesskeys',
+          impact: 'moderate',
+          description: 'Accesskeys must be unique',
+          helpUrl: '',
+          elements: [{ html: '<button accesskey="a">', target: ['button'] }],
+        },
+        {
           rule: 'label',
           impact: 'critical',
           description: 'Form elements must have labels',
@@ -398,6 +405,10 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
     expect(result.criteria.find((criterion) => criterion.rgaaId === '5.6')).toMatchObject({
       status: 'violation',
       violations: [{ rule: 'td-headers-attr' }, { rule: 'scope-attr-valid' }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '12.10')).toMatchObject({
+      status: 'incomplete',
+      violations: [{ rule: 'accesskeys' }],
     });
     expect(result.criteria.find((criterion) => criterion.rgaaId === '11.1')).toMatchObject({
       status: 'violation',

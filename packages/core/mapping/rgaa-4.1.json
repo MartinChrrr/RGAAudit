@@ -1771,7 +1771,7 @@
       "implementationLot": 0,
       "wcag": ["2.1.4"],
       "axeRules": ["accesskeys"],
-      "evaluationStrategy": "ANY_VIOLATION",
+      "evaluationStrategy": "ANY_VIOLATION_REVIEW",
       "dataCollectorFlags": [],
       "heuristicPatterns": {},
       "limits": "axe-core signale uniquement les valeurs accesskey dupliquées ; la possibilité de désactiver ou remapper les raccourcis reste manuelle."

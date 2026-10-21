@@ -24,6 +24,7 @@ const ENABLED_DETERMINISTIC_RULES = [
   'avoid-inline-spacing',
   'skip-link',
   'css-orientation-lock',
+  'bypass',
 ] as const;
 
 function flattenTarget(target: NodeResult['target']): string[] {
@@ -67,15 +68,11 @@ export class AxeCoreAdapter implements AuditEngine {
 
   async analyze(page: Page): Promise<AnalyzeResult> {
     try {
-      let builder = new AxeBuilder({ page });
-      builder = builder.options({
-        rules: Object.fromEntries(
-          ENABLED_DETERMINISTIC_RULES.map((rule) => [rule, { enabled: true }]),
-        ),
-      });
-      if (this.disableRules.length > 0) {
-        builder = builder.disableRules(this.disableRules);
-      }
+      const ruleOptions = Object.fromEntries([
+        ...ENABLED_DETERMINISTIC_RULES.map((rule) => [rule, { enabled: true }] as const),
+        ...this.disableRules.map((rule) => [rule, { enabled: false }] as const),
+      ]);
+      const builder = new AxeBuilder({ page }).options({ rules: ruleOptions });
 
       const axeResults = await Promise.race([
         builder.analyze(),
