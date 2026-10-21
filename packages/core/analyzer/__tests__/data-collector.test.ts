@@ -185,6 +185,7 @@ describe('collectFrames', () => {
         titleAttribute: null,
         titleStatus: 'absent',
         flags: ['FRAME_TITLE_ABSENT'],
+        elementIndex: 0,
       });
       expect(frames.find((frame) => frame.selector === 'iframe#empty-title')).toMatchObject({
         titleAttribute: '   ',
@@ -194,6 +195,8 @@ describe('collectFrames', () => {
 
       for (const frame of frames) {
         await expect(page.locator(frame.selector).count()).resolves.toBe(1);
+        expect(frame.origin).toBe(new URL(baseUrl).origin);
+        expect(frame.evidenceStatus).toBe('readable');
       }
     });
   });
@@ -208,6 +211,19 @@ describe('collectFrames', () => {
       titleAttribute: 'Aide à la saisie',
       titleStatus: 'present',
       flags: [],
+    });
+  });
+
+  it('conserve l’URL absolue et l’origine d’une source de frame', async () => {
+    await withPage(`${baseUrl}/frames/source-and-origin.html`, async (page) => {
+      const frames = await collectFrames(page);
+      expect(frames[0]).toMatchObject({
+        selector: 'iframe#source-frame',
+        sourceUrl: `${baseUrl}/frames/embedded.html`,
+        origin: new URL(baseUrl).origin,
+        evidenceStatus: 'readable',
+        elementIndex: 0,
+      });
     });
   });
 });

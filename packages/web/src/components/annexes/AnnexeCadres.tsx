@@ -5,6 +5,10 @@ export interface FrameItem {
   selector: string;
   tagName: string;
   src: string | null;
+  sourceUrl?: string | null;
+  origin?: string | null;
+  evidenceStatus?: 'readable' | 'unreadable';
+  elementIndex?: number;
   titleAttribute: string | null;
   titleStatus: 'absent' | 'empty' | 'present';
   flags: string[];
@@ -41,7 +45,9 @@ export default function AnnexeCadres({
     (!pageFilter || frame.pageUrl === pageFilter)
     && (!selectorFilter || selectorFilter.has(frame.selector))
   ));
-  const issueCount = visibleFrames.filter((frame) => frame.titleStatus !== 'present').length;
+  const issueCount = visibleFrames.filter((frame) => (
+    frame.titleStatus !== 'present' || frame.evidenceStatus === 'unreadable'
+  )).length;
 
   return (
     <div>
@@ -89,6 +95,7 @@ export default function AnnexeCadres({
                 <tr>
                   <th className="px-3 py-2">{t('annexes.frames.colSelector')}</th>
                   <th className="px-3 py-2">{t('annexes.frames.colSource')}</th>
+                  <th className="px-3 py-2">{t('annexes.frames.colOrigin')}</th>
                   <th className="px-3 py-2">{t('annexes.frames.colTitle')}</th>
                   <th className="px-3 py-2">{t('annexes.frames.colStatus')}</th>
                 </tr>
@@ -97,8 +104,11 @@ export default function AnnexeCadres({
                 {visibleFrames.map((frame) => (
                   <tr key={`${frame.pageUrl ?? ''}-${frame.selector}`} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs text-gray-700">{frame.selector}</td>
-                    <td className="max-w-64 truncate px-3 py-2 text-xs text-gray-700" title={frame.src ?? ''}>
-                      {frame.src || t('annexes.frames.sourceAbsent')}
+                    <td className="max-w-64 truncate px-3 py-2 text-xs text-gray-700" title={frame.sourceUrl ?? frame.src ?? ''}>
+                      {frame.sourceUrl || frame.src || t('annexes.frames.sourceAbsent')}
+                    </td>
+                    <td className="max-w-48 truncate px-3 py-2 text-xs text-gray-700" title={frame.origin ?? ''}>
+                      {frame.origin || t('annexes.frames.originAbsent')}
                     </td>
                     <td className="px-3 py-2 text-gray-800">
                       {frame.titleStatus === 'present'
@@ -107,11 +117,13 @@ export default function AnnexeCadres({
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        frame.titleStatus === 'present'
+                        frame.titleStatus === 'present' && frame.evidenceStatus !== 'unreadable'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {t(`annexes.frames.status${frame.titleStatus === 'present' ? 'Present' : 'Violation'}`)}
+                        {frame.evidenceStatus === 'unreadable'
+                          ? t('annexes.frames.evidenceUnreadable')
+                          : t(`annexes.frames.status${frame.titleStatus === 'present' ? 'Present' : 'Violation'}`)}
                       </span>
                     </td>
                   </tr>

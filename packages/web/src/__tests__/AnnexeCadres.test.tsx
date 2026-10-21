@@ -52,4 +52,16 @@ describe('AnnexeCadres', () => {
     expect(screen.getByText('Tous les cadres affichés possèdent un titre')).toBeInTheDocument();
     expect(screen.getByText('Aide')).toBeInTheDocument();
   });
+
+  it('signale une preuve de frame illisible même si son titre est présent', () => {
+    render(
+      <AnnexeCadres
+        frames={[{ ...frames[1], evidenceStatus: 'unreadable', origin: 'https://other.example' }]}
+        sessionId="session-1"
+      />,
+    );
+
+    expect(screen.getByText('Preuve illisible — à vérifier')).toBeInTheDocument();
+    expect(screen.getByText('https://other.example')).toBeInTheDocument();
+  });
 });

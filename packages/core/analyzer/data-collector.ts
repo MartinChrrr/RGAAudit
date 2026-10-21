@@ -39,6 +39,14 @@ export interface FrameData {
   selector: string;
   tagName: string;
   src: string | null;
+  /** Absolute source URL when the frame declares a src attribute. */
+  sourceUrl?: string | null;
+  /** Origin associated with the frame source, or the audited page for inline frames. */
+  origin?: string | null;
+  /** Whether the frame document was readable from the audited page. */
+  evidenceStatus?: 'readable' | 'unreadable';
+  /** Stable position among iframe/frame elements on the audited page. */
+  elementIndex?: number;
   titleAttribute: string | null;
   titleStatus: 'absent' | 'empty' | 'present';
   flags: string[];
@@ -411,12 +419,39 @@ export async function collectFrames(page: Page): Promise<FrameData[]> {
       return parts.join(' > ');
     };
 
-    return [...document.querySelectorAll('iframe, frame')].map((element) => ({
-      selector: getUniqueSelector(element),
-      tagName: element.tagName.toLowerCase(),
-      src: element.getAttribute('src'),
-      titleAttribute: element.getAttribute('title'),
-    }));
+    return [...document.querySelectorAll('iframe, frame')].map((element, elementIndex) => {
+      const rawSrc = element.getAttribute('src');
+      let sourceUrl: string | null = null;
+      let origin: string | null = document.location.origin;
+      if (rawSrc) {
+        try {
+          const resolved = new URL(rawSrc, document.baseURI);
+          sourceUrl = resolved.href;
+          origin = resolved.origin;
+        } catch {
+          origin = null;
+        }
+      }
+
+      let evidenceStatus: 'readable' | 'unreadable' = 'readable';
+      try {
+        const contentDocument = (element as HTMLIFrameElement).contentDocument;
+        if (rawSrc && !contentDocument) evidenceStatus = 'unreadable';
+      } catch {
+        evidenceStatus = 'unreadable';
+      }
+
+      return {
+        selector: getUniqueSelector(element),
+        tagName: element.tagName.toLowerCase(),
+        src: rawSrc,
+        sourceUrl,
+        origin,
+        evidenceStatus,
+        elementIndex,
+        titleAttribute: element.getAttribute('title'),
+      };
+    });
   });
 
   return frames.map((frame) => {
@@ -429,6 +464,7 @@ export async function collectFrames(page: Page): Promise<FrameData[]> {
 
     if (titleStatus === 'absent') flags.push('FRAME_TITLE_ABSENT');
     if (titleStatus === 'empty') flags.push('FRAME_TITLE_EMPTY');
+    if (frame.evidenceStatus === 'unreadable') flags.push('FRAME_CONTENT_UNREADABLE');
 
     return { ...frame, titleStatus, flags };
   });
