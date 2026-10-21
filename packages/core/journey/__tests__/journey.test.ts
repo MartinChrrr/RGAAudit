@@ -116,12 +116,13 @@ describe('replayJourney', () => {
       changed: true,
       trigger: { stepId: 'context-step', action: 'click', selector: '#context' },
       changeTypes: expect.arrayContaining(['navigation', 'title', 'live-region']),
+      criterionIds: expect.arrayContaining(['7.4', '7.5', '13.8']),
       requiresHumanReview: true,
     });
     expect(observation?.disruptions).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'motion', selector: '#motion' }),
     ]));
-    expect(run.steps[0].screenshotPath).toBe(path.join(screenshotDir, 'context-step.png'));
+    expect(run.steps[0].screenshotPath).toBe(path.join(screenshotDir, '000-context-step.png'));
     const screenshot = await readFile(run.steps[0].screenshotPath!);
     expect(screenshot.length).toBeGreaterThan(0);
   }, 30_000);

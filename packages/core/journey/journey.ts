@@ -82,8 +82,9 @@ export interface JourneyContextObservation {
   titleBefore: string;
   titleAfter: string;
   changed: boolean;
-  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region'>;
+  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disruption'>;
   disruptions: JourneyDisruptionObservation[];
+  criterionIds: string[];
   requiresHumanReview: true;
 }
 
@@ -160,7 +161,7 @@ export async function replayJourney(
     const steps: JourneyStepObservation[] = [];
     const focusHistory: string[] = [];
     let previousUrl = page.url();
-    for (const step of journey.steps) {
+    for (const [stepIndex, step] of journey.steps.entries()) {
       const observedAt = new Date().toISOString();
       try {
         const urlBeforeStep = page.url();
@@ -178,7 +179,7 @@ export async function replayJourney(
         if (url !== urlBeforeStep) focusHistory.length = 0;
         previousUrl = url;
         const result = await analyzeLoadedPage(page, url, sessionId, { timeout: options.timeout });
-        const resultId = `journey-result-${runId}-${step.id}`;
+        const resultId = `journey-result-${runId}-${stepIndex}-${step.id}`;
         const mappedCriteria = mapCriteriaForEvidence(result, url);
         const evidence = step.selector
           ? await collectStepEvidence(page, step.selector, resultId, mappedCriteria)
@@ -188,7 +189,7 @@ export async function replayJourney(
           : undefined;
         const context = buildContextObservation(step, beforeSignals, afterSignals);
         const screenshotPath = context.changed && options.screenshotDir
-          ? await captureContextScreenshot(page, options.screenshotDir, step.id)
+          ? await captureContextScreenshot(page, options.screenshotDir, step.id, stepIndex)
           : undefined;
         steps.push({
           stepId: step.id,
@@ -299,6 +300,18 @@ function buildContextObservation(
   if (before.title !== after.title) changeTypes.push('title');
   if (before.dialogs.join('|') !== after.dialogs.join('|')) changeTypes.push('dialog');
   if (before.liveRegions.join('|') !== after.liveRegions.join('|')) changeTypes.push('live-region');
+  const beforeDisruptions = new Map(before.disruptions.map((item) => [`${item.kind}|${item.selector}`, item.detail]));
+  const disruptions = after.disruptions.filter((item) => (
+    beforeDisruptions.get(`${item.kind}|${item.selector}`) !== item.detail
+  ));
+  if (disruptions.length > 0) changeTypes.push('disruption');
+  const criterionIds = new Set<string>();
+  if (changeTypes.some((type) => ['navigation', 'title', 'dialog'].includes(type))) criterionIds.add('7.4');
+  if (changeTypes.includes('live-region')) criterionIds.add('7.5');
+  for (const disruption of disruptions) {
+    if (disruption.kind === 'sound') criterionIds.add('4.10');
+    if (disruption.kind === 'motion') criterionIds.add('13.8');
+  }
   return {
     trigger: {
       stepId: step.id,
@@ -312,16 +325,17 @@ function buildContextObservation(
     titleAfter: after.title,
     changed: changeTypes.length > 0,
     changeTypes,
-    disruptions: after.disruptions,
+    disruptions,
+    criterionIds: [...criterionIds],
     requiresHumanReview: true,
   };
 }
 
-async function captureContextScreenshot(page: Page, directory: string, stepId: string): Promise<string | undefined> {
+async function captureContextScreenshot(page: Page, directory: string, stepId: string, stepIndex: number): Promise<string | undefined> {
   try {
     await mkdir(directory, { recursive: true });
     const safeStepId = stepId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80) || 'step';
-    const screenshotPath = `${directory}/${safeStepId}.png`;
+    const screenshotPath = `${directory}/${String(stepIndex).padStart(3, '0')}-${safeStepId}.png`;
     await page.screenshot({ path: screenshotPath, fullPage: false, timeout: 5_000 });
     return screenshotPath;
   } catch {
