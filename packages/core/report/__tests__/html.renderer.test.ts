@@ -302,7 +302,7 @@ describe('renderReportHtml', () => {
       report: {
         ...makeReport(),
         comparisons: [{
-          before: { url: 'https://example.com/before', observedAt: '2026-10-21T10:00:00.000Z', available: true, selectors: ['link:a#old'] },
+          before: { url: 'https://example.com/before', observedAt: '2026-10-21T10:00:00.000Z', stepId: 'step-1', available: true, selectors: ['link:a#old'] },
           after: { url: 'https://example.com/after', observedAt: '2026-10-21T10:01:00.000Z', stepId: 'step-2', available: true, selectors: ['link:a#new'] },
           changed: true,
           added: ['link:a#new'],
@@ -313,6 +313,8 @@ describe('renderReportHtml', () => {
 
     expect(html).toContain('data-testid="comparison-section"');
     expect(html).toContain('2026-10-21T10:01:00.000Z');
+    expect(html).toContain('Étape : step-1');
+    expect(html).toContain('Étape : step-2');
     expect(html).toContain('link:a#new');
   });
 

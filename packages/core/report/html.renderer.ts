@@ -439,8 +439,8 @@ function buildComparisonSection(comparisons: NonNullable<Report['comparisons']>)
   if (comparisons.length === 0) return '';
   const rows = comparisons.map((comparison) => `
     <tr>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(comparison.before.url)}<br><span class="text-gray-500">${escapeHtml(comparison.before.observedAt ?? 'Horodatage absent')}</span></td>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(comparison.after.url)}<br><span class="text-gray-500">${escapeHtml(comparison.after.observedAt ?? 'Horodatage absent')}</span></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(comparison.before.url)}<br><span class="text-gray-500">${escapeHtml(comparison.before.observedAt ?? 'Horodatage absent')}${comparison.before.stepId ? `<br>${escapeHtml(t('results.comparisonStep'))} : ${escapeHtml(comparison.before.stepId)}` : ''}</span></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(comparison.after.url)}<br><span class="text-gray-500">${escapeHtml(comparison.after.observedAt ?? 'Horodatage absent')}${comparison.after.stepId ? `<br>${escapeHtml(t('results.comparisonStep'))} : ${escapeHtml(comparison.after.stepId)}` : ''}</span></td>
       <td class="px-3 py-2 text-xs ${comparison.changed ? 'text-amber-900' : 'text-green-800'}">${!comparison.before.available || !comparison.after.available ? escapeHtml(t('results.comparisonUnavailable')) : comparison.changed ? escapeHtml(t('results.comparisonChanged')) : escapeHtml(t('results.comparisonNoSelectorChange'))}<br>${escapeHtml(t('results.comparisonAdded'))} : ${escapeHtml(comparison.added.join(', ') || 'aucun')}<br>${escapeHtml(t('results.comparisonRemoved'))} : ${escapeHtml(comparison.removed.join(', ') || 'aucune')}</td>
     </tr>`).join('');
 

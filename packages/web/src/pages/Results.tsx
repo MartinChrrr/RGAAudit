@@ -511,6 +511,13 @@ export default function Results() {
                   <p className="mt-1 text-xs text-gray-500">
                     Avant : {comparison.before.observedAt ?? 'horodatage absent'} · Après : {comparison.after.observedAt ?? 'horodatage absent'}
                   </p>
+                  {(comparison.before.stepId || comparison.after.stepId) && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {comparison.before.stepId && `${t('results.comparisonBefore')} — ${t('results.comparisonStep')} : ${comparison.before.stepId}`}
+                      {comparison.before.stepId && comparison.after.stepId ? ' · ' : ''}
+                      {comparison.after.stepId && `${t('results.comparisonAfter')} — ${t('results.comparisonStep')} : ${comparison.after.stepId}`}
+                    </p>
+                  )}
                   <p className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
                     {!comparison.before.available || !comparison.after.available
                       ? t('results.comparisonUnavailable')
