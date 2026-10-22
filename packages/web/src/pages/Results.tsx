@@ -36,8 +36,8 @@ interface CriterionCoverageSummary {
 }
 
 interface PageComparison {
-  before: { url: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
-  after: { url: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
+  before: { url: string; pageId?: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
+  after: { url: string; pageId?: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
   changed: boolean;
   added: string[];
   removed: string[];
@@ -242,6 +242,10 @@ export default function Results() {
   };
 
   const topIssues = (report.summary.topIssues ?? []).slice(0, 5);
+
+  const comparisonPageLabel = (snapshot: PageComparison['before']): string => (
+    `${snapshot.url}${snapshot.pageId ? ` — identifiant de page ${snapshot.pageId.slice(-8)}` : ''}`
+  );
 
   const handleOpenAnnex = (target: AnnexTarget) => {
     setAnnexTarget(target);
@@ -509,8 +513,10 @@ export default function Results() {
             <h2 className="mb-3 text-lg font-semibold text-gray-900">{t('results.comparisonTitle')}</h2>
             <div className="space-y-3">
               {report.comparisons.map((comparison) => (
-                <article key={`${comparison.before.url}:${comparison.after.url}`} className="rounded-xl border border-gray-200 bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-800">{comparison.before.url} → {comparison.after.url}</h3>
+                <article key={`${comparison.before.pageId ?? comparison.before.url}:${comparison.after.pageId ?? comparison.after.url}`} className="rounded-xl border border-gray-200 bg-white p-4">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Avant : {comparisonPageLabel(comparison.before)} <span aria-hidden="true">→</span> Après : {comparisonPageLabel(comparison.after)}
+                  </h3>
                   <p className="mt-1 text-xs text-gray-500">
                     Avant : {comparison.before.observedAt ?? 'horodatage absent'} · Après : {comparison.after.observedAt ?? 'horodatage absent'}
                   </p>
@@ -521,7 +527,7 @@ export default function Results() {
                       {comparison.after.stepId && `${t('results.comparisonAfter')} — ${t('results.comparisonStep')} : ${comparison.after.stepId}`}
                     </p>
                   )}
-                  <p className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
+                  <p role="status" className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
                     {!comparison.before.available || !comparison.after.available
                       ? t('results.comparisonUnavailable')
                       : comparison.changed
@@ -542,10 +548,11 @@ export default function Results() {
 
         {/* Annexes tabs */}
         <section id="annexes" tabIndex={-1} className="mb-8 scroll-mt-4 focus:outline-none">
-          <div className="flex border-b border-gray-200 mb-4" role="tablist">
+          <div className="flex border-b border-gray-200 mb-4" role="tablist" aria-label="Annexes du rapport">
             {(['images', 'media', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'] as const).map((tab) => (
               <button
                 key={tab}
+                id={`annex-tab-${tab}`}
                 type="button"
                 onClick={() => {
                   setActiveTab(tab);
@@ -557,6 +564,7 @@ export default function Results() {
                     : 'border-transparent text-gray-600 hover:text-gray-800'
                 }`}
                 aria-selected={activeTab === tab}
+                aria-controls="annex-panel"
                 role="tab"
               >
                 {tab === 'heuristics'
@@ -565,7 +573,7 @@ export default function Results() {
               </button>
             ))}
           </div>
-          <div role="tabpanel" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div id="annex-panel" role="tabpanel" aria-labelledby={`annex-tab-${activeTab}`} tabIndex={0} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             {activeTab === 'images' && (
               <AnnexeImages
                 images={allImages}

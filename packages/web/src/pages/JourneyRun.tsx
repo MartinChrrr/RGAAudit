@@ -176,11 +176,11 @@ function JourneyStepCard({ step, index }: { step: JourneyStep; index: number }) 
             </figcaption>
           </figure>
         ) : step.screenshotSkippedReason ? (
-          <p className="mt-3 text-sm text-gray-700">{skippedReasonLabel(step.screenshotSkippedReason)}</p>
+          <p role="status" className="mt-3 text-sm text-gray-700">{skippedReasonLabel(step.screenshotSkippedReason)}</p>
         ) : screenshotUnavailable ? (
-          <p className="mt-3 text-sm text-gray-700">{t('journey.screenshotMissing')}</p>
+          <p role="status" className="mt-3 text-sm text-gray-700">{t('journey.screenshotMissing')}</p>
         ) : (
-          <p className="mt-3 text-sm text-gray-700">{t('journey.noScreenshot')}</p>
+          <p role="status" className="mt-3 text-sm text-gray-700">{t('journey.noScreenshot')}</p>
         )}
       </section>
 

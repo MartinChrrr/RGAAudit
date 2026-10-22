@@ -154,6 +154,8 @@ export function toPublicReportData(data: ReportData, sessionId: string): ReportD
         url: redactUrl(comparison.after.url),
         pageId: publicPageId(comparison.after.url),
       },
+      added: comparison.added.map(redactTextUrls),
+      removed: comparison.removed.map(redactTextUrls),
     })),
   };
 

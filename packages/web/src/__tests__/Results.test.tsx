@@ -234,8 +234,8 @@ describe('Results', () => {
     const reportWithComparison = {
       ...mockReport,
       comparisons: [{
-        before: { url: 'https://example.com/before', observedAt: '2026-10-21T10:00:00.000Z', stepId: 'step-1', available: true, selectors: [] },
-        after: { url: 'https://example.com/after', observedAt: '2026-10-21T10:01:00.000Z', stepId: 'step-2', available: true, selectors: [] },
+        before: { url: 'https://example.com/before', pageId: 'page-before1234', observedAt: '2026-10-21T10:00:00.000Z', stepId: 'step-1', available: true, selectors: [] },
+        after: { url: 'https://example.com/after', pageId: 'page-after5678', observedAt: '2026-10-21T10:01:00.000Z', stepId: 'step-2', available: true, selectors: [] },
         changed: true,
         added: ['link:a#new'],
         removed: ['link:a#old'],
@@ -255,6 +255,9 @@ describe('Results', () => {
       expect(section).toHaveTextContent('2026-10-21T10:01:00.000Z');
       expect(section).toHaveTextContent('Étape : step-1');
       expect(section).toHaveTextContent('Étape : step-2');
+      expect(section).toHaveTextContent('identifiant de page fore1234');
+      expect(section).toHaveTextContent('identifiant de page fter5678');
+      expect(section.querySelector('[role="status"]')).toHaveTextContent('Différences détectées');
     });
   });
 });
