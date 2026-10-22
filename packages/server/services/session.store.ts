@@ -14,7 +14,6 @@ import { config } from '../config';
 
 const DATA_DIR = config.dataDir || join(homedir(), '.rgaaudit');
 const SESSIONS_DIR = join(DATA_DIR, 'sessions');
-const MAX_DECISION_HISTORY = 200;
 
 export interface AuditRepository {
   loadSession(sessionId: string): Promise<SessionState | null>;
@@ -122,7 +121,7 @@ export function applyImageDecisions(
   }
 }
 
-/** Preserve replaced decisions so a later review can reconstruct the audit trail. */
+/** Preserve every replaced decision so a later review can reconstruct the audit trail. */
 export function appendRevisionHistory(
   review: AuditReviewState,
   previousDecisions: AuditDecision[],
@@ -135,7 +134,6 @@ export function appendRevisionHistory(
     ));
     if (current && JSON.stringify(current) !== JSON.stringify(previous)) {
       decisionHistory.push(previous);
-      if (decisionHistory.length > MAX_DECISION_HISTORY) decisionHistory.splice(0, decisionHistory.length - MAX_DECISION_HISTORY);
     }
   }
 
@@ -149,7 +147,6 @@ export function appendRevisionHistory(
     ));
     if (current && JSON.stringify(current) !== JSON.stringify(previous)) {
       imageDecisionHistory.push(previous);
-      if (imageDecisionHistory.length > MAX_DECISION_HISTORY) imageDecisionHistory.splice(0, imageDecisionHistory.length - MAX_DECISION_HISTORY);
     }
   }
 }

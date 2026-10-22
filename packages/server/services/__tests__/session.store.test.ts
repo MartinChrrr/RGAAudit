@@ -108,4 +108,27 @@ describe('appendRevisionHistory', () => {
     expect(review.decisionHistory).toEqual([previous]);
     expect(review.decisions[0]?.comment).toBe('Validé');
   });
+
+  it('conserve plus de 200 révisions sans suppression silencieuse', () => {
+    const review = emptyReview();
+    review.decisions.push({
+      pageUrl,
+      criterionId: '4.1',
+      status: 'compliant',
+      comment: 'Version actuelle',
+      reviewedAt,
+    });
+
+    const previous = Array.from({ length: 205 }, (_, index) => ({
+      pageUrl,
+      criterionId: '4.1',
+      status: 'not_tested' as const,
+      comment: `Version ${index}`,
+      reviewedAt: null,
+    }));
+    appendRevisionHistory(review, previous, []);
+
+    expect(review.decisionHistory).toHaveLength(205);
+    expect(review.decisionHistory?.[0]?.comment).toBe('Version 0');
+  });
 });
