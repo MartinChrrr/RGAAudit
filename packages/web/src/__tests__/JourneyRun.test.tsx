@@ -54,6 +54,13 @@ describe('JourneyRun', () => {
               },
               screenshotUrl: '/api/journey-runs/run-001/screenshots/000-context-step.png',
             }],
+            comparisons: [{
+              before: { url: 'https://example.com', pageId: 'page-before1234', observedAt: '2026-10-21T10:00:00.000Z', stepId: 'before-step', available: true, selectors: [] },
+              after: { url: 'https://example.com/after', pageId: 'page-after5678', observedAt: '2026-10-21T10:00:30.000Z', stepId: 'context-step', available: true, selectors: [] },
+              changed: true,
+              added: ['link:a#new'],
+              removed: [],
+            }],
           },
         },
       }),
@@ -68,6 +75,7 @@ describe('JourneyRun', () => {
     expect(screen.getByText('Région live')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Capture après l’étape context-step/i })).toBeInTheDocument();
     expect(screen.getByText(/description textuelle ci-dessus/i)).toBeInTheDocument();
+    expect(screen.getByText(/Avant : Étape before-step.*Après : Étape context-step/)).toBeInTheDocument();
   });
 
   it('explique quand une capture est désactivée pour une étape sensible', async () => {

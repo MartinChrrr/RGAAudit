@@ -10,6 +10,7 @@ import { collectAll } from './data-collector';
 import type { CollectedData } from './data-collector';
 import { runAllHeuristics } from './heuristics/runner';
 import type { HeuristicResult } from './heuristics/heuristic.interface';
+import type { AuditObservation } from '../report/observation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,12 +46,15 @@ export interface SessionState {
   completedPages: string[];
   pendingPages: string[];
   results: Record<string, PageResult>;
+  /** Ordered observations retained for explicit comparison groups. */
+  observations?: AuditObservation[];
 }
 
 export interface AuditPagesOptions {
   maxConcurrent?: number;
   sessionId: string;
   disableRules?: string[];
+  comparisonGroup?: string;
   onPageComplete?: (url: string, result: PageResult) => void;
   persistState?: (state: SessionState) => Promise<void>;
   isRequestAllowed?: (url: string) => Promise<boolean>;
@@ -189,6 +193,7 @@ export async function* auditPages(
       completedPages: [],
       pendingPages: [...urls],
       results: {},
+      observations: [],
     };
 
     const persistState = options.persistState
@@ -222,11 +227,12 @@ export async function* auditPages(
     }
 
     // URL queue
-    const urlQueue = [...urls];
+    const urlQueue = urls.map((url, order) => ({ url, order }));
 
     async function worker(ctx: BrowserContext) {
       while (urlQueue.length > 0) {
-        const url = urlQueue.shift()!;
+        const entry = urlQueue.shift()!;
+        const { url } = entry;
         pushEvent({ type: 'page_start', url });
 
         const page = await ctx.newPage();
@@ -238,6 +244,14 @@ export async function* auditPages(
           state.pendingPages = state.pendingPages.filter((u) => u !== url);
           state.completedPages.push(url);
           state.results[url] = result;
+          state.observations!.push({
+            observationId: `${options.sessionId}-${entry.order}`,
+            order: entry.order,
+            url,
+            observedAt: result.auditedAt,
+            ...(options.comparisonGroup ? { comparisonGroup: options.comparisonGroup } : {}),
+            collectedData: result.collectedData,
+          });
 
           if (result.error) {
             pushEvent({ type: 'page_error', url, error: result.error });

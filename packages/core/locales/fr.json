@@ -27,6 +27,9 @@
     "tooManyPages": "Maximum 50 pages par audit. Veuillez en désélectionner.",
     "startAudit": "Lancer l'audit",
     "noPages": "Aucune page à auditer",
+    "comparisonGroupLabel": "Groupe de comparaison (facultatif)",
+    "comparisonGroupPlaceholder": "ex. avant-après-navigation",
+    "comparisonGroupHint": "Les pages sélectionnées avec le même groupe seront comparées dans leur ordre d’audit.",
     "contrastToggleLabel": "Inclure vérification des contrastes",
     "contrastToggleWarning": "Cette option ralentit l'audit (~+30s par page)"
   },
@@ -69,6 +72,7 @@
     "comparisonStep": "Étape",
     "comparisonAdded": "Ajouts",
     "comparisonRemoved": "Suppressions",
+    "comparisonUpdated": "Modifications",
     "comingSoon": "Annexes détaillées disponibles à l'étape 9",
     "backHome": "Nouvel audit"
   },

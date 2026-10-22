@@ -60,4 +60,34 @@ describe('compareCollectedData', () => {
       { url: 'https://example.com/b', collectedData: collected(['img#b']) },
     ])).toEqual([]);
   });
+
+  it('signale une modification de propriété d’accessibilité dans un groupe explicite', () => {
+    const before = collected(['img#hero']);
+    const after = collected(['img#hero']);
+    after.images[0]!.altAttribute = 'Nouvelle alternative';
+
+    const comparisons = compareCollectedData([
+      {
+        observationId: 'before',
+        order: 0,
+        url: 'https://example.com/page',
+        observedAt: '2026-10-21T10:00:00.000Z',
+        comparisonGroup: 'audit-1',
+        collectedData: before,
+      },
+      {
+        observationId: 'after',
+        order: 1,
+        url: 'https://example.com/page',
+        observedAt: '2026-10-21T10:01:00.000Z',
+        comparisonGroup: 'audit-1',
+        collectedData: after,
+      },
+    ]);
+
+    expect(comparisons[0]).toMatchObject({
+      changed: true,
+      updated: [{ key: 'image:img#hero', fields: expect.arrayContaining(['alt']) }],
+    });
+  });
 });

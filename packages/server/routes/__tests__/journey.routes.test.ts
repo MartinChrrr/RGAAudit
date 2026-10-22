@@ -205,6 +205,63 @@ describe('journey replay and run retrieval', () => {
     expect(JSON.stringify(response.body)).not.toContain('screenshotPath');
   });
 
+  it('expose la comparaison ordonnée des étapes sans données internes', async () => {
+    const timestamp = new Date().toISOString();
+    const run: JourneyRunState = {
+      runId: 'run-comparison',
+      journeyId: 'journey-001',
+      status: 'completed',
+      startedAt: timestamp,
+      finishedAt: timestamp,
+      run: {
+        runId: 'run-comparison',
+        journeyId: 'journey-001',
+        startedAt: timestamp,
+        finishedAt: timestamp,
+        steps: [
+          {
+            stepId: 'step-before',
+            action: 'navigate',
+            url: 'https://example.com/before?token=secret-before',
+            observedAt: timestamp,
+            title: 'Avant',
+            evidence: [],
+            result: null,
+          },
+          {
+            stepId: 'step-after',
+            action: 'click',
+            url: 'https://example.com/after?token=secret-after',
+            observedAt: timestamp,
+            title: 'Après',
+            evidence: [],
+            result: null,
+          },
+        ],
+      },
+    };
+    mockLoadJourneyRun.mockResolvedValue(run);
+
+    const response = await request(app).get('/api/journey-runs/run-comparison');
+
+    expect(response.status).toBe(200);
+    expect(response.body.run.run.comparisons).toMatchObject([{
+      before: {
+        url: 'https://example.com/before',
+        pageId: expect.stringMatching(/^page-[0-9a-f]{32}$/),
+        stepId: 'step-before',
+      },
+      after: {
+        url: 'https://example.com/after',
+        pageId: expect.stringMatching(/^page-[0-9a-f]{32}$/),
+        stepId: 'step-after',
+      },
+      changed: true,
+    }]);
+    expect(JSON.stringify(response.body)).not.toContain('secret-before');
+    expect(JSON.stringify(response.body)).not.toContain('run-comparison-0');
+  });
+
   it('sert une capture de contexte sans exposer le chemin serveur', async () => {
     mockReadJourneyScreenshot.mockResolvedValue(Buffer.from('png-bytes'));
 

@@ -41,6 +41,7 @@ interface PageComparison {
   changed: boolean;
   added: string[];
   removed: string[];
+  updated?: Array<{ key: string; fields: string[] }>;
 }
 
 interface ReportData {
@@ -527,7 +528,7 @@ export default function Results() {
                       {comparison.after.stepId && `${t('results.comparisonAfter')} — ${t('results.comparisonStep')} : ${comparison.after.stepId}`}
                     </p>
                   )}
-                  <p role="status" className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
+                  <p className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
                     {!comparison.before.available || !comparison.after.available
                       ? t('results.comparisonUnavailable')
                       : comparison.changed
@@ -538,6 +539,11 @@ export default function Results() {
                     <div className="mt-2 grid gap-2 text-xs text-gray-700 sm:grid-cols-2">
                       <p>{t('results.comparisonAdded')} : {comparison.added.length > 0 ? comparison.added.join(', ') : 'aucun'}</p>
                       <p>{t('results.comparisonRemoved')} : {comparison.removed.length > 0 ? comparison.removed.join(', ') : 'aucune'}</p>
+                      {(comparison.updated ?? []).length > 0 && (
+                        <p className="sm:col-span-2">
+                          {t('results.comparisonUpdated')} : {comparison.updated!.map((change) => `${change.key} (${change.fields.join(', ')})`).join(' · ')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </article>

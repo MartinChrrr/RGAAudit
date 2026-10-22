@@ -36,6 +36,15 @@ interface JourneyStep {
   error?: string;
 }
 
+interface JourneyComparison {
+  before: { url: string; pageId?: string; observedAt: string | null; stepId?: string; available: boolean; selectors: string[] };
+  after: { url: string; pageId?: string; observedAt: string | null; stepId?: string; available: boolean; selectors: string[] };
+  changed: boolean;
+  added: string[];
+  removed: string[];
+  updated?: Array<{ key: string; fields: string[] }>;
+}
+
 interface JourneyRunResponse {
   run: {
     runId: string;
@@ -46,6 +55,7 @@ interface JourneyRunResponse {
     error?: string;
     run?: {
       steps: JourneyStep[];
+      comparisons?: JourneyComparison[];
     };
   };
 }
@@ -245,6 +255,10 @@ export default function JourneyRun() {
 
   const run = data.run;
   const steps = run.run?.steps ?? [];
+  const comparisons = run.run?.comparisons ?? [];
+  const comparisonPageLabel = (snapshot: JourneyComparison['before']): string => (
+    `${snapshot.url}${snapshot.pageId ? ` — identifiant de page ${snapshot.pageId.slice(-8)}` : ''}`
+  );
 
   return (
     <main id="main-content" className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6">
@@ -271,6 +285,49 @@ export default function JourneyRun() {
             {steps.length === 0 ? <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">{t('journey.noSteps')}</p> : steps.map((step, index) => <JourneyStepCard key={step.stepId} step={step} index={index} />)}
           </div>
         </section>
+
+        {comparisons.length > 0 && (
+          <section className="mt-8" aria-labelledby="journey-comparisons-title" data-testid="journey-comparison-summary">
+            <h2 id="journey-comparisons-title" className="text-xl font-semibold text-gray-900">{t('results.comparisonTitle')}</h2>
+            <div className="mt-4 space-y-3">
+              {comparisons.map((comparison) => (
+                <article key={`${comparison.before.pageId ?? comparison.before.url}:${comparison.after.pageId ?? comparison.after.url}`} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {t('results.comparisonBefore')} : {comparisonPageLabel(comparison.before)} <span aria-hidden="true">→</span> {t('results.comparisonAfter')} : {comparisonPageLabel(comparison.after)}
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t('results.comparisonBefore')} : {comparison.before.observedAt ?? t('journey.unknownDate')} · {t('results.comparisonAfter')} : {comparison.after.observedAt ?? t('journey.unknownDate')}
+                  </p>
+                  {(comparison.before.stepId || comparison.after.stepId) && (
+                    <p className="mt-1 text-xs text-gray-600">
+                      {comparison.before.stepId && `${t('results.comparisonBefore')} : ${t('results.comparisonStep')} ${comparison.before.stepId}`}
+                      {comparison.before.stepId && comparison.after.stepId ? ' · ' : ''}
+                      {comparison.after.stepId && `${t('results.comparisonAfter')} : ${t('results.comparisonStep')} ${comparison.after.stepId}`}
+                    </p>
+                  )}
+                  <p className={`mt-2 text-sm ${comparison.changed ? 'text-amber-900' : 'text-green-800'}`}>
+                    {!comparison.before.available || !comparison.after.available
+                      ? t('results.comparisonUnavailable')
+                      : comparison.changed
+                        ? t('results.comparisonChanged')
+                        : t('results.comparisonNoSelectorChange')}
+                  </p>
+                  {comparison.changed && (
+                    <div className="mt-2 grid gap-2 text-xs text-gray-700 sm:grid-cols-2">
+                      <p>{t('results.comparisonAdded')} : {comparison.added.length > 0 ? comparison.added.join(', ') : 'aucun'}</p>
+                      <p>{t('results.comparisonRemoved')} : {comparison.removed.length > 0 ? comparison.removed.join(', ') : 'aucune'}</p>
+                      {(comparison.updated ?? []).length > 0 && (
+                        <p className="sm:col-span-2">
+                          {t('results.comparisonUpdated')} : {comparison.updated!.map((change) => `${change.key} (${change.fields.join(', ')})`).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
-import { buildReportFromSession, formatContrastRatio, toPublicReportData } from '../report.service';
+import { buildReportFromSession, formatContrastRatio, toPublicComparisons, toPublicReportData } from '../report.service';
 
 describe('formatContrastRatio', () => {
   it.each([
@@ -227,5 +227,43 @@ describe('buildReportFromSession', () => {
       proofStatus: 'missing',
     });
     expect(criterion11?.missingProofs).toHaveLength(1);
+  });
+});
+
+describe('toPublicComparisons', () => {
+  it('redacte les URLs présentes dans les différences sans exposer le groupe interne', () => {
+    const publicComparisons = toPublicComparisons([{
+      before: {
+        url: 'https://example.com/before?token=secret-before',
+        observedAt: '2026-10-20T00:00:00.000Z',
+        observationId: 'internal-before',
+        comparisonGroup: 'private-group',
+        order: 0,
+        available: true,
+        selectors: ['specialized:document:https://example.com/file?token=secret'],
+      },
+      after: {
+        url: 'https://example.com/after?token=secret-after',
+        observedAt: '2026-10-20T00:01:00.000Z',
+        observationId: 'internal-after',
+        comparisonGroup: 'private-group',
+        order: 1,
+        available: true,
+        selectors: [],
+      },
+      changed: true,
+      added: ['specialized:document:https://example.com/file?token=secret'],
+      removed: [],
+      updated: [{ key: 'image:img.hero', fields: ['alt'] }],
+    }], 'public-comparison');
+
+    expect(publicComparisons[0]).toMatchObject({
+      before: { url: 'https://example.com/before', pageId: expect.stringMatching(/^page-/), selectors: ['specialized:document:https://example.com/file'] },
+      after: { url: 'https://example.com/after' },
+      updated: [{ key: 'image:img.hero', fields: ['alt'] }],
+    });
+    expect(JSON.stringify(publicComparisons)).not.toContain('secret');
+    expect(JSON.stringify(publicComparisons)).not.toContain('private-group');
+    expect(JSON.stringify(publicComparisons)).not.toContain('internal-before');
   });
 });

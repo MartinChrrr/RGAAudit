@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, stat, unlink } from 'node:fs/promises';
 import { analyzeLoadedPage, type PageResult } from '../analyzer/analyzer';
 import { mapPageResults } from '../mapping/mapper';
+import type { PageComparison } from '../report/comparison';
 
 export const JOURNEY_ACTIONS = ['navigate', 'click', 'fill', 'press', 'wait'] as const;
 export type JourneyAction = typeof JOURNEY_ACTIONS[number];
@@ -112,6 +113,7 @@ export interface JourneyRun {
   startedAt: string;
   finishedAt: string;
   steps: JourneyStepObservation[];
+  comparisons?: PageComparison[];
 }
 
 export interface JourneyRunState {

@@ -18,6 +18,7 @@ import type {
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
 import type { AxeElement } from '@rgaaudit/core/engines/engine.interface';
 import type { CollectedData } from '@rgaaudit/core/analyzer/data-collector';
+import type { PageComparison } from '@rgaaudit/core/report/comparison';
 import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
 import {
   aggregateHumanStatus,
@@ -48,7 +49,16 @@ export interface ContrastViolationItem {
 export interface ReportData {
   report: ReturnType<typeof buildReport>;
   mappedPages: MappedPage[];
-  allCollected: { url: string; pageId?: string; observedAt?: string; collectedData: CollectedData | null }[];
+  allCollected: Array<{
+    observationId?: string;
+    order?: number;
+    url: string;
+    observedAt?: string;
+    comparisonGroup?: string;
+    stepId?: string;
+    pageId?: string;
+    collectedData: CollectedData | null;
+  }>;
   contrastViolations: ContrastViolationItem[];
   heuristicFindings: Array<HeuristicFinding & {
     heuristicId: string;
@@ -124,6 +134,26 @@ export interface ReviewData {
  * generated exports. The session and review files keep the original URLs so
  * that query parameters remain available for exact page identity and replay.
  */
+export function toPublicComparisons(comparisons: PageComparison[], sessionId: string): PageComparison[] {
+  const publicPageId = (url: string) => pageIdForUrl(sessionId, url);
+  const publicSnapshot = (snapshot: PageComparison['before']) => ({
+    url: redactUrl(snapshot.url),
+    pageId: publicPageId(snapshot.url),
+    observedAt: snapshot.observedAt,
+    ...(snapshot.stepId ? { stepId: snapshot.stepId } : {}),
+    available: snapshot.available,
+    selectors: snapshot.selectors.map(redactTextUrls),
+  });
+  return comparisons.map((comparison) => ({
+    before: publicSnapshot(comparison.before),
+    after: publicSnapshot(comparison.after),
+    added: comparison.added.map(redactTextUrls),
+    removed: comparison.removed.map(redactTextUrls),
+    ...(comparison.updated ? { updated: comparison.updated.map((change) => ({ key: redactTextUrls(change.key), fields: change.fields })) } : {}),
+    changed: comparison.changed,
+  }));
+}
+
 export function toPublicReportData(data: ReportData, sessionId: string): ReportData {
   const publicPageId = (url: string) => pageIdForUrl(sessionId, url);
   const publicReport = {
@@ -142,21 +172,7 @@ export function toPublicReportData(data: ReportData, sessionId: string): ReportD
         pagesIncomplete: (criterion.pagesIncomplete ?? []).map(redactUrl),
       })),
     },
-    comparisons: data.report.comparisons?.map((comparison) => ({
-      ...comparison,
-      before: {
-        ...comparison.before,
-        url: redactUrl(comparison.before.url),
-        pageId: publicPageId(comparison.before.url),
-      },
-      after: {
-        ...comparison.after,
-        url: redactUrl(comparison.after.url),
-        pageId: publicPageId(comparison.after.url),
-      },
-      added: comparison.added.map(redactTextUrls),
-      removed: comparison.removed.map(redactTextUrls),
-    })),
+    comparisons: data.report.comparisons ? toPublicComparisons(data.report.comparisons, sessionId) : undefined,
   };
 
   return {
@@ -167,9 +183,9 @@ export function toPublicReportData(data: ReportData, sessionId: string): ReportD
     // leaking through a future spread of this object.
     mappedPages: [],
     allCollected: data.allCollected.map((entry) => ({
-      ...entry,
-      pageId: publicPageId(entry.url),
       url: redactUrl(entry.url),
+      ...(entry.observedAt ? { observedAt: entry.observedAt } : {}),
+      pageId: publicPageId(entry.url),
       collectedData: redactCollectedData(entry.collectedData),
     })),
     contrastViolations: data.contrastViolations.map((item) => ({
@@ -316,9 +332,19 @@ export function buildReportFromSession(
 
   const allCollected = Object.values(session.results)
     .filter((r) => !r.error)
-    .map((r) => ({ url: r.url, observedAt: r.auditedAt, collectedData: r.collectedData }));
+    .map((r, order) => ({
+      observationId: `${session.sessionId}-legacy-${order}`,
+      order,
+      url: r.url,
+      observedAt: r.auditedAt,
+      collectedData: r.collectedData,
+    }));
 
-  const summary = aggregateResults(mappedPages, allCollected);
+  const observations = session.observations && session.observations.length > 0
+    ? session.observations
+    : allCollected;
+
+  const summary = aggregateResults(mappedPages, observations);
 
   const firstUrl = session.completedPages[0] ?? '';
   const report = buildReport(summary, {
@@ -326,7 +352,7 @@ export function buildReportFromSession(
     date: session.startedAt,
     pagesAudited: session.completedPages.length,
     version: APP_VERSION,
-  }, allCollected);
+  }, observations);
 
   const contrastViolations = extractContrastViolations(mappedPages);
   const heuristicFindings = Object.values(session.results).flatMap((page) =>
@@ -341,7 +367,7 @@ export function buildReportFromSession(
   );
   const review = buildReviewData(mappedPages, reviewState);
 
-  return { report, mappedPages, allCollected, contrastViolations, heuristicFindings, review };
+  return { report, mappedPages, allCollected: observations, contrastViolations, heuristicFindings, review };
 }
 
 function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): ReviewData {

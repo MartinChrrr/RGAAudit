@@ -15,7 +15,8 @@ import {
 } from '../services/journey.store';
 import { startJourneyReplay } from '../services/journey.service';
 import { redactStructuredText, redactTextUrls, redactUrl } from '../security/url.redaction';
-import { redactCollectedData } from '../services/report.service';
+import { redactCollectedData, toPublicComparisons } from '../services/report.service';
+import { compareCollectedData } from '../../core/report/comparison';
 
 export const journeyRouter = Router();
 
@@ -26,6 +27,15 @@ function exposeJourneyRun(run: JourneyRunState): JourneyRunState {
     ...(run.error ? { error: redactTextUrls(run.error) } : {}),
     run: {
       ...run.run,
+      comparisons: toPublicComparisons(compareCollectedData(run.run.steps.map((step, order) => ({
+        observationId: `${run.runId}-${order}`,
+        order,
+        url: step.url,
+        observedAt: step.observedAt,
+        comparisonGroup: run.runId,
+        stepId: step.stepId,
+        collectedData: step.result?.collectedData ?? null,
+      }))), run.runId),
       steps: run.run.steps.map((step) => {
         const { screenshotPath: _screenshotPath, ...stepWithoutScreenshotPath } = step;
         const publicObservation = {

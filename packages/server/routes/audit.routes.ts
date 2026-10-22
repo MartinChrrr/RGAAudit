@@ -20,6 +20,7 @@ const startAuditSchema = z.object({
   options: z.object({
     maxConcurrent: z.number().int().min(1).max(config.audit.maxConcurrent).optional(),
     disableContrasts: z.boolean().optional(),
+    comparisonGroup: z.string().trim().min(1).max(120).optional(),
   }).optional(),
 });
 
@@ -80,6 +81,7 @@ auditRouter.post('/api/audit/start', validateBody(startAuditSchema), (req: Reque
     urls,
     maxConcurrent: options?.maxConcurrent,
     disableContrasts: options?.disableContrasts,
+    comparisonGroup: options?.comparisonGroup,
   });
 
   if (!started) {
@@ -125,11 +127,19 @@ auditRouter.get('/api/audit/session/:sessionId', asyncHandler(async (req, res) =
       collectedData: redactCollectedData(result.collectedData),
     },
   ]));
+  const safeObservations = (session.observations ?? []).map((observation) => ({
+    pageId: pageIdForUrl(sessionId, observation.url),
+    order: observation.order,
+    observedAt: observation.observedAt,
+    stepId: observation.stepId,
+    collectedData: redactCollectedData(observation.collectedData),
+  }));
   res.json({
     ...session,
     completedPages: session.completedPages.map((url) => pageIdForUrl(sessionId, url)),
     pendingPages: session.pendingPages.map((url) => pageIdForUrl(sessionId, url)),
     results: safeResults,
+    observations: safeObservations,
   });
 }));
 

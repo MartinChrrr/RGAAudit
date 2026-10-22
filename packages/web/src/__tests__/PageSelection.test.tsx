@@ -118,4 +118,20 @@ describe('PageSelection', () => {
       body: expect.stringContaining('disableContrasts'),
     }));
   });
+
+  it('envoie le groupe de comparaison choisi', async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ sessionId: 'test-comparison' }),
+    } as Response);
+
+    renderPageSelection();
+    await user.type(screen.getByPlaceholderText(/avant-après-navigation/i), 'navigation-login');
+    await user.click(screen.getByRole('button', { name: /lancer l'audit/i }));
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/audit/start', expect.objectContaining({
+      body: expect.stringContaining('navigation-login'),
+    }));
+  });
 });

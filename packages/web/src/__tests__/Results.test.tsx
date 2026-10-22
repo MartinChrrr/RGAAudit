@@ -257,7 +257,7 @@ describe('Results', () => {
       expect(section).toHaveTextContent('Étape : step-2');
       expect(section).toHaveTextContent('identifiant de page fore1234');
       expect(section).toHaveTextContent('identifiant de page fter5678');
-      expect(section.querySelector('[role="status"]')).toHaveTextContent('Différences détectées');
+      expect(section.querySelector('[role="status"]')).toBeNull();
     });
   });
 });

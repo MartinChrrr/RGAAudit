@@ -17,6 +17,7 @@ export default function PageSelection() {
   const [manualUrl, setManualUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [includeContrasts, setIncludeContrasts] = useState(true);
+  const [comparisonGroup, setComparisonGroup] = useState('');
 
   const MAX_PAGES = 50;
 
@@ -59,7 +60,12 @@ export default function PageSelection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           urls: selectedUrls,
-          ...(includeContrasts ? {} : { options: { disableContrasts: true } }),
+          ...((includeContrasts && !comparisonGroup.trim()) ? {} : {
+            options: {
+              ...(includeContrasts ? {} : { disableContrasts: true }),
+              ...(comparisonGroup.trim() ? { comparisonGroup: comparisonGroup.trim() } : {}),
+            },
+          }),
         }),
       });
 
@@ -146,6 +152,22 @@ export default function PageSelection() {
               {t('pageSelection.addButton')}
             </button>
           </form>
+
+          <div className="mt-5 border-t border-gray-100 pt-5">
+            <label htmlFor="comparison-group" className="block text-sm font-medium text-gray-700">
+              {t('pageSelection.comparisonGroupLabel')}
+            </label>
+            <input
+              id="comparison-group"
+              type="text"
+              value={comparisonGroup}
+              onChange={(event) => setComparisonGroup(event.target.value)}
+              placeholder={t('pageSelection.comparisonGroupPlaceholder')}
+              maxLength={120}
+              className="mt-1 block w-full max-w-lg rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-600">{t('pageSelection.comparisonGroupHint')}</p>
+          </div>
         </div>
 
         {/* Contrast toggle */}

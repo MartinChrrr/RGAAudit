@@ -49,9 +49,10 @@ export interface StartAuditOptions {
   urls: string[];
   maxConcurrent?: number;
   disableContrasts?: boolean;
+  comparisonGroup?: string;
 }
 
-export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }: StartAuditOptions): boolean {
+export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts, comparisonGroup }: StartAuditOptions): boolean {
   if (runningAudits.size >= config.audit.maxRunning) return false;
 
   const control: AuditControl = { cancelled: false };
@@ -67,6 +68,7 @@ export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }:
         sessionId,
         maxConcurrent,
         disableRules,
+        comparisonGroup,
         persistState: saveSession,
         isRequestAllowed: isPublicNetworkUrl,
       });

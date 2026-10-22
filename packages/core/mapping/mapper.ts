@@ -651,7 +651,16 @@ function detectDuplicateLabels(
 export function buildReport(
   summary: AuditReportSummary,
   config: AuditConfig,
-  collectedDataList?: Array<{ url: string; observedAt?: string; stepId?: string; collectedData: CollectedData | null }>,
+  collectedDataList?: Array<{
+    observationId?: string;
+    order?: number;
+    url: string;
+    observedAt?: string;
+    stepId?: string;
+    comparisonGroup?: string;
+    comparisonKey?: string;
+    collectedData: CollectedData | null;
+  }>,
 ): Report {
   const mapping = loadMapping();
 
