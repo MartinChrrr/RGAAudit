@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import type { JourneyDefinition, JourneyRunState } from '../../core/journey/journey';
 import { config } from '../config';
 import { parseJourney } from './journey.validation';
+import { redactUrl } from '../security/url.redaction';
 
 const DATA_DIR = config.dataDir || join(homedir(), '.rgaaudit');
 const JOURNEYS_DIR = join(DATA_DIR, 'journeys');
@@ -83,11 +84,12 @@ export function redactJourney(journey: JourneyDefinition): Omit<JourneyDefinitio
 } {
   return {
     ...journey,
+    startUrl: redactUrl(journey.startUrl),
     requiresSecretInput: journey.steps.some((step) => step.sensitive && step.value === undefined),
     steps: journey.steps.map((step) => {
-      if (!step.sensitive) return step;
+      if (!step.sensitive) return step.url ? { ...step, url: redactUrl(step.url) } : step;
       const { value: _value, secretRef: _secretRef, ...safeStep } = step;
-      return safeStep;
+      return safeStep.url ? { ...safeStep, url: redactUrl(safeStep.url) } : safeStep;
     }),
   };
 }

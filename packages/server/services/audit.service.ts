@@ -3,6 +3,8 @@ import { sseManager } from '../sse/progress';
 import { config } from '../config';
 import { loadSession, saveSession } from './session.store';
 import { isPublicNetworkUrl } from '../security/url.policy';
+import { pageIdForUrl, redactStructuredText, redactTextUrls, redactUrl } from '../security/url.redaction';
+import { redactCollectedData } from './report.service';
 
 interface AuditControl {
   cancelled: boolean;
@@ -13,6 +15,27 @@ const runningAudits = new Map<string, AuditControl>();
 const completedAudits = new Map<string, { event: ProgressEvent; expiresAt: number }>();
 
 const COMPLETED_TTL_MS = config.audit.completedTtlMs;
+
+function publicProgressEvent(sessionId: string, event: ProgressEvent): Record<string, unknown> {
+  if (event.type === 'audit_complete') return event;
+  return {
+    ...event,
+    pageId: pageIdForUrl(sessionId, event.url),
+    url: redactUrl(event.url),
+    ...(event.type === 'page_error' ? { error: redactTextUrls(event.error) } : {}),
+    ...(event.type === 'page_complete'
+      ? {
+        result: {
+          ...event.result,
+          url: redactUrl(event.result.url),
+          axeResults: redactStructuredText(event.result.axeResults),
+          heuristicResults: redactStructuredText(event.result.heuristicResults),
+          collectedData: redactCollectedData(event.result.collectedData),
+        },
+      }
+      : {}),
+  };
+}
 
 function cleanupExpired(): void {
   const now = Date.now();
@@ -50,7 +73,7 @@ export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }:
 
       for await (const event of gen) {
         if (control.cancelled) break;
-        sseManager.send(sessionId, event.type, event);
+        sseManager.send(sessionId, event.type, publicProgressEvent(sessionId, event));
 
         if (event.type === 'audit_complete') {
           cleanupExpired();
@@ -62,7 +85,7 @@ export function startAudit({ sessionId, urls, maxConcurrent, disableContrasts }:
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      sseManager.send(sessionId, 'audit_error', { type: 'audit_error', error: message });
+      sseManager.send(sessionId, 'audit_error', { type: 'audit_error', error: redactTextUrls(message) });
     } finally {
       runningAudits.delete(sessionId);
     }
@@ -87,20 +110,33 @@ export function connectClient(sessionId: string, res: import('express').Response
   void loadSession(sessionId).then((session) => {
     if (!session) return;
     for (const url of [...session.completedPages, ...session.pendingPages]) {
-      sseManager.send(sessionId, 'page_start', { type: 'page_start', url });
+      sseManager.send(sessionId, 'page_start', {
+        type: 'page_start',
+        pageId: pageIdForUrl(sessionId, url),
+        url: redactUrl(url),
+      });
     }
     for (const url of session.completedPages) {
       const result = session.results[url];
       if (!result) continue;
       if (result.error) {
-        sseManager.send(sessionId, 'page_error', { type: 'page_error', url, error: result.error });
+        sseManager.send(sessionId, 'page_error', {
+          type: 'page_error',
+          pageId: pageIdForUrl(sessionId, url),
+          url: redactUrl(url),
+          error: redactTextUrls(result.error),
+        });
       } else {
-        sseManager.send(sessionId, 'page_complete', { type: 'page_complete', url, result });
+        sseManager.send(sessionId, 'page_complete', publicProgressEvent(sessionId, {
+          type: 'page_complete',
+          url,
+          result,
+        }));
       }
     }
   }).catch(() => {}).finally(() => {
     const completed = getCompletedAudit(sessionId);
-    if (completed) sseManager.send(sessionId, completed.type, completed);
+    if (completed) sseManager.send(sessionId, completed.type, publicProgressEvent(sessionId, completed));
   });
 }
 

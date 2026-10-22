@@ -14,25 +14,58 @@ import {
   saveJourney,
 } from '../services/journey.store';
 import { startJourneyReplay } from '../services/journey.service';
+import { redactStructuredText, redactTextUrls, redactUrl } from '../security/url.redaction';
+import { redactCollectedData } from '../services/report.service';
 
 export const journeyRouter = Router();
 
 function exposeJourneyRun(run: JourneyRunState): JourneyRunState {
-  if (!run.run) return run;
+  if (!run.run) return run.error ? { ...run, error: redactTextUrls(run.error) } : run;
   return {
     ...run,
+    ...(run.error ? { error: redactTextUrls(run.error) } : {}),
     run: {
       ...run.run,
       steps: run.run.steps.map((step) => {
-        if (!step.screenshotPath) return step;
+        const { screenshotPath: _screenshotPath, ...stepWithoutScreenshotPath } = step;
+        const publicObservation = {
+          ...stepWithoutScreenshotPath,
+          url: redactUrl(step.url),
+          title: redactTextUrls(step.title),
+          evidence: step.evidence.map((evidence) => ({
+            ...evidence,
+            html: redactTextUrls(evidence.html),
+            context: evidence.context ? redactTextUrls(evidence.context) : evidence.context,
+          })),
+          ...(step.context ? {
+            context: {
+              ...step.context,
+              urlBefore: redactUrl(step.context.urlBefore),
+              urlAfter: redactUrl(step.context.urlAfter),
+              titleBefore: redactTextUrls(step.context.titleBefore),
+              titleAfter: redactTextUrls(step.context.titleAfter),
+            },
+          } : {}),
+          ...(step.result ? {
+            result: {
+              ...step.result,
+              url: redactUrl(step.result.url),
+              error: step.result.error ? redactTextUrls(step.result.error) : step.result.error,
+              axeResults: redactStructuredText(step.result.axeResults) as typeof step.result.axeResults,
+              heuristicResults: redactStructuredText(step.result.heuristicResults) as typeof step.result.heuristicResults,
+              collectedData: redactCollectedData(step.result.collectedData),
+            },
+          } : {}),
+          ...(step.error ? { error: redactTextUrls(step.error) } : {}),
+        };
+        if (!step.screenshotPath) return publicObservation;
         const filename = basename(step.screenshotPath);
-        const { screenshotPath: _screenshotPath, ...publicStep } = step;
         const expectedSuffix = join('journeys', run.runId, 'screenshots', filename);
         if (!normalize(step.screenshotPath).endsWith(expectedSuffix)) {
-          return { ...publicStep, screenshotSkippedReason: 'capture_error' };
+          return { ...publicObservation, screenshotSkippedReason: 'capture_error' };
         }
         return {
-          ...publicStep,
+          ...publicObservation,
           screenshotUrl: `/api/journey-runs/${run.runId}/screenshots/${encodeURIComponent(filename)}`,
         };
       }),

@@ -10,6 +10,7 @@ export interface HeadingItem {
 
 export interface HeadingTreeData {
   url: string;
+  pageId?: string;
   documentTitle: string;
   headings: HeadingItem[];
   flags: string[];
@@ -19,16 +20,17 @@ interface Props {
   headingData: HeadingTreeData[];
   sessionId: string;
   initialPageUrl?: string;
+  initialPageId?: string;
 }
 
-export default function AnnexeTitres({ headingData, sessionId: _sessionId, initialPageUrl }: Props) {
-  const initialIndex = Math.max(0, headingData.findIndex((page) => page.url === initialPageUrl));
+export default function AnnexeTitres({ headingData, sessionId: _sessionId, initialPageUrl, initialPageId }: Props) {
+  const initialIndex = Math.max(0, headingData.findIndex((page) => (page.pageId ?? page.url) === (initialPageId ?? initialPageUrl)));
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   useEffect(() => {
-    const index = headingData.findIndex((page) => page.url === initialPageUrl);
+    const index = headingData.findIndex((page) => (page.pageId ?? page.url) === (initialPageId ?? initialPageUrl));
     if (index >= 0) setCurrentIndex(index);
-  }, [headingData, initialPageUrl]);
+  }, [headingData, initialPageId, initialPageUrl]);
 
   if (headingData.length === 0) {
     return <p className="text-sm text-gray-600 py-4">{t('annexes.headings.noHeadings')}</p>;
@@ -59,7 +61,7 @@ export default function AnnexeTitres({ headingData, sessionId: _sessionId, initi
           className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           {headingData.map((page, i) => (
-            <option key={page.url} value={i}>{page.url}</option>
+            <option key={page.pageId ?? page.url} value={i}>{page.url} {page.pageId?.startsWith('page-') ? `(${page.pageId.slice(-8)})` : ''}</option>
           ))}
         </select>
         <button

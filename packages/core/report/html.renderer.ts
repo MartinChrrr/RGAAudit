@@ -43,6 +43,10 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function pageLabel(url: string, pageId?: string): string {
+  return pageId ? `${url} (identifiant de page ${pageId.slice(-8)})` : url;
+}
+
 function serializeForHtmlScript(value: unknown): string {
   return JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -54,6 +58,7 @@ function serializeForHtmlScript(value: unknown): string {
 
 export interface ContrastViolationItem {
   pageUrl: string;
+  pageId?: string;
   rgaaId: string;
   selector: string;
   contrastRatio: string;
@@ -64,7 +69,7 @@ export interface ContrastViolationItem {
 
 export interface RenderOptions {
   report: Report;
-  allCollected?: Array<{ url: string; collectedData: CollectedData | null }>;
+  allCollected?: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>;
   contrastViolations?: ContrastViolationItem[];
 }
 
@@ -348,13 +353,13 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 </html>`;
 }
 
-function buildMediaSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {
-  const media = allCollected.flatMap(({ url, collectedData }) => (
-    (collectedData?.media ?? []).map((item) => ({ url, item }))
+function buildMediaSection(allCollected: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>): string {
+  const media = allCollected.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.media ?? []).map((item) => ({ url, pageId, item }))
   ));
   if (media.length === 0) return '';
 
-  const rows = media.map(({ url, item }) => `
+  const rows = media.map(({ url, pageId, item }) => `
     <tr>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
       <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(item.sources.join(', ') || 'Source absente')}</td>
@@ -370,7 +375,7 @@ function buildMediaSection(allCollected: Array<{ url: string; collectedData: Col
         <div>Critères : ${escapeHtml(item.criterionIds.join(', '))}</div>
         <div>${escapeHtml(item.manualChecks.join(' '))}</div>
         <div>Signaux : ${escapeHtml(item.flags.join(', ') || 'aucun')}</div>
-        <span class="text-gray-500">${escapeHtml(url)}</span>
+        <span class="text-gray-500">${escapeHtml(pageLabel(url, pageId))}</span>
       </td>
     </tr>`).join('');
 
@@ -396,20 +401,20 @@ function buildMediaSection(allCollected: Array<{ url: string; collectedData: Col
     </section>`;
 }
 
-function buildSpecializedContentSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {
-  const items = allCollected.flatMap(({ url, collectedData }) => (
-    (collectedData?.specializedContent ?? []).map((item) => ({ url, item }))
+function buildSpecializedContentSection(allCollected: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>): string {
+  const items = allCollected.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.specializedContent ?? []).map((item) => ({ url, pageId, item }))
   ));
   if (items.length === 0) return '';
 
   const reviewCount = items.filter(({ item }) => item.status === 'review_required').length;
-  const rows = items.map(({ url, item }) => `
+  const rows = items.map(({ url, pageId, item }) => `
     <tr>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
       <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(item.source ?? 'Source absente')}<br>${escapeHtml(item.label ?? (item.context || 'Aucun libellé observé'))}</td>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.evidence.join(', ') || 'Aucune preuve complémentaire observée')}</td>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.criterionIds.join(', '))}</td>
-      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(t('annexes.specialized.reviewRequired'))}<br>${escapeHtml(item.flags.join(', ') || 'aucun signal')}<br><span class="text-gray-500">${escapeHtml(url)}</span></td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(t('annexes.specialized.reviewRequired'))}<br>${escapeHtml(item.flags.join(', ') || 'aucun signal')}<br><span class="text-gray-500">${escapeHtml(pageLabel(url, pageId))}</span></td>
     </tr>`).join('');
 
   return `
@@ -439,8 +444,8 @@ function buildComparisonSection(comparisons: NonNullable<Report['comparisons']>)
   if (comparisons.length === 0) return '';
   const rows = comparisons.map((comparison) => `
     <tr>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(comparison.before.url)}<br><span class="text-gray-500">${escapeHtml(comparison.before.observedAt ?? 'Horodatage absent')}${comparison.before.stepId ? `<br>${escapeHtml(t('results.comparisonStep'))} : ${escapeHtml(comparison.before.stepId)}` : ''}</span></td>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(comparison.after.url)}<br><span class="text-gray-500">${escapeHtml(comparison.after.observedAt ?? 'Horodatage absent')}${comparison.after.stepId ? `<br>${escapeHtml(t('results.comparisonStep'))} : ${escapeHtml(comparison.after.stepId)}` : ''}</span></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(pageLabel(comparison.before.url, comparison.before.pageId))}<br><span class="text-gray-500">${escapeHtml(comparison.before.observedAt ?? 'Horodatage absent')}${comparison.before.stepId ? `<br>${escapeHtml(t('results.comparisonStep'))} : ${escapeHtml(comparison.before.stepId)}` : ''}</span></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(pageLabel(comparison.after.url, comparison.after.pageId))}<br><span class="text-gray-500">${escapeHtml(comparison.after.observedAt ?? 'Horodatage absent')}${comparison.after.stepId ? `<br>${escapeHtml(t('results.comparisonStep'))} : ${escapeHtml(comparison.after.stepId)}` : ''}</span></td>
       <td class="px-3 py-2 text-xs ${comparison.changed ? 'text-amber-900' : 'text-green-800'}">${!comparison.before.available || !comparison.after.available ? escapeHtml(t('results.comparisonUnavailable')) : comparison.changed ? escapeHtml(t('results.comparisonChanged')) : escapeHtml(t('results.comparisonNoSelectorChange'))}<br>${escapeHtml(t('results.comparisonAdded'))} : ${escapeHtml(comparison.added.join(', ') || 'aucun')}<br>${escapeHtml(t('results.comparisonRemoved'))} : ${escapeHtml(comparison.removed.join(', ') || 'aucune')}</td>
     </tr>`).join('');
 
@@ -457,13 +462,13 @@ function buildComparisonSection(comparisons: NonNullable<Report['comparisons']>)
     </section>`;
 }
 
-function buildFormsSection(allCollected: Array<{ url: string; collectedData: CollectedData | null }>): string {
-  const forms = allCollected.flatMap(({ url, collectedData }) => (
-    (collectedData?.forms ?? []).map((form) => ({ url, form }))
+function buildFormsSection(allCollected: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>): string {
+  const forms = allCollected.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.forms ?? []).map((form) => ({ url, pageId, form }))
   ));
   if (forms.length === 0) return '';
 
-  const sections = forms.map(({ url, form }) => {
+  const sections = forms.map(({ url, pageId, form }) => {
     const rows = form.controls.map((control) => `
       <tr>
         <td class="px-3 py-2 font-mono text-xs text-gray-700">${escapeHtml(control.selector)}</td>
@@ -474,7 +479,7 @@ function buildFormsSection(allCollected: Array<{ url: string; collectedData: Col
     return `
       <section class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeForms'))}</h2>
-        <p class="text-xs text-gray-600 mb-2">${escapeHtml(url)} · ${escapeHtml(form.selector)}</p>
+        <p class="text-xs text-gray-600 mb-2">${escapeHtml(pageLabel(url, pageId))} · ${escapeHtml(form.selector)}</p>
         <table class="w-full text-sm text-left">
           <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeForms'))} ${escapeHtml(form.selector)}</caption>
           <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
@@ -521,7 +526,7 @@ function buildContrastSection(violations: ContrastViolationItem[]): string {
         </div>
       </td>
       <td class="px-3 py-2 text-xs font-semibold text-gray-800">${escapeHtml(v.expectedContrastRatio)}</td>
-      <td class="px-3 py-2 text-xs text-gray-500 break-all">${escapeHtml(v.pageUrl)}</td>
+      <td class="px-3 py-2 text-xs text-gray-500 break-all">${escapeHtml(pageLabel(v.pageUrl, v.pageId))}</td>
     </tr>`;
   }).join('');
 

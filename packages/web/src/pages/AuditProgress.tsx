@@ -6,6 +6,7 @@ type PageStatus = 'pending' | 'running' | 'done' | 'error';
 
 interface PageState {
   url: string;
+  pageId?: string;
   status: PageStatus;
   error?: string;
 }
@@ -37,25 +38,25 @@ export default function AuditProgress() {
     es.addEventListener('page_start', (e) => {
       const data = JSON.parse(e.data);
       setPages((prev) => {
-        const existing = prev.find((p) => p.url === data.url);
+        const existing = prev.find((p) => (data.pageId ? p.pageId === data.pageId : p.url === data.url));
         if (existing) {
-          return prev.map((p) => p.url === data.url ? { ...p, status: 'running' } : p);
+          return prev.map((p) => (data.pageId ? p.pageId === data.pageId : p.url === data.url) ? { ...p, status: 'running' } : p);
         }
-        return [...prev, { url: data.url, status: 'running' as const }];
+        return [...prev, { url: data.url, pageId: data.pageId, status: 'running' as const }];
       });
     });
 
     es.addEventListener('page_complete', (e) => {
       const data = JSON.parse(e.data);
       setPages((prev) =>
-        prev.map((p) => p.url === data.url ? { ...p, status: 'done' } : p),
+        prev.map((p) => (data.pageId ? p.pageId === data.pageId : p.url === data.url) ? { ...p, status: 'done' } : p),
       );
     });
 
     es.addEventListener('page_error', (e) => {
       const data = JSON.parse(e.data);
       setPages((prev) =>
-        prev.map((p) => p.url === data.url ? { ...p, status: 'error', error: data.error } : p),
+        prev.map((p) => (data.pageId ? p.pageId === data.pageId : p.url === data.url) ? { ...p, status: 'error', error: data.error } : p),
       );
     });
 
@@ -143,9 +144,17 @@ export default function AuditProgress() {
           ) : (
             <ul className="space-y-2">
               {pages.map((page) => (
-                <li key={page.url} className="flex items-center gap-3 py-2">
+                <li key={page.pageId ?? page.url} className="flex items-center gap-3 py-2">
                   <span className="flex-shrink-0 w-6 text-center">{statusIcon(page.status)}</span>
-                  <span className="text-sm text-gray-700 truncate flex-1">{page.url}</span>
+                  <span className="text-sm text-gray-700 truncate flex-1" title={page.url}>{page.url}</span>
+                  {page.pageId && (
+                    <span
+                      className="shrink-0 font-mono text-xs text-gray-500"
+                      aria-label={`Identifiant de page ${page.pageId.slice(-8)}`}
+                    >
+                      {page.pageId.slice(-8)}
+                    </span>
+                  )}
                   {page.status === 'error' && page.error && (
                     <span
                       className="text-xs text-red-700 cursor-help"

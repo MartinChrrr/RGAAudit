@@ -10,6 +10,7 @@ export interface LinkItem {
   hasNewWindowWarning: boolean;
   flags: string[];
   pageUrl?: string;
+  pageId?: string;
 }
 
 type FilterType = 'all' | 'empty' | 'generic' | 'duplicates' | 'newWindow';
@@ -18,6 +19,7 @@ interface Props {
   links: LinkItem[];
   sessionId: string;
   initialPageUrl?: string;
+  initialPageId?: string;
 }
 
 interface DuplicateGroup {
@@ -27,12 +29,12 @@ interface DuplicateGroup {
   expanded: boolean;
 }
 
-export default function AnnexeLiens({ links, sessionId: _sessionId, initialPageUrl }: Props) {
+export default function AnnexeLiens({ links, sessionId: _sessionId, initialPageUrl, initialPageId }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
-  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+  const [pageFilter, setPageFilter] = useState(initialPageId ?? initialPageUrl ?? '');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
+  useEffect(() => setPageFilter(initialPageId ?? initialPageUrl ?? ''), [initialPageId, initialPageUrl]);
 
   // Counts
   const emptyCount = links.filter((l) => l.flags.includes('EMPTY_LABEL')).length;
@@ -78,15 +80,18 @@ export default function AnnexeLiens({ links, sessionId: _sessionId, initialPageU
   // Apply filter
   const filtered = useMemo(() => {
     switch (filter) {
-      case 'empty': return links.filter((l) => l.flags.includes('EMPTY_LABEL') && (!pageFilter || l.pageUrl === pageFilter));
-      case 'generic': return links.filter((l) => l.flags.includes('GENERIC_LABEL') && (!pageFilter || l.pageUrl === pageFilter));
-      case 'newWindow': return links.filter((l) => l.flags.includes('NEW_WINDOW_NO_WARNING') && (!pageFilter || l.pageUrl === pageFilter));
+      case 'empty': return links.filter((l) => l.flags.includes('EMPTY_LABEL') && (!pageFilter || (l.pageId ?? l.pageUrl) === pageFilter));
+      case 'generic': return links.filter((l) => l.flags.includes('GENERIC_LABEL') && (!pageFilter || (l.pageId ?? l.pageUrl) === pageFilter));
+      case 'newWindow': return links.filter((l) => l.flags.includes('NEW_WINDOW_NO_WARNING') && (!pageFilter || (l.pageId ?? l.pageUrl) === pageFilter));
       case 'duplicates': return null; // handled separately
-      default: return links.filter((l) => !pageFilter || l.pageUrl === pageFilter);
+      default: return links.filter((l) => !pageFilter || (l.pageId ?? l.pageUrl) === pageFilter);
     }
   }, [links, filter, pageFilter]);
 
-  const pages = [...new Set(links.map((link) => link.pageUrl).filter(Boolean))] as string[];
+  const pages = [...new Map(links
+    .filter((link) => link.pageUrl)
+    .map((link) => [link.pageId ?? link.pageUrl!, { id: link.pageId ?? link.pageUrl!, url: link.pageUrl! }]),
+  ).values()];
 
   const typeColors: Record<string, string> = {
     a: 'bg-blue-100 text-blue-800',
@@ -121,7 +126,7 @@ export default function AnnexeLiens({ links, sessionId: _sessionId, initialPageU
             aria-label="Filtrer les liens par page"
           >
             <option value="">Toutes les pages</option>
-            {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+            {pages.map((page) => <option key={page.id} value={page.id}>{page.url} {page.id.startsWith('page-') ? `(${page.id.slice(-8)})` : ''}</option>)}
           </select>
         )}
       </div>

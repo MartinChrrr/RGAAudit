@@ -84,6 +84,7 @@ interface ReportData {
   review?: ReviewData;
   allCollected?: Array<{
     url: string;
+    pageId?: string;
     observedAt?: string;
     collectedData: {
       images: ImageItem[];
@@ -257,28 +258,30 @@ export default function Results() {
     (entry.collectedData?.images ?? []).map((img, elementIndex) => ({
       ...img,
       pageUrl: entry.url,
+      pageId: entry.pageId,
       elementIndex,
     })),
   );
   const allMedia: MediaItem[] = (report.allCollected ?? []).flatMap((entry) =>
-    (entry.collectedData?.media ?? []).map((media) => ({ ...media, pageUrl: entry.url })),
+    (entry.collectedData?.media ?? []).map((media) => ({ ...media, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allSpecialized: SpecializedContentItem[] = (report.allCollected ?? []).flatMap((entry) =>
-    (entry.collectedData?.specializedContent ?? []).map((item) => ({ ...item, pageUrl: entry.url })),
+    (entry.collectedData?.specializedContent ?? []).map((item) => ({ ...item, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allFrames: FrameItem[] = (report.allCollected ?? []).flatMap((entry) =>
-    (entry.collectedData?.frames ?? []).map((frame) => ({ ...frame, pageUrl: entry.url })),
+    (entry.collectedData?.frames ?? []).map((frame) => ({ ...frame, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allLinks: LinkItem[] = (report.allCollected ?? []).flatMap((entry) =>
-    (entry.collectedData?.links ?? []).map((link) => ({ ...link, pageUrl: entry.url })),
+    (entry.collectedData?.links ?? []).map((link) => ({ ...link, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allForms: FormItem[] = (report.allCollected ?? []).flatMap((entry) =>
-    (entry.collectedData?.forms ?? []).map((form) => ({ ...form, pageUrl: entry.url })),
+    (entry.collectedData?.forms ?? []).map((form) => ({ ...form, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allHeadings: HeadingTreeData[] = (report.allCollected ?? [])
     .filter((entry) => entry.collectedData?.headings)
     .map((entry) => ({
       url: entry.url,
+      pageId: entry.pageId,
       ...entry.collectedData!.headings,
     }));
 
@@ -569,6 +572,7 @@ export default function Results() {
                 sessionId={sessionId!}
                 initialDecisions={report.review?.imageDecisions}
                 initialPageUrl={annexTarget?.tab === 'images' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'images' ? annexTarget.pageId : undefined}
                 focusedSelectors={annexTarget?.tab === 'images' ? annexTarget.selectors : undefined}
                 focusedElementIndexes={annexTarget?.tab === 'images' ? annexTarget.elementIndexes : undefined}
                 focusedCriterionId={annexTarget?.tab === 'images' ? annexTarget.criterionId : undefined}
@@ -579,12 +583,14 @@ export default function Results() {
               <AnnexeMedias
                 media={allMedia}
                 initialPageUrl={annexTarget?.tab === 'media' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'media' ? annexTarget.pageId : undefined}
               />
             )}
             {activeTab === 'specialized' && (
               <AnnexeContenusSpecialises
                 items={allSpecialized}
                 initialPageUrl={annexTarget?.tab === 'specialized' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'specialized' ? annexTarget.pageId : undefined}
               />
             )}
             {activeTab === 'frames' && (
@@ -592,6 +598,7 @@ export default function Results() {
                 frames={allFrames}
                 sessionId={sessionId!}
                 initialPageUrl={annexTarget?.tab === 'frames' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'frames' ? annexTarget.pageId : undefined}
                 focusedSelectors={annexTarget?.tab === 'frames' ? annexTarget.selectors : undefined}
                 focusedCriterionId={annexTarget?.tab === 'frames' ? annexTarget.criterionId : undefined}
               />
@@ -601,12 +608,14 @@ export default function Results() {
                 links={allLinks}
                 sessionId={sessionId!}
                 initialPageUrl={annexTarget?.tab === 'links' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'links' ? annexTarget.pageId : undefined}
               />
             )}
             {activeTab === 'forms' && (
               <AnnexeFormulaires
                 forms={allForms}
                 initialPageUrl={annexTarget?.tab === 'forms' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'forms' ? annexTarget.pageId : undefined}
               />
             )}
             {activeTab === 'headings' && (
@@ -614,6 +623,7 @@ export default function Results() {
                 headingData={allHeadings}
                 sessionId={sessionId!}
                 initialPageUrl={annexTarget?.tab === 'headings' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'headings' ? annexTarget.pageId : undefined}
               />
             )}
             {activeTab === 'heuristics' && (
@@ -621,6 +631,7 @@ export default function Results() {
                 findings={report.heuristicFindings ?? []}
                 sessionId={sessionId!}
                 initialPageUrl={annexTarget?.tab === 'heuristics' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'heuristics' ? annexTarget.pageId : undefined}
               />
             )}
           </div>

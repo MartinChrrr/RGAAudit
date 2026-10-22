@@ -28,6 +28,7 @@ import {
   type ImageAuditDecision,
   type MachineStatus,
 } from '@rgaaudit/core/domain/review';
+import { pageIdForUrl, redactTextUrls, redactUrl } from '../security/url.redaction';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
@@ -35,6 +36,7 @@ const APP_VERSION: string = pkg.version;
 
 export interface ContrastViolationItem {
   pageUrl: string;
+  pageId?: string;
   rgaaId: string;
   selector: string;
   contrastRatio: string;
@@ -46,7 +48,7 @@ export interface ContrastViolationItem {
 export interface ReportData {
   report: ReturnType<typeof buildReport>;
   mappedPages: MappedPage[];
-  allCollected: { url: string; observedAt?: string; collectedData: CollectedData | null }[];
+  allCollected: { url: string; pageId?: string; observedAt?: string; collectedData: CollectedData | null }[];
   contrastViolations: ContrastViolationItem[];
   heuristicFindings: Array<HeuristicFinding & {
     heuristicId: string;
@@ -81,6 +83,7 @@ export interface ReviewEvidence {
   proofId: string;
   resultId: string;
   pageUrl: string;
+  pageId?: string;
   criterionId: string;
   kind: 'violation' | 'incomplete';
   rule: string;
@@ -105,7 +108,7 @@ export interface ReviewData {
     notApplicable: number;
     notTested: number;
   };
-  pages: Array<{ url: string; criteria: ReviewCriterion[] }>;
+  pages: Array<{ url: string; pageId?: string; criteria: ReviewCriterion[] }>;
   criteria: Array<{
     rgaaId: string;
     machineStatus: MachineStatus;
@@ -114,6 +117,191 @@ export interface ReviewData {
   imageDecisions: ImageAuditDecision[];
   decisionHistory: AuditDecision[];
   imageDecisionHistory: ImageAuditDecision[];
+}
+
+/**
+ * Converts an internal report to the representation safe for API responses and
+ * generated exports. The session and review files keep the original URLs so
+ * that query parameters remain available for exact page identity and replay.
+ */
+export function toPublicReportData(data: ReportData, sessionId: string): ReportData {
+  const publicPageId = (url: string) => pageIdForUrl(sessionId, url);
+  const publicReport = {
+    ...data.report,
+    metadata: {
+      ...data.report.metadata,
+      url: redactUrl(data.report.metadata.url),
+    },
+    summary: {
+      ...data.report.summary,
+      criteria: data.report.summary.criteria.map((criterion) => ({
+        ...criterion,
+        pagesViolating: (criterion.pagesViolating ?? []).map(redactUrl),
+        pagesPass: (criterion.pagesPass ?? []).map(redactUrl),
+        pagesManual: (criterion.pagesManual ?? []).map(redactUrl),
+        pagesIncomplete: (criterion.pagesIncomplete ?? []).map(redactUrl),
+      })),
+    },
+    comparisons: data.report.comparisons?.map((comparison) => ({
+      ...comparison,
+      before: {
+        ...comparison.before,
+        url: redactUrl(comparison.before.url),
+        pageId: publicPageId(comparison.before.url),
+      },
+      after: {
+        ...comparison.after,
+        url: redactUrl(comparison.after.url),
+        pageId: publicPageId(comparison.after.url),
+      },
+    })),
+  };
+
+  return {
+    ...data,
+    report: publicReport,
+    // Mapped pages are an internal aggregation detail and are not part of
+    // any public response. Keeping them empty also prevents raw URLs from
+    // leaking through a future spread of this object.
+    mappedPages: [],
+    allCollected: data.allCollected.map((entry) => ({
+      ...entry,
+      pageId: publicPageId(entry.url),
+      url: redactUrl(entry.url),
+      collectedData: redactCollectedData(entry.collectedData),
+    })),
+    contrastViolations: data.contrastViolations.map((item) => ({
+      ...item,
+      pageId: publicPageId(item.pageUrl),
+      pageUrl: redactUrl(item.pageUrl),
+    })),
+    heuristicFindings: data.heuristicFindings.map((finding) => ({
+      ...finding,
+      pageId: publicPageId(finding.pageUrl),
+      pageUrl: redactUrl(finding.pageUrl),
+      selector: redactTextUrls(finding.selector),
+      html: redactTextUrls(finding.html),
+      evidence: redactTextUrls(finding.evidence),
+      context: redactTextUrls(finding.context),
+    })),
+    review: toPublicReviewData(data.review, sessionId),
+  };
+}
+
+export function redactCollectedData(collectedData: CollectedData | null): CollectedData | null {
+  if (!collectedData) return null;
+  return {
+    ...collectedData,
+    images: (collectedData.images ?? []).map((image) => ({
+      ...image,
+      // Screenshot paths are server-internal filesystem locations. Public
+      // consumers must never receive them; previews fall back to the
+      // redacted resource URL instead.
+      screenshotPath: null,
+      src: redactUrl(image.src),
+      linkHref: image.linkHref ? redactUrl(image.linkHref) : image.linkHref,
+      altAttribute: image.altAttribute ? redactTextUrls(image.altAttribute) : image.altAttribute,
+      ariaLabel: image.ariaLabel ? redactTextUrls(image.ariaLabel) : image.ariaLabel,
+      ariaLabelledby: image.ariaLabelledby ? redactTextUrls(image.ariaLabelledby) : image.ariaLabelledby,
+      surroundingText: redactTextUrls(image.surroundingText),
+      parentFigcaption: image.parentFigcaption ? redactTextUrls(image.parentFigcaption) : image.parentFigcaption,
+      linkText: image.linkText ? redactTextUrls(image.linkText) : image.linkText,
+    })),
+    media: collectedData.media?.map((media) => ({
+      ...media,
+      sources: media.sources.map(redactUrl),
+      tracks: media.tracks.map((track) => ({ ...track, src: track.src ? redactUrl(track.src) : track.src })),
+      accessibleName: media.accessibleName ? redactTextUrls(media.accessibleName) : media.accessibleName,
+      fallbackText: media.fallbackText ? redactTextUrls(media.fallbackText) : media.fallbackText,
+      surroundingText: redactTextUrls(media.surroundingText),
+    })),
+    specializedContent: collectedData.specializedContent?.map((item) => ({
+      ...item,
+      source: item.source ? redactUrl(item.source) : item.source,
+      label: item.label ? redactTextUrls(item.label) : item.label,
+      context: redactTextUrls(item.context),
+      evidence: item.evidence.map(redactTextUrls),
+    })),
+    frames: (collectedData.frames ?? []).map((frame) => ({
+      ...frame,
+      src: frame.src ? redactUrl(frame.src) : frame.src,
+      sourceUrl: frame.sourceUrl ? redactUrl(frame.sourceUrl) : frame.sourceUrl,
+      origin: frame.origin ? redactUrl(frame.origin) : frame.origin,
+      titleAttribute: frame.titleAttribute ? redactTextUrls(frame.titleAttribute) : frame.titleAttribute,
+    })),
+    links: (collectedData.links ?? []).map((link) => ({
+      ...link,
+      href: link.href ? redactUrl(link.href) : link.href,
+      accessibleLabel: link.accessibleLabel ? redactTextUrls(link.accessibleLabel) : link.accessibleLabel,
+    })),
+    headings: collectedData.headings ? {
+      ...collectedData.headings,
+      documentTitle: redactTextUrls(collectedData.headings.documentTitle),
+      headings: collectedData.headings.headings.map((heading) => ({ ...heading, text: redactTextUrls(heading.text) })),
+    } : collectedData.headings,
+    figcaptions: collectedData.figcaptions?.map((caption) => ({
+      ...caption,
+      text: redactTextUrls(caption.text),
+    })),
+    forms: collectedData.forms?.map((form) => ({
+      ...form,
+      action: form.action ? redactUrl(form.action) : form.action,
+      controls: form.controls.map((control) => ({
+        ...control,
+        label: control.label ? redactTextUrls(control.label) : control.label,
+        helpText: control.helpText ? redactTextUrls(control.helpText) : control.helpText,
+        errorMessage: control.errorMessage ? redactTextUrls(control.errorMessage) : control.errorMessage,
+      })),
+    })),
+  };
+}
+
+export function toPublicReviewData(review: ReviewData, sessionId: string): ReviewData {
+  const publicPageId = (url: string) => pageIdForUrl(sessionId, url);
+  return {
+    ...review,
+    pages: review.pages.map((page) => ({
+      ...page,
+      pageId: publicPageId(page.url),
+      url: redactUrl(page.url),
+      criteria: page.criteria.map((criterion) => ({
+        ...criterion,
+        comment: redactTextUrls(criterion.comment),
+        evidence: criterion.evidence.map((evidence) => ({
+          ...evidence,
+          proofId: `proof-${publicPageId(evidence.pageUrl)}-${evidence.criterionId}-${evidence.kind}-${evidence.elementIndex ?? 0}`,
+          resultId: `result-${publicPageId(evidence.pageUrl)}-${evidence.criterionId}-${evidence.kind}-${evidence.rule}`,
+          pageId: publicPageId(evidence.pageUrl),
+          pageUrl: redactUrl(evidence.pageUrl),
+          description: redactTextUrls(evidence.description),
+          selector: redactTextUrls(evidence.selector),
+          target: evidence.target.map(redactTextUrls),
+          html: redactTextUrls(evidence.html),
+          context: evidence.context ? redactTextUrls(evidence.context) : evidence.context,
+        })),
+      })),
+    })),
+    imageDecisions: (review.imageDecisions ?? []).map((decision) => ({
+      ...decision,
+      pageId: publicPageId(decision.pageUrl),
+      pageUrl: redactUrl(decision.pageUrl),
+      notes: redactTextUrls(decision.notes),
+      correctedAlt: redactTextUrls(decision.correctedAlt),
+    })),
+    decisionHistory: (review.decisionHistory ?? []).map((decision) => ({
+      ...decision,
+      pageId: publicPageId(decision.pageUrl),
+      pageUrl: redactUrl(decision.pageUrl),
+      comment: redactTextUrls(decision.comment),
+    })),
+    imageDecisionHistory: (review.imageDecisionHistory ?? []).map((decision) => ({
+      ...decision,
+      pageId: publicPageId(decision.pageUrl),
+      pageUrl: redactUrl(decision.pageUrl),
+      notes: redactTextUrls(decision.notes),
+      correctedAlt: redactTextUrls(decision.correctedAlt),
+    })),
+  };
 }
 
 export function buildReportFromSession(

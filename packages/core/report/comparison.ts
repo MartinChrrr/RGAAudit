@@ -2,6 +2,7 @@ import type { CollectedData } from '../analyzer/data-collector';
 
 export interface ObservationSnapshot {
   url: string;
+  pageId?: string;
   observedAt: string | null;
   stepId?: string;
   comparisonKey?: string;

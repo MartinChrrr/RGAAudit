@@ -25,11 +25,13 @@ export interface MediaItem {
   flags: string[];
   requiresHumanReview: true;
   pageUrl?: string;
+  pageId?: string;
 }
 
 interface Props {
   media: MediaItem[];
   initialPageUrl?: string;
+  initialPageId?: string;
 }
 
 function trackLabel(track: MediaTrackItem): string {
@@ -39,15 +41,18 @@ function trackLabel(track: MediaTrackItem): string {
   return `${label}${language}${defaultMarker}`;
 }
 
-export default function AnnexeMedias({ media, initialPageUrl }: Props) {
-  const pages = [...new Set(media.map((item) => item.pageUrl).filter(Boolean))] as string[];
-  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+export default function AnnexeMedias({ media, initialPageUrl, initialPageId }: Props) {
+  const pages = [...new Map(media
+    .filter((item) => item.pageUrl)
+    .map((item) => [item.pageId ?? item.pageUrl!, { id: item.pageId ?? item.pageUrl!, url: item.pageUrl! }]),
+  ).values()];
+  const [pageFilter, setPageFilter] = useState(initialPageId ?? initialPageUrl ?? '');
 
   useEffect(() => {
-    setPageFilter(initialPageUrl ?? '');
-  }, [initialPageUrl]);
+    setPageFilter(initialPageId ?? initialPageUrl ?? '');
+  }, [initialPageId, initialPageUrl]);
 
-  const visible = pageFilter ? media.filter((item) => item.pageUrl === pageFilter) : media;
+  const visible = pageFilter ? media.filter((item) => (item.pageId ?? item.pageUrl) === pageFilter) : media;
 
   return (
     <div data-testid="annexe-media">
@@ -62,7 +67,7 @@ export default function AnnexeMedias({ media, initialPageUrl }: Props) {
             onChange={(event) => setPageFilter(event.target.value)}
           >
             <option value="">{t('annexes.media.allPages')}</option>
-            {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+            {pages.map((page) => <option key={page.id} value={page.id}>{page.url} {page.id.startsWith('page-') ? `(${page.id.slice(-8)})` : ''}</option>)}
           </select>
         </div>
       )}
@@ -84,7 +89,7 @@ export default function AnnexeMedias({ media, initialPageUrl }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {visible.map((item) => (
-                <tr key={`${item.pageUrl ?? ''}:${item.selector}`} className="align-top">
+                <tr key={`${item.pageId ?? item.pageUrl ?? ''}:${item.selector}`} className="align-top">
                   <td className="px-3 py-3">
                     <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                       {item.kind}

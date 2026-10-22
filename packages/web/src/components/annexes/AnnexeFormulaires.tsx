@@ -25,23 +25,28 @@ export interface FormItem {
   controls: FormControlItem[];
   flags: string[];
   pageUrl?: string;
+  pageId?: string;
 }
 
 interface Props {
   forms: FormItem[];
   initialPageUrl?: string;
+  initialPageId?: string;
 }
 
-export default function AnnexeFormulaires({ forms, initialPageUrl }: Props) {
-  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId }: Props) {
+  const [pageFilter, setPageFilter] = useState(initialPageId ?? initialPageUrl ?? '');
 
-  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
+  useEffect(() => setPageFilter(initialPageId ?? initialPageUrl ?? ''), [initialPageId, initialPageUrl]);
 
   const pages = useMemo(
-    () => [...new Set(forms.map((form) => form.pageUrl).filter(Boolean))] as string[],
+    () => [...new Map(forms
+      .filter((form) => form.pageUrl)
+      .map((form) => [form.pageId ?? form.pageUrl!, { id: form.pageId ?? form.pageUrl!, url: form.pageUrl! }]),
+    ).values()],
     [forms],
   );
-  const visibleForms = forms.filter((form) => !pageFilter || form.pageUrl === pageFilter);
+  const visibleForms = forms.filter((form) => !pageFilter || (form.pageId ?? form.pageUrl) === pageFilter);
   const issueCount = visibleForms.reduce(
     (count, form) => count + form.controls.filter((control) => control.flags.length > 0).length,
     0,
@@ -63,7 +68,7 @@ export default function AnnexeFormulaires({ forms, initialPageUrl }: Props) {
               className="ml-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700"
             >
               <option value="">{t('annexes.forms.allPages')}</option>
-              {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+              {pages.map((page) => <option key={page.id} value={page.id}>{page.url} {page.id.startsWith('page-') ? `(${page.id.slice(-8)})` : ''}</option>)}
             </select>
           </label>
         )}
@@ -80,7 +85,7 @@ export default function AnnexeFormulaires({ forms, initialPageUrl }: Props) {
           </p>
           <div className="space-y-5">
             {visibleForms.map((form) => (
-              <section key={`${form.pageUrl ?? ''}-${form.selector}`} className="rounded-lg border border-gray-200 p-4">
+              <section key={`${form.pageId ?? form.pageUrl ?? ''}-${form.selector}`} className="rounded-lg border border-gray-200 p-4">
                 <div className="mb-3 flex flex-wrap justify-between gap-2">
                   <div>
                     <h3 className="font-mono text-sm text-gray-900">{form.selector}</h3>

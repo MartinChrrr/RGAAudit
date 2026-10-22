@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
-import { buildReportFromSession, formatContrastRatio } from '../report.service';
+import { buildReportFromSession, formatContrastRatio, toPublicReportData } from '../report.service';
 
 describe('formatContrastRatio', () => {
   it.each([
@@ -14,6 +14,60 @@ describe('formatContrastRatio', () => {
 });
 
 describe('buildReportFromSession', () => {
+  it('keeps exact URLs internally but exposes only a redacted URL and page id publicly', () => {
+    const secretUrl = 'https://example.com/audit?token=secret-value';
+    const session: SessionState = {
+      sessionId: 'public-report-test',
+      startedAt: '2026-10-20T00:00:00.000Z',
+      totalPages: 1,
+      completedPages: [secretUrl],
+      pendingPages: [],
+      results: {
+        [secretUrl]: {
+          url: secretUrl,
+          auditedAt: '2026-10-20T00:00:01.000Z',
+          axeResults: null,
+          collectedData: {
+            images: [{
+              selector: 'img.hero',
+              tagName: 'IMG',
+              src: 'https://example.com/hero.png?token=secret-value',
+              altAttribute: 'Hero',
+              altStatus: 'present',
+              ariaLabel: null,
+              ariaLabelledby: null,
+              rolePresentation: false,
+              surroundingText: '',
+              parentFigcaption: null,
+              isInLink: false,
+              linkHref: null,
+              linkText: null,
+              axeViolations: [],
+              automatedStatus: 'pass',
+              flags: [],
+              screenshotPath: '/var/lib/rgaaudit/screenshots/secret.png',
+            }],
+            frames: [],
+            links: [],
+            headings: { documentTitle: 'Test', headings: [], flags: [] },
+          },
+          heuristicResults: [],
+          error: null,
+        },
+      },
+    };
+
+    const internal = buildReportFromSession(session);
+    const publicData = toPublicReportData(internal, session.sessionId);
+
+    expect(internal.allCollected[0]?.url).toBe(secretUrl);
+    expect(publicData.allCollected[0]?.url).toBe('https://example.com/audit');
+    expect(publicData.allCollected[0]?.pageId).toMatch(/^page-[0-9a-f]{32}$/);
+    expect(publicData.allCollected[0]?.collectedData?.images[0]?.screenshotPath).toBeNull();
+    expect(JSON.stringify(publicData)).not.toContain('secret-value');
+    expect(JSON.stringify(publicData)).not.toContain('/var/lib/rgaaudit/screenshots/secret.png');
+  });
+
   it('expose l’historique des décisions révisées dans la revue', () => {
     const session: SessionState = {
       sessionId: 'history-test',

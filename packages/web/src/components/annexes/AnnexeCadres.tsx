@@ -13,12 +13,14 @@ export interface FrameItem {
   titleStatus: 'absent' | 'empty' | 'present';
   flags: string[];
   pageUrl?: string;
+  pageId?: string;
 }
 
 interface Props {
   frames: FrameItem[];
   sessionId: string;
   initialPageUrl?: string;
+  initialPageId?: string;
   focusedSelectors?: string[];
   focusedCriterionId?: string;
 }
@@ -27,22 +29,26 @@ export default function AnnexeCadres({
   frames,
   sessionId: _sessionId,
   initialPageUrl,
+  initialPageId,
   focusedSelectors,
   focusedCriterionId,
 }: Props) {
-  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+  const [pageFilter, setPageFilter] = useState(initialPageId ?? initialPageUrl ?? '');
 
-  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
+  useEffect(() => setPageFilter(initialPageId ?? initialPageUrl ?? ''), [initialPageId, initialPageUrl]);
 
   const pages = useMemo(
-    () => [...new Set(frames.map((frame) => frame.pageUrl).filter(Boolean))] as string[],
+    () => [...new Map(frames
+      .filter((frame) => frame.pageUrl)
+      .map((frame) => [frame.pageId ?? frame.pageUrl!, { id: frame.pageId ?? frame.pageUrl!, url: frame.pageUrl! }]),
+    ).values()],
     [frames],
   );
   const selectorFilter = focusedSelectors && focusedSelectors.length > 0
     ? new Set(focusedSelectors)
     : null;
   const visibleFrames = frames.filter((frame) => (
-    (!pageFilter || frame.pageUrl === pageFilter)
+    (!pageFilter || (frame.pageId ?? frame.pageUrl) === pageFilter)
     && (!selectorFilter || selectorFilter.has(frame.selector))
   ));
   const issueCount = visibleFrames.filter((frame) => (
@@ -65,7 +71,7 @@ export default function AnnexeCadres({
               className="ml-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700"
             >
               <option value="">{t('annexes.frames.allPages')}</option>
-              {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+              {pages.map((page) => <option key={page.id} value={page.id}>{page.url} {page.id.startsWith('page-') ? `(${page.id.slice(-8)})` : ''}</option>)}
             </select>
           </label>
         )}
@@ -103,7 +109,7 @@ export default function AnnexeCadres({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {visibleFrames.map((frame) => (
-                  <tr key={`${frame.pageUrl ?? ''}-${frame.selector}`} className="hover:bg-gray-50">
+                  <tr key={`${frame.pageId ?? frame.pageUrl ?? ''}-${frame.selector}`} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs text-gray-700">{frame.selector}</td>
                     <td className="max-w-64 break-all px-3 py-2 text-xs text-gray-700">
                       {frame.sourceUrl || frame.src || t('annexes.frames.sourceAbsent')}

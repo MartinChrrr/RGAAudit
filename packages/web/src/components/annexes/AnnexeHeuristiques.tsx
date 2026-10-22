@@ -10,12 +10,14 @@ export interface HeuristicFindingItem {
   heuristicId: string;
   rgaaCriteria: string[];
   pageUrl?: string;
+  pageId?: string;
 }
 
 interface Props {
   findings: HeuristicFindingItem[];
   sessionId: string;
   initialPageUrl?: string;
+  initialPageId?: string;
 }
 
 type SubTab = 'interactive' | 'structure' | 'svg';
@@ -39,14 +41,14 @@ const CONFIDENCE_BADGES: Record<string, { icon: string; className: string }> = {
   possible: { icon: '\uD83D\uDD0D', className: 'bg-blue-100 text-blue-800' },
 };
 
-export default function AnnexeHeuristiques({ findings, initialPageUrl }: Props) {
+export default function AnnexeHeuristiques({ findings, initialPageUrl, initialPageId }: Props) {
   const [subTab, setSubTab] = useState<SubTab>('interactive');
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('all');
   const [showPossible, setShowPossible] = useState(true);
   const [copiedSelector, setCopiedSelector] = useState<string | null>(null);
-  const [pageFilter, setPageFilter] = useState<string>(initialPageUrl ?? '');
+  const [pageFilter, setPageFilter] = useState<string>(initialPageId ?? initialPageUrl ?? '');
 
-  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
+  useEffect(() => setPageFilter(initialPageId ?? initialPageUrl ?? ''), [initialPageId, initialPageUrl]);
 
   // Group findings by sub-tab
   const grouped: Record<SubTab, HeuristicFindingItem[]> = {
@@ -72,7 +74,7 @@ export default function AnnexeHeuristiques({ findings, initialPageUrl }: Props) 
 
   // Page filter
   if (pageFilter) {
-    filtered = filtered.filter((f) => f.pageUrl === pageFilter);
+    filtered = filtered.filter((f) => (f.pageId ?? f.pageUrl) === pageFilter);
   }
 
   // Hide "possible" by default
@@ -86,7 +88,10 @@ export default function AnnexeHeuristiques({ findings, initialPageUrl }: Props) 
   }
 
   // Get unique pages for the page filter
-  const allPages = [...new Set(findings.filter((f) => f.pageUrl).map((f) => f.pageUrl!))];
+  const allPages = [...new Map(findings
+    .filter((finding) => finding.pageUrl)
+    .map((finding) => [finding.pageId ?? finding.pageUrl!, { id: finding.pageId ?? finding.pageUrl!, url: finding.pageUrl! }]),
+  ).values()];
 
   const handleCopySelector = async (selector: string) => {
     try {
@@ -168,9 +173,9 @@ export default function AnnexeHeuristiques({ findings, initialPageUrl }: Props) 
             data-testid="page-filter"
           >
             <option value="">{t('annexes.heuristics.allPages')}</option>
-            {allPages.map((url) => (
-              <option key={url} value={url}>
-                {url}
+            {allPages.map((page) => (
+              <option key={page.id} value={page.id}>
+                {page.url} {page.id.startsWith('page-') ? `(${page.id.slice(-8)})` : ''}
               </option>
             ))}
           </select>

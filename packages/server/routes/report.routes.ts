@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { renderReportHtml } from '@rgaaudit/core/report/html.renderer';
 import { generatePDF, getPdfPathIfExists } from '@rgaaudit/core/report/pdf.generator';
 import { loadReviews, loadSession } from '../services/session.store';
-import { buildReportFromSession } from '../services/report.service';
+import { buildReportFromSession, toPublicReportData } from '../services/report.service';
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 
 export const reportRouter = Router();
@@ -18,7 +18,8 @@ reportRouter.get('/api/report/:sessionId', asyncHandler(async (req, res) => {
   }
 
   const reviews = await loadReviews(sessionId);
-  const { report, allCollected, contrastViolations, heuristicFindings, review } = buildReportFromSession(session, reviews);
+  const publicReport = toPublicReportData(buildReportFromSession(session, reviews), sessionId);
+  const { report, allCollected, contrastViolations, heuristicFindings, review } = publicReport;
   res.json({ ...report, allCollected, contrastViolations, heuristicFindings, review });
 }));
 
@@ -31,7 +32,10 @@ reportRouter.get('/api/report/:sessionId/html', asyncHandler(async (req, res) =>
     throw new HttpError(404, 'Session introuvable.');
   }
 
-  const { report, allCollected, contrastViolations } = buildReportFromSession(session);
+  const { report, allCollected, contrastViolations } = toPublicReportData(
+    buildReportFromSession(session),
+    sessionId,
+  );
   const html = renderReportHtml({ report, allCollected, contrastViolations });
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src data: https: http:; base-uri 'none'; form-action 'none'");
@@ -48,7 +52,8 @@ reportRouter.get('/api/report/:sessionId/pdf', asyncHandler(async (req, res) => 
   }
 
   // Check if PDF already exists
-  const existingPath = await getPdfPathIfExists(sessionId, session.startedAt);
+  const pdfCacheVersion = 'redacted-v2';
+  const existingPath = await getPdfPathIfExists(sessionId, session.startedAt, pdfCacheVersion);
   if (existingPath) {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="rapport-rgaa-${sessionId}.pdf"`);
@@ -57,11 +62,15 @@ reportRouter.get('/api/report/:sessionId/pdf', asyncHandler(async (req, res) => 
     return;
   }
 
-  const { report, allCollected } = buildReportFromSession(session);
+  const { report, allCollected } = toPublicReportData(
+    buildReportFromSession(session),
+    sessionId,
+  );
 
   const { filePath } = await generatePDF({
     reportData: { report, allCollected },
     sessionId,
+    cacheVersion: pdfCacheVersion,
   });
 
   res.setHeader('Content-Type', 'application/pdf');

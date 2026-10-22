@@ -34,6 +34,7 @@ export interface ReviewCriterion {
     proofId?: string;
     resultId?: string;
     pageUrl?: string;
+    pageId?: string;
     criterionId?: string;
     kind: 'violation' | 'incomplete';
     rule: string;
@@ -62,9 +63,10 @@ export interface ReviewData {
     notApplicable: number;
     notTested: number;
   };
-  pages: Array<{ url: string; criteria: ReviewCriterion[] }>;
+  pages: Array<{ url: string; pageId?: string; criteria: ReviewCriterion[] }>;
   imageDecisions?: Array<{
     pageUrl: string;
+    pageId?: string;
     selector: string;
     elementIndex?: number;
     decision: 'decorative' | 'informative' | 'violation' | null;
@@ -75,6 +77,7 @@ export interface ReviewData {
   }>;
   decisionHistory?: Array<{
     pageUrl: string;
+    pageId?: string;
     criterionId: string;
     status: HumanStatus;
     comment: string;
@@ -83,6 +86,7 @@ export interface ReviewData {
   }>;
   imageDecisionHistory?: Array<{
     pageUrl: string;
+    pageId?: string;
     selector: string;
     elementIndex?: number;
     decision: 'decorative' | 'informative' | 'violation' | null;
@@ -98,6 +102,7 @@ export type AnnexTab = 'images' | 'media' | 'specialized' | 'frames' | 'links' |
 export interface AnnexTarget {
   tab: AnnexTab;
   pageUrl: string;
+  pageId?: string;
   criterionId: string;
   selectors: string[];
   elementIndexes: number[];
@@ -146,8 +151,8 @@ const coverageColors: Record<CriterionCoverage, string> = {
   manual_shell: 'bg-gray-100 text-gray-700',
 };
 
-function decisionKey(pageUrl: string, criterionId: string): string {
-  return `${pageUrl}\u001f${criterionId}`;
+function decisionKey(pageId: string, criterionId: string): string {
+  return `${pageId}\u001f${criterionId}`;
 }
 
 function historyUrlLabel(value: string): string {
@@ -184,7 +189,7 @@ const annexLabels: Record<AnnexTab, string> = {
 };
 
 export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Props) {
-  const [activePage, setActivePage] = useState(review.pages[0]?.url ?? '');
+  const [activePage, setActivePage] = useState(review.pages[0]?.pageId ?? review.pages[0]?.url ?? '');
   const [criteria, setCriteria] = useState(review.pages);
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
@@ -192,7 +197,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
 
   useEffect(() => setCriteria(review.pages), [review.pages]);
 
-  const page = criteria.find((item) => item.url === activePage) ?? criteria[0];
+  const page = criteria.find((item) => (item.pageId ?? item.url) === activePage) ?? criteria[0];
   const localSummary = useMemo(() => {
     const all = criteria.flatMap((item) => item.criteria);
     const reviewed = all.filter((criterion) => criterion.humanStatus !== 'not_tested');
@@ -200,11 +205,11 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
   }, [criteria]);
 
   const updateCriterion = (
-    pageUrl: string,
+    pageKey: string,
     criterionId: string,
     update: Partial<Pick<ReviewCriterion, 'humanStatus' | 'comment'>>,
   ) => {
-    setCriteria((current) => current.map((item) => item.url !== pageUrl ? item : ({
+    setCriteria((current) => current.map((item) => (item.pageId ?? item.url) !== pageKey ? item : ({
       ...item,
       criteria: item.criteria.map((criterion) => criterion.rgaaId === criterionId
         ? { ...criterion, ...update }
@@ -212,8 +217,8 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
     })));
   };
 
-  const persist = async (pageUrl: string, criterion: ReviewCriterion) => {
-    const key = decisionKey(pageUrl, criterion.rgaaId);
+  const persist = async (pageKey: string, pageUrl: string, criterion: ReviewCriterion) => {
+    const key = decisionKey(pageKey, criterion.rgaaId);
     setSaving(key);
     setSaved(null);
     setError(null);
@@ -222,7 +227,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pageUrl,
+          ...(page.pageId ? { pageId: page.pageId } : { pageUrl }),
           criterionId: criterion.rgaaId,
           status: criterion.humanStatus,
           comment: criterion.comment,
@@ -254,11 +259,11 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
           <label className="text-sm text-gray-700">
             Page à vérifier
             <select
-              value={page.url}
+              value={page.pageId ?? page.url}
               onChange={(event) => setActivePage(event.target.value)}
               className="mt-1 block max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm"
             >
-              {criteria.map((item) => <option key={item.url} value={item.url}>{item.url}</option>)}
+              {criteria.map((item) => <option key={item.pageId ?? item.url} value={item.pageId ?? item.url}>{item.url}{item.pageId ? ` — identifiant de page ${item.pageId.slice(-8)}` : ''}</option>)}
             </select>
           </label>
         )}
@@ -296,14 +301,14 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
             {(review.decisionHistory ?? []).map((decision, index) => (
               <article key={`criterion-${decision.pageUrl}-${decision.criterionId}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
                 <p className="font-medium">Critère {decision.criterionId} — {humanLabels[decision.status]}</p>
-                <p className="text-xs text-gray-600">{historyUrlLabel(decision.pageUrl)} · {decision.reviewedAt ?? 'date inconnue'}</p>
+                <p className="text-xs text-gray-600">{historyUrlLabel(decision.pageUrl)} {decision.pageId ? `(${decision.pageId.slice(-8)})` : ''} · {decision.reviewedAt ?? 'date inconnue'}</p>
                 {decision.comment && <p className="mt-1 whitespace-pre-wrap">{decision.comment}</p>}
               </article>
             ))}
             {(review.imageDecisionHistory ?? []).map((decision, index) => (
               <article key={`image-${decision.pageUrl}-${decision.selector}-${decision.elementIndex ?? 'legacy'}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
                 <p className="font-medium">Image {decision.selector} — {humanLabels[decision.status]}</p>
-                <p className="text-xs text-gray-600">{historyUrlLabel(decision.pageUrl)} · {decision.reviewedAt ?? 'date inconnue'}</p>
+                <p className="text-xs text-gray-600">{historyUrlLabel(decision.pageUrl)} {decision.pageId ? `(${decision.pageId.slice(-8)})` : ''} · {decision.reviewedAt ?? 'date inconnue'}</p>
                 {decision.notes && <p className="mt-1 whitespace-pre-wrap">{decision.notes}</p>}
               </article>
             ))}
@@ -315,7 +320,8 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
 
       <div className="space-y-3">
         {page.criteria.map((criterion) => {
-          const key = decisionKey(page.url, criterion.rgaaId);
+          const pageKey = page.pageId ?? page.url;
+          const key = decisionKey(pageKey, criterion.rgaaId);
           const annex = annexForCriterion(criterion.rgaaId);
           return (
             <article key={criterion.rgaaId} id={`criterion-${criterion.rgaaId}`} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -388,6 +394,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                       onClick={() => onOpenAnnex({
                         tab: annex,
                         pageUrl: page.url,
+                        ...(page.pageId ? { pageId: page.pageId } : {}),
                         criterionId: criterion.rgaaId,
                         selectors: criterion.elements.map((element) => element.selector),
                         elementIndexes: criterion.elements.flatMap((element) => (
@@ -407,7 +414,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                   <select
                     aria-label={`Décision humaine pour le critère ${criterion.rgaaId}`}
                     value={criterion.humanStatus}
-                    onChange={(event) => updateCriterion(page.url, criterion.rgaaId, {
+                    onChange={(event) => updateCriterion(pageKey, criterion.rgaaId, {
                       humanStatus: event.target.value as HumanStatus,
                     })}
                     className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -424,7 +431,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                   Commentaire ou preuve
                   <textarea
                     value={criterion.comment}
-                    onChange={(event) => updateCriterion(page.url, criterion.rgaaId, { comment: event.target.value })}
+                    onChange={(event) => updateCriterion(pageKey, criterion.rgaaId, { comment: event.target.value })}
                     rows={2}
                     maxLength={5_000}
                     className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -434,7 +441,7 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                 <button
                   type="button"
                   disabled={saving === key}
-                  onClick={() => persist(page.url, criterion)}
+                  onClick={() => persist(pageKey, page.url, criterion)}
                   className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
                 >
                   {saving === key ? 'Enregistrement…' : saved === key ? 'Enregistré' : 'Enregistrer'}

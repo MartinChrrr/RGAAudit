@@ -17,6 +17,7 @@ export interface ImageItem {
   alternativeSources?: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'>;
   manualChecks?: string[];
   pageUrl?: string;
+  pageId?: string;
   elementIndex?: number;
 }
 
@@ -30,6 +31,7 @@ export interface ImageDecision {
 
 export interface PersistedImageDecision extends ImageDecision {
   pageUrl: string;
+  pageId?: string;
   selector: string;
   elementIndex?: number;
 }
@@ -41,6 +43,7 @@ interface Props {
   sessionId: string;
   initialDecisions?: PersistedImageDecision[];
   initialPageUrl?: string;
+  initialPageId?: string;
   focusedSelectors?: string[];
   focusedElementIndexes?: number[];
   focusedCriterionId?: string;
@@ -51,14 +54,14 @@ function storageKey(sessionId: string): string {
   return `rgaaudit-images-${sessionId}`;
 }
 
-function legacyImageKey(image: Pick<ImageItem, 'pageUrl' | 'selector'>): string {
-  return `${image.pageUrl ?? ''}\u001f${image.selector}`;
+function legacyImageKey(image: Pick<ImageItem, 'pageUrl' | 'pageId' | 'selector'>): string {
+  return `${image.pageId ?? image.pageUrl ?? ''}\u001f${image.selector}`;
 }
 
-function imageKey(image: Pick<ImageItem, 'pageUrl' | 'selector' | 'elementIndex'>): string {
+function imageKey(image: Pick<ImageItem, 'pageUrl' | 'pageId' | 'selector' | 'elementIndex'>): string {
   return image.elementIndex === undefined
     ? legacyImageKey(image)
-    : `${image.pageUrl ?? ''}\u001findex:${image.elementIndex}`;
+    : `${image.pageId ?? image.pageUrl ?? ''}\u001findex:${image.elementIndex}`;
 }
 
 type ImageNature = 'decorative' | 'informative';
@@ -120,13 +123,14 @@ export default function AnnexeImages({
   sessionId,
   initialDecisions = [],
   initialPageUrl,
+  initialPageId,
   focusedSelectors = [],
   focusedElementIndexes = [],
   focusedCriterionId,
   onSaved,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
-  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+  const [pageFilter, setPageFilter] = useState(initialPageId ?? initialPageUrl ?? '');
   const [search, setSearch] = useState('');
   const [showAllFocused, setShowAllFocused] = useState(false);
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
@@ -174,10 +178,10 @@ export default function AnnexeImages({
   }, [initialDecisions]);
 
   useEffect(() => {
-    setPageFilter(initialPageUrl ?? '');
+    setPageFilter(initialPageId ?? initialPageUrl ?? '');
     setShowAllFocused(false);
     setFilter('all');
-  }, [initialPageUrl, focusedCriterionId]);
+  }, [initialPageId, initialPageUrl, focusedCriterionId]);
 
   const updateDecision = useCallback((image: ImageItem, update: Partial<ImageDecision>) => {
     const key = imageKey(image);
@@ -199,7 +203,7 @@ export default function AnnexeImages({
         const decision = decisions[imageKey(image)] ?? emptyDecision(image);
         const status = deriveImageStatus(image, decision);
         return {
-          pageUrl: image.pageUrl,
+          ...(image.pageId ? { pageId: image.pageId } : { pageUrl: image.pageUrl }),
           selector: image.selector,
           elementIndex: image.elementIndex,
           decision: decision.decision,
@@ -208,7 +212,10 @@ export default function AnnexeImages({
           notes: decision.notes,
         };
       })
-      .filter((decision): decision is typeof decision & { pageUrl: string } => Boolean(decision.pageUrl));
+      .filter((decision) => Boolean(
+        (decision as { pageId?: string; pageUrl?: string }).pageId
+        || (decision as { pageId?: string; pageUrl?: string }).pageUrl,
+      ));
 
     if (pending.length === 0) return;
 
@@ -245,7 +252,10 @@ export default function AnnexeImages({
   const passCount = images.filter((img) => img.automatedStatus === 'pass').length;
 
   // Unique pages
-  const pages = [...new Set(images.map((img) => img.pageUrl).filter(Boolean))] as string[];
+  const pages = [...new Map(images
+    .filter((image) => image.pageUrl)
+    .map((image) => [image.pageId ?? image.pageUrl!, { id: image.pageId ?? image.pageUrl!, url: image.pageUrl! }]),
+  ).values()];
   const focusedSelectorSet = new Set(focusedSelectors);
   const focusedIndexSet = new Set(focusedElementIndexes);
   const usesIndexFocus = focusedElementIndexes.length > 0;
@@ -253,7 +263,7 @@ export default function AnnexeImages({
     ? image.elementIndex !== undefined && focusedIndexSet.has(image.elementIndex)
     : focusedSelectorSet.has(image.selector);
   const hasMatchingFocusedImages = (usesIndexFocus || focusedSelectors.length > 0) && images.some((image) => (
-    (!initialPageUrl || image.pageUrl === initialPageUrl) && matchesFocus(image)
+    (!initialPageId && !initialPageUrl || (image.pageId ?? image.pageUrl) === (initialPageId ?? initialPageUrl)) && matchesFocus(image)
   ));
 
   // Filter + sort
@@ -262,7 +272,7 @@ export default function AnnexeImages({
       if (filter === 'violations' && img.automatedStatus !== 'violation') return false;
       if (filter === 'warnings' && img.automatedStatus !== 'manual') return false;
       if (filter === 'passes' && img.automatedStatus !== 'pass') return false;
-      if (pageFilter && img.pageUrl !== pageFilter) return false;
+      if (pageFilter && (img.pageId ?? img.pageUrl) !== pageFilter) return false;
       if (hasMatchingFocusedImages && !showAllFocused && !matchesFocus(img)) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -317,7 +327,7 @@ export default function AnnexeImages({
             aria-label={t('annexes.images.filterByPage')}
           >
             <option value="">{t('annexes.images.allPages')}</option>
-            {pages.map((p) => <option key={p} value={p}>{p}</option>)}
+            {pages.map((p) => <option key={p.id} value={p.id}>{p.url} {p.id.startsWith('page-') ? `(${p.id.slice(-8)})` : ''}</option>)}
           </select>
         )}
 
@@ -387,7 +397,8 @@ export default function AnnexeImages({
               {filtered.map((img) => {
                 const key = imageKey(img);
                 const isFirstSelectorOccurrence = images.findIndex((candidate) => (
-                  candidate.pageUrl === img.pageUrl && candidate.selector === img.selector
+                  (candidate.pageId ?? candidate.pageUrl) === (img.pageId ?? img.pageUrl)
+                  && candidate.selector === img.selector
                 )) === images.indexOf(img);
                 const legacyDecision = isFirstSelectorOccurrence
                   ? decisions[legacyImageKey(img)] ?? decisions[img.selector]

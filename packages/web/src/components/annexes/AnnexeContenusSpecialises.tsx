@@ -12,11 +12,13 @@ export interface SpecializedContentItem {
   evidence: string[];
   flags: string[];
   pageUrl?: string;
+  pageId?: string;
 }
 
 interface Props {
   items: SpecializedContentItem[];
   initialPageUrl?: string;
+  initialPageId?: string;
 }
 
 const kindLabels: Record<SpecializedContentItem['kind'], string> = {
@@ -54,13 +56,16 @@ function readableEvidence(value: string): string {
   return evidenceLabels[value] ?? value;
 }
 
-export default function AnnexeContenusSpecialises({ items, initialPageUrl }: Props) {
-  const pages = [...new Set(items.map((item) => item.pageUrl).filter(Boolean))] as string[];
-  const [pageFilter, setPageFilter] = useState(initialPageUrl ?? '');
+export default function AnnexeContenusSpecialises({ items, initialPageUrl, initialPageId }: Props) {
+  const pages = [...new Map(items
+    .filter((item) => item.pageUrl)
+    .map((item) => [item.pageId ?? item.pageUrl!, { id: item.pageId ?? item.pageUrl!, url: item.pageUrl! }]),
+  ).values()];
+  const [pageFilter, setPageFilter] = useState(initialPageId ?? initialPageUrl ?? '');
 
-  useEffect(() => setPageFilter(initialPageUrl ?? ''), [initialPageUrl]);
+  useEffect(() => setPageFilter(initialPageId ?? initialPageUrl ?? ''), [initialPageId, initialPageUrl]);
 
-  const visible = pageFilter ? items.filter((item) => item.pageUrl === pageFilter) : items;
+  const visible = pageFilter ? items.filter((item) => (item.pageId ?? item.pageUrl) === pageFilter) : items;
   const grouped = visible.reduce<Record<string, number>>((counts, item) => {
     counts[item.status] = (counts[item.status] ?? 0) + 1;
     return counts;
@@ -85,7 +90,7 @@ export default function AnnexeContenusSpecialises({ items, initialPageUrl }: Pro
             onChange={(event) => setPageFilter(event.target.value)}
           >
             <option value="">{t('annexes.specialized.allPages')}</option>
-            {pages.map((page) => <option key={page} value={page}>{page}</option>)}
+            {pages.map((page) => <option key={page.id} value={page.id}>{page.url} {page.id.startsWith('page-') ? `(${page.id.slice(-8)})` : ''}</option>)}
           </select>
         </div>
       )}
@@ -106,7 +111,7 @@ export default function AnnexeContenusSpecialises({ items, initialPageUrl }: Pro
             </thead>
             <tbody className="divide-y divide-gray-100">
               {visible.map((item) => (
-                <tr key={`${item.pageUrl ?? ''}:${item.selector}`} className="align-top">
+                <tr key={`${item.pageId ?? item.pageUrl ?? ''}:${item.selector}`} className="align-top">
                   <td className="px-3 py-3">
                     <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
                       {kindLabels[item.kind]}
