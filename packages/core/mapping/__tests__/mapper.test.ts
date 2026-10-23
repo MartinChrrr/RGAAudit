@@ -330,6 +330,72 @@ describe('mapPageResults — MANUAL_ONLY', () => {
 });
 
 describe('mapPageResults — contrôles DOM déterministes', () => {
+  it('expose les preuves du collecteur structurel pour les six critères du lot 1', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        structure: {
+          pageFlags: ['HTML_VALIDITY_REVIEW'],
+          tables: [{
+            selector: 'table#data',
+            dataFeatures: ['th'],
+            flags: ['TABLE_LAYOUT_DATA_FEATURE'],
+          }],
+          styles: {
+            stylesheetCount: 1,
+            inlineStyleCount: 0,
+            presentationMarkupCount: 0,
+            flags: ['STYLESHEET_PRESENT'],
+          },
+          colors: [{
+            selector: 'p#notice',
+            color: 'rgb(0, 0, 0)',
+            backgroundColor: null,
+            flags: ['COLOR_FOREGROUND_ONLY'],
+          }],
+          fieldGroups: [{
+            selector: 'fieldset#profile',
+            legend: null,
+            controlCount: 1,
+            flags: ['FIELDSET_LEGEND_ABSENT'],
+          }],
+          landmarks: [{
+            selector: 'main',
+            role: 'main',
+            accessibleName: null,
+            flags: ['LANDMARK_PRESENT'],
+          }],
+        },
+      }),
+      'http://example.com/structure',
+    );
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '5.8')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'table#data', flags: ['TABLE_LAYOUT_DATA_FEATURE'] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '8.2')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'document', flags: ['HTML_VALIDITY_REVIEW'] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '10.1')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'document', flags: ['STYLESHEET_PRESENT'] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '10.5')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'p#notice', flags: ['COLOR_FOREGROUND_ONLY'] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.6')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'fieldset#profile', flags: ['FIELDSET_LEGEND_ABSENT'] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '12.6')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'main', flags: ['LANDMARK_PRESENT'] }],
+    });
+  });
+
   it('signale un doctype absent et distingue une page sans signal', () => {
     const withoutDoctype = mapPageResults(
       makeAxeResult(),
