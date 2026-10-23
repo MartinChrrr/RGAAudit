@@ -13,6 +13,25 @@ Sources de référence :
 - [Environnement de test](https://accessibilite.numerique.gouv.fr/methode/environnement-de-test/)
 - État actuel du produit : [`packages/core/mapping/rgaa-4.1.json`](packages/core/mapping/rgaa-4.1.json), collecteurs Playwright et règles axe-core 4.9.1.
 
+## Registre canonique (source de vérité)
+
+La couverture et l'ordre d'implémentation sont ceux du registre runtime
+[`packages/core/mapping/rgaa-4.1.json`](packages/core/mapping/rgaa-4.1.json). Les anciens tableaux de cette feuille de route ne doivent pas
+réintroduire un critère déjà présent dans le lot 0.
+
+| Lot runtime | Nombre | Identifiants RGAA |
+|---:|---:|---|
+| 0 — socle intégré | 27 | 1.1, 1.2, 1.9, 2.1, 3.2, 3.3, 5.4, 5.6, 6.1, 6.2, 7.1, 8.1, 8.3, 8.4, 8.5, 8.6, 8.8, 8.9, 9.1, 9.3, 10.6, 10.12, 11.1, 11.13, 12.7, 12.10, 13.9 |
+| 1 — prochain incrément | 6 | 5.8, 8.2, 10.1, 10.5, 11.6, 12.6 |
+| 2 — collecteurs et preuves | 28 | 1.3, 2.2, 4.10, 5.1–5.7, 8.7, 8.10, 9.2, 9.4, 10.2–10.4, 10.7, 10.8, 10.11, 10.14, 11.2, 11.4–11.9, 12.8, 13.5, 13.8 |
+| 3 — parcours et comparaisons | 17 | 4.7, 7.4, 7.5, 10.13, 11.3, 11.10–11.12, 12.1–12.5, 12.11, 13.1, 13.2, 13.6 |
+| 4 — interactions complexes | 13 | 3.1, 4.11–4.13, 7.2, 7.3, 10.9, 10.10, 12.9, 13.7, 13.10–13.12 |
+| 5 — médias et documents | 15 | 1.4–1.8, 4.1–4.6, 4.8, 4.9, 13.3, 13.4 |
+
+Les colonnes `coverage`, `humanLevel` et `implementationLot` du registre runtime
+décrivent respectivement le niveau de signal, la validation humaine restante et
+le lot de backlog. Elles sont déjà validées par les tests du mapper.
+
 Les tableaux emploient des intitulés abrégés pour rester lisibles. L'identifiant fait foi et renvoie au libellé complet de la source officielle ci-dessus.
 
 ## Légende
@@ -45,8 +64,8 @@ Les tableaux emploient des intitulés abrégés pour rester lisibles. L'identifi
 
 | Lot | Contenu | Critères | Pourquoi cet ordre |
 |---|---|---:|---|
-| **0** | Consolider l'existant | 12 | Sécuriser ce qui est déjà visible avant d'augmenter le compteur. |
-| **1** | Gains rapides DOM / axe-core | 21 | Faible coût, preuves fiables, briques réutilisables par les lots suivants. |
+| **0** | Consolider l'existant | 27 | Sécuriser ce qui est déjà visible avant d'augmenter le compteur. |
+| **1** | Gains rapides DOM / axe-core | 6 | Faible coût, preuves fiables, briques réutilisables par les lots suivants. |
 | **2** | Collecteurs et preuves visuelles | 28 | Forte valeur pour l'auditeur sans prétendre automatiser la pertinence. |
 | **3** | Parcours, formulaires et comparaisons | 17 | Demande un moteur de scénarios et des analyses inter-pages. |
 | **4** | Interactions complexes et expertise | 13 | Automatisation partielle seulement ; environnement de test plus exigeant. |
@@ -56,7 +75,10 @@ Après le lot 1, RGAAudit afficherait **33 critères intégrés sur 106**. Aprè
 
 ## Lot 0 — critères déjà intégrés
 
-Les 12 critères ci-dessous sont ceux présents dans le mapping actuel. La colonne « suite » évite de considérer un critère partiel comme définitivement terminé.
+Les 12 critères ci-dessous détaillent les premiers contrôles historiques du
+socle. La liste exhaustive des 27 critères intégrés est celle du registre
+canonique ci-dessus ; la colonne « suite » évite de considérer un critère
+partiel comme définitivement terminé.
 
 | Critère | Objet du critère (résumé) | État réel | Difficulté | Humain | Signal actuel et suite recommandée |
 |---|---|---|---|---|---|
@@ -73,40 +95,33 @@ Les 12 critères ci-dessous sont ceux présents dans le mapping actuel. La colon
 | **8.9** | Les balises ne sont-elles pas utilisées uniquement à des fins de présentation ? | **Intégré, partiel** | E2 | H2 | Heuristiques de faux titres, paragraphes et listes. Étendre aux autres détournements de balises et présenter la preuve visuelle. |
 | **9.1** | L'information est-elle structurée par une utilisation appropriée des titres ? | **Intégré, partiel** | E2 | H2 | axe et arbre des titres. Un saut de niveau est un indice, pas à lui seul une non-conformité ; garder la décision humaine. |
 
-### Action préalable au lot 1
+### Garde-fous avant le lot 1
 
-1. Ajouter au schéma du mapping les champs `coverage` (`full`, `partial`, `manual_shell`), `humanLevel` et `implementationLot`.
-2. Afficher séparément « critères intégrés », « critères avec signal automatique » et « critères décidés par un humain ».
-3. Interdire qu'une absence de violation axe produise à elle seule une conformité RGAA lorsque tous les tests du critère ne sont pas couverts.
-4. Ajouter un test garantissant que chaque identifiant RGAA apparaît une seule fois et que le total de référence reste 106.
+Les métadonnées `coverage`, `humanLevel` et `implementationLot`, l'affichage
+des 106 critères et les contrôles d'identifiants uniques existent déjà dans le
+runtime et ses tests. Toute nouvelle story doit les réutiliser, et non créer un
+second registre.
+
+1. Conserver la séparation entre critères intégrés, signaux machine et décisions humaines.
+2. Interdire qu'une absence de violation axe produise à elle seule une conformité RGAA lorsque tous les tests du critère ne sont pas couverts.
+3. Maintenir le test garantissant que chaque identifiant RGAA apparaît une seule fois et que le total de référence reste 106.
 
 ## Lot 1 — gains rapides DOM et axe-core
 
-Ordre 2 à 22 du backlog restant ; l'ordre 1 correspond au critère 2.1 désormais intégré au lot 0.
+Le lot runtime ne contient plus que six critères réellement non couverts par le
+lot 0 : **5.8, 8.2, 10.1, 10.5, 11.6 et 12.6**. Les critères 8.1, 8.3, 8.4,
+8.8, 9.3, 10.6, 10.12, 11.1, 12.7, 12.10, 13.9, 1.9, 5.4 et 5.6 sont
+déjà intégrés au lot 0 et doivent être traités comme du hardening ou des
+extensions, jamais comme de nouvelles entrées de couverture.
 
 | Ordre | Critère | Objet du critère (résumé) | Difficulté | Humain | Première tranche utile |
 |---:|---|---|---|---|---|
-| **2** | **8.1** | Chaque page web est-elle définie par un type de document ? | E1 | H0 | Contrôler le `doctype` et exposer une preuve au niveau document. |
-| **3** | **8.3** | La langue par défaut est-elle présente ? | E1 | H0 | Mapper `html-has-lang`. |
-| **4** | **8.4** | Le code de langue par défaut est-il pertinent ? | E1 | H1 | Mapper `html-lang-valid` et `html-xml-lang-mismatch`, puis confirmer que la langue déclarée correspond au contenu. |
-| **5** | **8.8** | Le code de langue de chaque changement de langue est-il valide et pertinent ? | E1 | H1 | Mapper `valid-lang` sur les éléments possédant `lang`/`xml:lang`; revue de pertinence. |
-| **6** | **5.4** | Le titre d'un tableau de données est-il correctement associé au tableau ? | E1 | H0 | Vérifier `caption` et les associations ARIA admises par les tests RGAA. |
-| **7** | **5.6** | Les en-têtes de colonnes et de lignes sont-ils correctement déclarés ? | E2 | H1 | Réutiliser `th-has-data-cells`, `empty-table-header` et un inventaire `th`/`scope`. |
-| **8** | **9.3** | Chaque liste est-elle correctement structurée ? | E1 | H1 | Mapper `list`, `listitem`, `definition-list` et `dlitem`. |
-| **9** | **10.1** | Des feuilles de styles sont-elles utilisées pour contrôler la présentation ? | E1 | H0 | Détecter les attributs et balises de présentation interdits ainsi que l'usage effectif de CSS. |
-| **10** | **10.5** | Les couleurs de fond et de police sont-elles correctement déclarées ensemble ? | E2 | H1 | Examiner les styles calculés et signaler les couples couleur/fond incomplets. |
-| **11** | **10.6** | Un lien non évident est-il visible par rapport au texte environnant ? | E1 | H1 | Mapper `link-in-text-block` et fournir les couleurs/états de survol et focus. |
-| **12** | **10.12** | L'espacement du texte peut-il être redéfini sans perte ? | E1 | H1 | Mapper `avoid-inline-spacing`, injecter les valeurs WCAG/RGAA et capturer les débordements. |
-| **13** | **11.1** | Chaque champ de formulaire a-t-il une étiquette ? | E1 | H1 | Mapper `label`, `select-name`, `aria-input-field-name` et règles de nom des contrôles. |
-| **14** | **11.6** | Chaque regroupement de champs a-t-il une légende ? | E1 | H0 | Inventorier `fieldset` et vérifier la présence d'un `legend`. |
-| **15** | **11.13** | La finalité d'un champ peut-elle être déduite pour l'autocomplétion ? | E1 | H1 | Mapper `autocomplete-valid` et vérifier les champs correspondant aux données utilisateur. |
-| **16** | **12.6** | Les zones récurrentes peuvent-elles être atteintes ou évitées ? | E2 | H1 | Mapper landmarks et `bypass`; présenter la structure des régions. |
-| **17** | **12.7** | Un lien d'évitement ou d'accès rapide au contenu principal est-il présent ? | E1 | H1 | Mapper `skip-link`, vérifier cible, visibilité au focus et fonctionnement. |
-| **18** | **12.10** | Les raccourcis clavier à une seule touche sont-ils contrôlables ? | E1 | H1 | Mapper `accesskeys`, inventorier les gestionnaires de touche simples et demander confirmation. |
-| **19** | **13.9** | Le contenu est-il consultable en portrait et paysage ? | E1 | H1 | Mapper `css-orientation-lock` et tester deux viewports. |
-| **20** | **8.2** | Le code généré est-il valide selon le type de document ? | E2 | H1 | Ajouter la validation HTML ciblée par les tests RGAA, sans remonter les erreurs sans impact. |
-| **21** | **1.9** | Chaque légende d'image est-elle correctement reliée à l'image ? | E2 | H1 | Étendre l'annexe Images à `figure`/`figcaption`, ARIA et groupes d'images. |
-| **22** | **5.8** | Un tableau de mise en forme évite-t-il les éléments propres aux tableaux de données ? | E2 | H1 | Détecter les tableaux de présentation contenant `caption`, `th`, `scope`, `headers` ou résumé. |
+| **1** | **5.8** | Un tableau de mise en forme évite-t-il les éléments propres aux tableaux de données ? | E2 | H1 | Détecter les tableaux de présentation contenant `caption`, `th`, `scope`, `headers` ou résumé. |
+| **2** | **8.2** | Le code généré est-il valide selon le type de document ? | E2 | H1 | Ajouter la validation HTML ciblée par les tests RGAA, sans remonter les erreurs sans impact. |
+| **3** | **10.1** | Des feuilles de styles sont-elles utilisées pour contrôler la présentation ? | E1 | H0 | Détecter les attributs et balises de présentation interdits ainsi que l'usage effectif de CSS. |
+| **4** | **10.5** | Les couleurs de fond et de police sont-elles correctement déclarées ensemble ? | E2 | H1 | Examiner les styles calculés et signaler les couples couleur/fond incomplets. |
+| **5** | **11.6** | Chaque regroupement de champs a-t-il une légende ? | E1 | H0 | Inventorier `fieldset` et vérifier la présence d'un `legend`. |
+| **6** | **12.6** | Les zones récurrentes peuvent-elles être atteintes ou évitées ? | E2 | H1 | Mapper landmarks et `bypass`; présenter la structure des régions. |
 
 ## Lot 2 — collecteurs et preuves visuelles
 
@@ -234,7 +249,7 @@ Un critère ne devrait passer à « intégré » que si les éléments suivants 
 
 ## Premier incrément concret conseillé
 
-Le prochain incrément devrait implémenter ensemble **8.1, 8.3, 8.4, 8.8, 9.3, 11.1 et 12.7**. Ils couvrent plusieurs thématiques, exploitent des règles axe/DOM déjà disponibles et obligent à mettre en place le nouveau modèle de couverture sans nécessiter tout de suite un moteur de scénarios complexe.
+Le prochain incrément devrait implémenter ensemble **5.8, 8.2, 10.1, 10.5, 11.6 et 12.6**. Ils couvrent plusieurs thématiques, exploitent des règles axe/DOM déjà disponibles et réutilisent le modèle de couverture canonique sans nécessiter tout de suite les scénarios complexes des lots 3 et 4.
 
 Une fois ce socle validé, poursuivre strictement l'ordre des lots, mais traiter dans une même branche les critères partageant un collecteur : **5.x tableaux**, **11.x formulaires**, **12.x navigation**, puis **4.x médias**.
 

@@ -59,6 +59,9 @@ describe('loadMapping', () => {
 
     const implemented = mapping.criteria.filter((criterion) => criterion.implementationLot === 0);
     expect(implemented).toHaveLength(27);
+    expect([0, 1, 2, 3, 4, 5].map((lot) => (
+      mapping.criteria.filter((criterion) => criterion.implementationLot === lot).length
+    ))).toEqual([27, 6, 28, 17, 13, 15]);
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.1')).toMatchObject({
       coverage: 'partial',
       humanLevel: 'H2',
