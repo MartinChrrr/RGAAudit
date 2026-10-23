@@ -39,7 +39,12 @@ export type ProgressEvent =
   | { type: 'page_error'; url: string; error: string }
   | { type: 'audit_complete'; summary: AuditSummary };
 
+/** Version of the persisted audit session envelope. */
+export const SESSION_SCHEMA_VERSION = 1 as const;
+
 export interface SessionState {
+  /** Optional for backwards-compatible sessions written before versioning. */
+  schemaVersion?: typeof SESSION_SCHEMA_VERSION;
   sessionId: string;
   startedAt: string;
   totalPages: number;
@@ -187,6 +192,7 @@ export async function* auditPages(
     }
 
     const state: SessionState = {
+      schemaVersion: SESSION_SCHEMA_VERSION,
       sessionId: options.sessionId,
       startedAt: new Date().toISOString(),
       totalPages: urls.length,

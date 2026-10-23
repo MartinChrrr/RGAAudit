@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditReviewState, ImageAuditDecision } from '@rgaaudit/core/domain/review';
-import { appendRevisionHistory, applyImageDecision, applyImageDecisions } from '../session.store';
+import {
+  appendRevisionHistory,
+  applyImageDecision,
+  applyImageDecisions,
+  migrateReviewState,
+  migrateSessionState,
+} from '../session.store';
 
 const pageUrl = 'https://example.com/';
 const reviewedAt = '2026-09-11T12:00:00.000Z';
@@ -130,5 +136,60 @@ describe('appendRevisionHistory', () => {
 
     expect(review.decisionHistory).toHaveLength(205);
     expect(review.decisionHistory?.[0]?.comment).toBe('Version 0');
+  });
+});
+
+describe('schema migrations', () => {
+  it('migre une ancienne revue en conservant décisions, preuves et provenance', () => {
+    const migrated = migrateReviewState({
+      decisions: [{
+        pageUrl,
+        criterionId: '1.1',
+        status: 'compliant',
+        comment: 'Ancienne décision',
+        reviewedAt,
+      }],
+      imageDecisions: [{
+        pageUrl,
+        selector: 'main > img',
+        decision: 'violation',
+        correctedAlt: '',
+        notes: 'Ancien format',
+      }],
+      updatedAt: reviewedAt,
+    }, 'legacy-review');
+
+    expect(migrated).toMatchObject({
+      schemaVersion: 1,
+      sessionId: 'legacy-review',
+      decisions: [{ criterionId: '1.1', status: 'compliant' }],
+      imageDecisions: [{ decision: 'informative', status: 'non_compliant' }],
+    });
+  });
+
+  it('ajoute la version et les valeurs manquantes d’une ancienne session', () => {
+    const migrated = migrateSessionState({
+      sessionId: 'legacy-session',
+      startedAt: reviewedAt,
+      totalPages: 1,
+      completedPages: [pageUrl],
+      pendingPages: [],
+      results: {
+        [pageUrl]: {
+          url: pageUrl,
+          auditedAt: reviewedAt,
+          axeResults: null,
+          collectedData: null,
+          error: null,
+        },
+      },
+    }, 'legacy-session');
+
+    expect(migrated).toMatchObject({
+      schemaVersion: 1,
+      sessionId: 'legacy-session',
+      results: { [pageUrl]: { heuristicResults: [] } },
+    });
+    expect(migrateSessionState({ schemaVersion: 2 }, 'future-session')).toBeNull();
   });
 });
