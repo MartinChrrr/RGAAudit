@@ -12,6 +12,7 @@
     "analyzeButton": "Rechercher les pages du site",
     "analyzing": "Recherche en cours…",
     "manualEntry": "Entrer les URLs manuellement",
+    "createJourney": "Créer un parcours d’audit",
     "sitemapNotFound": "Aucun sitemap trouvé pour ce site.",
     "continueWithoutSitemap": "Continuer sans sitemap",
     "crawlError": "Erreur lors de l'analyse : {error}"
@@ -81,6 +82,7 @@
     "loading": "Chargement des observations…",
     "error": "Impossible de charger cette exécution de parcours.",
     "backHome": "Retour à l’accueil",
+    "editJourney": "Modifier le parcours",
     "statusLabel": "Statut",
     "runId": "Identifiant d’exécution",
     "startedAt": "Démarrée le",
@@ -132,6 +134,32 @@
       "capture_error": "Capture non disponible en raison d’une erreur technique."
     },
     "evidenceTitle": "Preuves textuelles"
+  },
+  "journeyBuilder": {
+    "title": "Créer un parcours d’audit",
+    "editTitle": "Modifier le parcours d’audit",
+    "description": "Définissez des étapes rejouables. Les signaux produits restent des preuves à confirmer humainement.",
+    "backHome": "Retour à l’accueil",
+    "loading": "Chargement du parcours…",
+    "loadError": "Impossible de charger ce parcours.",
+    "saveError": "Impossible d’enregistrer le parcours : {error}",
+    "definition": "Définition du parcours",
+    "name": "Nom",
+    "startUrl": "URL de départ",
+    "steps": "Étapes",
+    "step": "Étape {index}",
+    "stepId": "Identifiant",
+    "action": "Action",
+    "url": "URL",
+    "selector": "Sélecteur CSS",
+    "value": "Valeur",
+    "key": "Touche",
+    "waitMs": "Attente (ms)",
+    "sensitive": "Valeur sensible (ne pas capturer)",
+    "addStep": "Ajouter une étape",
+    "removeStep": "Supprimer",
+    "save": "Enregistrer le parcours",
+    "saving": "Enregistrement…"
   },
   "annexes": {
     "images": {

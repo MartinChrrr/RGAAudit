@@ -276,6 +276,9 @@ export default function JourneyRun() {
             <div><dt className="font-medium text-gray-900">{t('journey.finishedAt')}</dt><dd>{formatDate(run.finishedAt)}</dd></div>
           </dl>
           {run.error && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{run.error}</p>}
+          <Link to={`/journeys/${encodeURIComponent(run.journeyId)}/edit`} className="mt-4 inline-block text-sm font-medium text-primary-700 underline">
+            {t('journey.editJourney')}
+          </Link>
         </header>
 
         <section className="mt-6" aria-labelledby="journey-observations-title">

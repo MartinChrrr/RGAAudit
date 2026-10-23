@@ -112,6 +112,65 @@ describe('POST /api/journeys', () => {
   });
 });
 
+describe('PUT /api/journeys/:journeyId', () => {
+  it('met à jour le parcours en conservant son identifiant et sa date', async () => {
+    const current: JourneyDefinition = {
+      id: 'journey-001',
+      name: 'Ancien nom',
+      startUrl: 'https://example.com',
+      steps: [{ id: 'step-1', action: 'wait', waitMs: 10 }],
+      createdAt: '2026-10-20T00:00:00.000Z',
+    };
+    mockLoadJourney.mockResolvedValue(current);
+
+    const response = await request(app).put('/api/journeys/journey-001').send({
+      name: 'Parcours modifié',
+      startUrl: 'https://example.com/start',
+      steps: [{ id: 'step-1', action: 'click', selector: '#continue' }],
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockSaveJourney).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'journey-001',
+      name: 'Parcours modifié',
+      createdAt: current.createdAt,
+      steps: [{ id: 'step-1', action: 'click', selector: '#continue' }],
+    }));
+  });
+
+  it('retourne 404 si le parcours à modifier n’existe pas', async () => {
+    const response = await request(app).put('/api/journeys/missing').send({
+      name: 'Absent',
+      startUrl: 'https://example.com',
+      steps: [{ action: 'wait', waitMs: 1 }],
+    });
+
+    expect(response.status).toBe(404);
+    expect(mockSaveJourney).not.toHaveBeenCalled();
+  });
+
+  it('conserve la référence d’un secret quand l’interface ne renvoie pas sa valeur', async () => {
+    mockLoadJourney.mockResolvedValue({
+      id: 'journey-001',
+      name: 'Connexion',
+      startUrl: 'https://example.com',
+      steps: [{ id: 'step-1', action: 'fill', selector: '#password', sensitive: true, secretRef: 'secret-1', value: 'secret' }],
+      createdAt: '2026-10-20T00:00:00.000Z',
+    });
+
+    const response = await request(app).put('/api/journeys/journey-001').send({
+      name: 'Connexion',
+      startUrl: 'https://example.com',
+      steps: [{ id: 'step-1', action: 'fill', selector: '#password', sensitive: true }],
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockSaveJourney).toHaveBeenCalledWith(expect.objectContaining({
+      steps: [{ id: 'step-1', action: 'fill', selector: '#password', sensitive: true, secretRef: 'secret-1' }],
+    }));
+  });
+});
+
 describe('journey replay and run retrieval', () => {
   it('démarre un rejeu et expose son identifiant', async () => {
     const journey: JourneyDefinition = {

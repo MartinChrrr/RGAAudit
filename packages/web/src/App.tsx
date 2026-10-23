@@ -4,6 +4,7 @@ import PageSelection from './pages/PageSelection';
 import AuditProgress from './pages/AuditProgress';
 import Results from './pages/Results';
 import JourneyRun from './pages/JourneyRun';
+import JourneyBuilder from './pages/JourneyBuilder';
 
 export default function App() {
   return (
@@ -20,6 +21,8 @@ export default function App() {
         <Route path="/progress/:sessionId" element={<AuditProgress />} />
         <Route path="/results/:sessionId" element={<Results />} />
         <Route path="/journey-runs/:runId" element={<JourneyRun />} />
+        <Route path="/journeys/new" element={<JourneyBuilder />} />
+        <Route path="/journeys/:journeyId/edit" element={<JourneyBuilder />} />
       </Routes>
     </BrowserRouter>
   );

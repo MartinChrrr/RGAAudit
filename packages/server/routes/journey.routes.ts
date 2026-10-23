@@ -103,6 +103,33 @@ journeyRouter.post('/api/journeys', validateBody(journeyInputSchema), asyncHandl
   res.status(201).json({ journey: redactJourney(journey) });
 }));
 
+journeyRouter.put('/api/journeys/:journeyId', validateBody(journeyInputSchema), asyncHandler(async (req: Request, res: Response) => {
+  const journeyId = String(req.params.journeyId);
+  const current = await loadJourney(journeyId);
+  if (!current) throw new HttpError(404, 'Parcours introuvable.');
+
+  const validationError = validateJourneySteps(req.body.steps);
+  if (validationError) throw new HttpError(400, validationError);
+  const steps: JourneyStep[] = req.body.steps.map((step: Omit<JourneyStep, 'id'> & { id?: string }, index: number): JourneyStep => {
+    const id = step.id ?? `step-${index + 1}`;
+    const previous = current.steps.find((candidate) => candidate.id === id);
+    return step.sensitive && step.value === undefined && previous?.sensitive && previous.secretRef
+      ? { ...step, id, secretRef: previous.secretRef }
+      : { ...step, id };
+  });
+  const normalizedValidationError = validateJourneySteps(steps);
+  if (normalizedValidationError) throw new HttpError(400, normalizedValidationError);
+
+  const journey: JourneyDefinition = {
+    ...current,
+    name: req.body.name,
+    startUrl: req.body.startUrl,
+    steps,
+  };
+  await saveJourney(journey);
+  res.json({ journey: redactJourney(journey) });
+}));
+
 journeyRouter.get('/api/journeys/:journeyId', asyncHandler(async (req, res) => {
   const journey = await loadJourney(String(req.params.journeyId));
   if (!journey) throw new HttpError(404, 'Parcours introuvable.');

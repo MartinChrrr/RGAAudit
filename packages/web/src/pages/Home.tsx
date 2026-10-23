@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { t } from '../locales';
 
 export default function Home() {
@@ -120,6 +120,10 @@ export default function Home() {
               </button>
             </div>
           </form>
+
+          <Link to="/journeys/new" className="mt-4 block text-center text-sm font-medium text-primary-700 underline">
+            {t('home.createJourney')}
+          </Link>
 
           {sitemapNotFound && (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
