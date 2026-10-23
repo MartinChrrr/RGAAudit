@@ -19,8 +19,8 @@ reportRouter.get('/api/report/:sessionId', asyncHandler(async (req, res) => {
 
   const reviews = await loadReviews(sessionId);
   const publicReport = toPublicReportData(buildReportFromSession(session, reviews), sessionId);
-  const { report, allCollected, contrastViolations, heuristicFindings, review } = publicReport;
-  res.json({ ...report, allCollected, contrastViolations, heuristicFindings, review });
+  const { report, allCollected, contrastViolations, extractorRuns, heuristicFindings, review } = publicReport;
+  res.json({ ...report, allCollected, contrastViolations, extractorRuns, heuristicFindings, review });
 }));
 
 // GET /api/report/:sessionId/html

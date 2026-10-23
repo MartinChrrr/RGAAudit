@@ -17,7 +17,7 @@ Aucun log côté serveur (ni audits lancés, ni erreurs, ni PDF générés). Ajo
 ## P2
 
 ### Système d'extracteurs d'annexes par thème
-`extractContrastViolations` dans `report.service.ts` est hardcodé pour les critères 3.2/3.3. Quand on passera à 106 critères, il faudra des annexes détaillées pour d'autres thèmes (tableaux, formulaires, navigation...). Prévoir un système d'extracteurs pluggables par thème.
+Le socle `packages/core/report/extractors.ts` fournit désormais un contrat versionné, un plafond d'éléments et un indicateur de troncature. Le registre doit être étendu aux prochaines annexes (tableaux, formulaires, navigation) au fil des stories, sans contourner cette limite ni la redaction serveur.
 
 ### Version injectée au build plutôt que readFileSync
 `report.service.ts` lit `package.json` avec `readFileSync` + `import.meta.url` au boot. Fragile si on déplace le fichier. Préférer une constante injectée au build (define plugin Vite/esbuild) ou un simple `export const VERSION = '0.1.0'` dans `config.ts`.

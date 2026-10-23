@@ -212,6 +212,15 @@ describe('buildReportFromSession', () => {
 
     const data = buildReportFromSession(session);
 
+    expect(data.extractorRuns).toEqual([
+      expect.objectContaining({
+        extractorId: 'contrast-violations',
+        extractorVersion: 1,
+        schemaVersion: 1,
+        itemCount: 0,
+        truncated: false,
+      }),
+    ]);
     expect(data.report.coverage).toMatchObject({
       total: 106,
       integrated: 33,

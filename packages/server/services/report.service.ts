@@ -19,6 +19,7 @@ import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
 import type { AxeElement } from '@rgaaudit/core/engines/engine.interface';
 import type { CollectedData } from '@rgaaudit/core/analyzer/data-collector';
 import type { PageComparison } from '@rgaaudit/core/report/comparison';
+import { runReportExtractor, type ReportExtractor } from '@rgaaudit/core/report/extractors';
 import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
 import {
   aggregateHumanStatus,
@@ -48,6 +49,14 @@ export interface ContrastViolationItem {
   bgColor: string;
 }
 
+export interface ReportExtractorRunMetadata {
+  schemaVersion: number;
+  extractorId: string;
+  extractorVersion: number;
+  itemCount: number;
+  truncated: boolean;
+}
+
 export interface ReportData {
   report: ReturnType<typeof buildReport>;
   mappedPages: MappedPage[];
@@ -62,6 +71,7 @@ export interface ReportData {
     collectedData: CollectedData | null;
   }>;
   contrastViolations: ContrastViolationItem[];
+  extractorRuns: ReportExtractorRunMetadata[];
   heuristicFindings: Array<HeuristicFinding & {
     heuristicId: string;
     rgaaCriteria: string[];
@@ -358,7 +368,8 @@ export function buildReportFromSession(
     version: APP_VERSION,
   }, observations);
 
-  const contrastViolations = extractContrastViolations(mappedPages);
+  const contrastRun = runReportExtractor(CONTRAST_EXTRACTOR, mappedPages);
+  const contrastViolations = contrastRun.items;
   const heuristicFindings = Object.values(session.results).flatMap((page) =>
     (page.heuristicResults ?? []).flatMap((result) =>
       result.findings.map((finding) => ({
@@ -371,7 +382,21 @@ export function buildReportFromSession(
   );
   const review = buildReviewData(mappedPages, reviewState);
 
-  return { report, mappedPages, allCollected: observations, contrastViolations, heuristicFindings, review };
+  return {
+    report,
+    mappedPages,
+    allCollected: observations,
+    contrastViolations,
+    extractorRuns: [{
+      schemaVersion: contrastRun.schemaVersion,
+      extractorId: contrastRun.extractorId,
+      extractorVersion: contrastRun.extractorVersion,
+      itemCount: contrastRun.items.length,
+      truncated: contrastRun.truncated,
+    }],
+    heuristicFindings,
+    review,
+  };
 }
 
 function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): ReviewData {
@@ -504,7 +529,18 @@ function getProofStatus(criterion: MappedPage['criteria'][number]): ReviewCriter
   return 'not_required';
 }
 
-function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolationItem[] {
+const CONTRAST_EXTRACTOR: ReportExtractor<MappedPage[], ContrastViolationItem> = {
+  id: 'contrast-violations',
+  version: 1,
+  maxItems: 2_000,
+  extract: (mappedPages) => collectContrastViolations(mappedPages),
+};
+
+export function extractContrastViolations(mappedPages: MappedPage[]): ContrastViolationItem[] {
+  return runReportExtractor(CONTRAST_EXTRACTOR, mappedPages).items;
+}
+
+function collectContrastViolations(mappedPages: MappedPage[]): ContrastViolationItem[] {
   const contrastRules = ['color-contrast', 'color-contrast-enhanced'];
   const rgaaIdByRule: Record<string, string> = {
     'color-contrast': '3.2',
