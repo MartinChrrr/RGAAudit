@@ -3,7 +3,13 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Report, AggregatedCriterion } from '../mapping/mapper';
-import type { CollectedData } from '../analyzer/data-collector';
+import type {
+  CollectedData,
+  FormDataItem,
+  MediaData,
+  SpecializedContentData,
+} from '../analyzer/data-collector';
+import { runReportExtractor, type ReportExtractor } from './extractors';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -72,6 +78,46 @@ export interface RenderOptions {
   allCollected?: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>;
   contrastViolations?: ContrastViolationItem[];
 }
+
+type CollectedPage = { url: string; pageId?: string; collectedData: CollectedData | null };
+type FormAnnexItem = { url: string; pageId?: string; form: FormDataItem };
+type MediaAnnexItem = { url: string; pageId?: string; item: MediaData };
+type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
+type ComparisonItem = NonNullable<Report['comparisons']>[number];
+
+const FORM_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], FormAnnexItem> = {
+  id: 'annex-forms',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.forms ?? []).map((form) => ({ url, pageId, form }))
+  )),
+};
+
+const MEDIA_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], MediaAnnexItem> = {
+  id: 'annex-media',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.media ?? []).map((item) => ({ url, pageId, item }))
+  )),
+};
+
+const SPECIALIZED_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], SpecializedAnnexItem> = {
+  id: 'annex-specialized-content',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.specializedContent ?? []).map((item) => ({ url, pageId, item }))
+  )),
+};
+
+const COMPARISON_EXTRACTOR: ReportExtractor<ComparisonItem[], ComparisonItem> = {
+  id: 'annex-comparisons',
+  version: 1,
+  maxItems: 2_000,
+  extract: (comparisons) => comparisons,
+};
 
 export function renderReportHtml({ report, allCollected, contrastViolations }: RenderOptions): string {
   const { metadata, limitBanner, summary, uncoveredThemes } = report;
@@ -204,10 +250,11 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
       </section>`
     : '';
 
-  const formsSection = buildFormsSection(allCollected ?? []);
-  const mediaSection = buildMediaSection(allCollected ?? []);
-  const specializedSection = buildSpecializedContentSection(allCollected ?? []);
-  const comparisonSection = buildComparisonSection(report.comparisons ?? []);
+  const collectedPages = allCollected ?? [];
+  const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
+  const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
+  const specializedSection = buildSpecializedContentSection(runReportExtractor(SPECIALIZED_ANNEX_EXTRACTOR, collectedPages).items);
+  const comparisonSection = buildComparisonSection(runReportExtractor(COMPARISON_EXTRACTOR, report.comparisons ?? []).items);
 
   const annexeDataJson = allCollected
     ? serializeForHtmlScript(allCollected)
@@ -353,10 +400,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 </html>`;
 }
 
-function buildMediaSection(allCollected: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>): string {
-  const media = allCollected.flatMap(({ url, pageId, collectedData }) => (
-    (collectedData?.media ?? []).map((item) => ({ url, pageId, item }))
-  ));
+function buildMediaSection(media: MediaAnnexItem[]): string {
   if (media.length === 0) return '';
 
   const rows = media.map(({ url, pageId, item }) => `
@@ -401,10 +445,7 @@ function buildMediaSection(allCollected: Array<{ url: string; pageId?: string; c
     </section>`;
 }
 
-function buildSpecializedContentSection(allCollected: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>): string {
-  const items = allCollected.flatMap(({ url, pageId, collectedData }) => (
-    (collectedData?.specializedContent ?? []).map((item) => ({ url, pageId, item }))
-  ));
+function buildSpecializedContentSection(items: SpecializedAnnexItem[]): string {
   if (items.length === 0) return '';
 
   const reviewCount = items.filter(({ item }) => item.status === 'review_required').length;
@@ -440,7 +481,7 @@ function buildSpecializedContentSection(allCollected: Array<{ url: string; pageI
     </section>`;
 }
 
-function buildComparisonSection(comparisons: NonNullable<Report['comparisons']>): string {
+function buildComparisonSection(comparisons: ComparisonItem[]): string {
   if (comparisons.length === 0) return '';
   const rows = comparisons.map((comparison) => `
     <tr>
@@ -462,10 +503,7 @@ function buildComparisonSection(comparisons: NonNullable<Report['comparisons']>)
     </section>`;
 }
 
-function buildFormsSection(allCollected: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>): string {
-  const forms = allCollected.flatMap(({ url, pageId, collectedData }) => (
-    (collectedData?.forms ?? []).map((form) => ({ url, pageId, form }))
-  ));
+function buildFormsSection(forms: FormAnnexItem[]): string {
   if (forms.length === 0) return '';
 
   const sections = forms.map(({ url, pageId, form }) => {
