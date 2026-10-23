@@ -115,6 +115,48 @@ export interface HeadingTree {
   flags: string[];
 }
 
+export interface StructureTableData {
+  selector: string;
+  dataFeatures: string[];
+  flags: string[];
+}
+
+export interface StructureFieldGroupData {
+  selector: string;
+  legend: string | null;
+  controlCount: number;
+  flags: string[];
+}
+
+export interface StructureColorData {
+  selector: string;
+  color: string | null;
+  backgroundColor: string | null;
+  flags: string[];
+}
+
+export interface StructureLandmarkData {
+  selector: string;
+  role: string;
+  accessibleName: string | null;
+  flags: string[];
+}
+
+/** Evidence shared by the DOM/CSS/form/navigation criteria of lot 1. */
+export interface StructureData {
+  pageFlags: string[];
+  tables: StructureTableData[];
+  styles: {
+    stylesheetCount: number;
+    inlineStyleCount: number;
+    presentationMarkupCount: number;
+    flags: string[];
+  };
+  colors: StructureColorData[];
+  fieldGroups: StructureFieldGroupData[];
+  landmarks: StructureLandmarkData[];
+}
+
 export interface FormControlData {
   selector: string;
   tagName: string;
@@ -156,6 +198,8 @@ export interface CollectedData {
   frames: FrameData[];
   links: LinkData[];
   headings: HeadingTree;
+  /** DOM/CSS/form/navigation evidence for the foundational lot-1 criteria. */
+  structure?: StructureData;
   /** Form fields, labels, help instructions and observable validation messages. */
   forms?: FormDataItem[];
   /** Optional for backwards-compatible persisted sessions. */
@@ -979,6 +1023,151 @@ export async function collectHeadings(page: Page): Promise<HeadingTree> {
 }
 
 // ---------------------------------------------------------------------------
+// collectStructure
+// ---------------------------------------------------------------------------
+
+export async function collectStructure(page: Page): Promise<StructureData> {
+  return page.evaluate(() => {
+    const MAX_ITEMS = 200;
+    const normalize = (value: string | null | undefined, max = 300): string | null => {
+      const text = (value ?? '').replace(/\s+/g, ' ').trim();
+      return text ? text.slice(0, max) : null;
+    };
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+    const referencedText = (element: Element): string | null => {
+      const ids = (element.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+      return normalize(ids.map((id) => document.getElementById(id)?.textContent ?? '').join(' '))
+        ?? normalize(element.getAttribute('aria-label'))
+        ?? normalize(element.getAttribute('title'));
+    };
+
+    const pageFlags = ['HTML_VALIDITY_REVIEW'];
+    const doctype = document.doctype?.name?.toLowerCase() ?? null;
+    if (!doctype || doctype !== 'html') pageFlags.push('DOCTYPE_INVALID');
+
+    const tables = Array.from(document.querySelectorAll('table')).slice(0, MAX_ITEMS).map((table) => {
+      const dataFeatures = ['caption', 'th', 'scope', 'headers', 'summary']
+        .filter((attribute) => attribute === 'caption'
+          ? Boolean(table.querySelector('caption'))
+          : attribute === 'th'
+            ? Boolean(table.querySelector('th'))
+            : table.hasAttribute(attribute));
+      return {
+        selector: getUniqueSelector(table),
+        dataFeatures,
+        flags: dataFeatures.length > 0
+          ? ['TABLE_LAYOUT_DATA_FEATURE']
+          : ['TABLE_LAYOUT_NO_DATA_FEATURE'],
+      };
+    });
+
+    const stylesheetCount = document.querySelectorAll('link[rel~="stylesheet"], style').length;
+    const inlineStyleCount = document.querySelectorAll('[style]').length;
+    const presentationMarkupCount = document.querySelectorAll(
+      'font, center, [align], [bgcolor], [color], [cellpadding], [cellspacing], [border]',
+    ).length;
+    const styleFlags = [stylesheetCount > 0 ? 'STYLESHEET_PRESENT' : 'STYLESHEET_ABSENT'];
+    if (inlineStyleCount > 0) styleFlags.push('INLINE_STYLE_PRESENT');
+    if (presentationMarkupCount > 0) styleFlags.push('PRESENTATION_MARKUP_DETECTED');
+
+    const colors = Array.from(document.querySelectorAll('*')).slice(0, MAX_ITEMS).flatMap((element) => {
+      const style = getComputedStyle(element);
+      const explicitColor = element.hasAttribute('style') && /(?:^|;)\s*color\s*:/i.test(element.getAttribute('style') ?? '');
+      const explicitBackground = element.hasAttribute('style') && /background(?:-color)?\s*:/i.test(element.getAttribute('style') ?? '');
+      if (!explicitColor && !explicitBackground) return [];
+      const flags = ['COLOR_DECLARATION_REVIEW'];
+      if (explicitColor && !explicitBackground) flags.push('COLOR_FOREGROUND_ONLY');
+      if (!explicitColor && explicitBackground) flags.push('COLOR_BACKGROUND_ONLY');
+      if (explicitColor && explicitBackground) flags.push('COLOR_BOTH_DECLARED');
+      return [{
+        selector: getUniqueSelector(element),
+        color: normalize(style.color),
+        backgroundColor: normalize(style.backgroundColor),
+        flags,
+      }];
+    });
+
+    const fieldGroups = Array.from(document.querySelectorAll('fieldset, [role="group"]'))
+      .slice(0, MAX_ITEMS)
+      .map((group) => {
+        const legend = normalize(group.querySelector('legend')?.textContent)
+          ?? referencedText(group);
+        const controlCount = group.querySelectorAll('input:not([type="hidden"]), select, textarea').length;
+        return {
+          selector: getUniqueSelector(group),
+          legend,
+          controlCount,
+          flags: group.tagName.toLowerCase() === 'fieldset'
+            ? [legend ? 'FIELDSET_LEGEND_PRESENT' : 'FIELDSET_LEGEND_ABSENT']
+            : [legend ? 'GROUP_LEGEND_PRESENT' : 'GROUP_LEGEND_REVIEW'],
+        };
+      });
+
+    const roleFor = (element: Element): string | null => {
+      const explicitRole = element.getAttribute('role')?.trim().toLowerCase();
+      if (explicitRole && ['banner', 'complementary', 'contentinfo', 'main', 'navigation', 'region', 'search'].includes(explicitRole)) {
+        return explicitRole;
+      }
+      const tag = element.tagName.toLowerCase();
+      if (tag === 'header') return 'banner';
+      if (tag === 'nav') return 'navigation';
+      if (tag === 'main') return 'main';
+      if (tag === 'footer') return 'contentinfo';
+      if (tag === 'aside') return 'complementary';
+      if (tag === 'form' && element.getAttribute('role') === 'search') return 'search';
+      return null;
+    };
+    const landmarks = Array.from(document.querySelectorAll('header, nav, main, footer, aside, form[role="search"], [role]'))
+      .slice(0, MAX_ITEMS)
+      .flatMap((element) => {
+        const role = roleFor(element);
+        if (!role) return [];
+        return [{
+          selector: getUniqueSelector(element),
+          role,
+          accessibleName: referencedText(element),
+          flags: ['LANDMARK_PRESENT'],
+        }];
+      });
+
+    const roles = new Set(landmarks.map((landmark) => landmark.role));
+    for (const [role, flag] of [
+      ['banner', 'LANDMARK_BANNER_MISSING'],
+      ['navigation', 'LANDMARK_NAVIGATION_MISSING'],
+      ['main', 'LANDMARK_MAIN_MISSING'],
+      ['contentinfo', 'LANDMARK_CONTENTINFO_MISSING'],
+      ['search', 'LANDMARK_SEARCH_MISSING'],
+    ] as const) {
+      if (!roles.has(role)) pageFlags.push(flag);
+    }
+    if (landmarks.filter((landmark) => landmark.role === 'main').length > 1) {
+      pageFlags.push('LANDMARK_MULTIPLE_MAIN');
+    }
+
+    return {
+      pageFlags,
+      tables,
+      styles: { stylesheetCount, inlineStyleCount, presentationMarkupCount, flags: styleFlags },
+      colors,
+      fieldGroups,
+      landmarks,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // collectForms
 // ---------------------------------------------------------------------------
 
@@ -1146,16 +1335,17 @@ export async function collectFigureCaptions(page: Page): Promise<FigureCaptionDa
 // ---------------------------------------------------------------------------
 
 export async function collectAll(page: Page): Promise<CollectedData> {
-  const [images, media, frames, links, headings, forms, figcaptions] = await Promise.all([
+  const [images, media, frames, links, headings, structure, forms, figcaptions] = await Promise.all([
     collectImages(page),
     collectMedia(page),
     collectFrames(page),
     collectLinks(page),
     collectHeadings(page),
+    collectStructure(page),
     collectForms(page),
     collectFigureCaptions(page),
   ]);
 
   const specializedContent = await collectSpecializedContent(page, media, images);
-  return { images, media, specializedContent, frames, links, headings, forms, figcaptions };
+  return { images, media, specializedContent, frames, links, headings, structure, forms, figcaptions };
 }

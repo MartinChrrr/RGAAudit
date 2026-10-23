@@ -774,8 +774,10 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "dataCollectorFlags": ["TABLE_LAYOUT_DATA_FEATURE", "TABLE_LAYOUT_NO_DATA_FEATURE"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer les éléments propres aux tableaux de données avec l’usage réel du tableau de mise en forme."]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -982,8 +984,10 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "dataCollectorFlags": ["HTML_VALIDITY_REVIEW", "DOCTYPE_INVALID"],
+      "heuristicPatterns": {
+        "manualChecks": ["Soumettre le code généré au validateur adapté au type de document et conserver la preuve de résultat."]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -1248,8 +1252,10 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "dataCollectorFlags": ["STYLESHEET_PRESENT", "STYLESHEET_ABSENT", "INLINE_STYLE_PRESENT", "PRESENTATION_MARKUP_DETECTED"],
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier que la présentation de l’information est contrôlée par des feuilles de styles et non par des éléments de présentation."]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -1312,8 +1318,10 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "dataCollectorFlags": ["COLOR_DECLARATION_REVIEW", "COLOR_FOREGROUND_ONLY", "COLOR_BACKGROUND_ONLY", "COLOR_BOTH_DECLARED"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer les déclarations de couleur de premier plan et d’arrière-plan avec le rendu et le contexte visuel."]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -1552,8 +1560,10 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "dataCollectorFlags": ["FIELDSET_LEGEND_ABSENT", "FIELDSET_LEGEND_PRESENT", "GROUP_LEGEND_REVIEW", "GROUP_LEGEND_PRESENT"],
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier que chaque regroupement de champs de même nature possède une légende pertinente."]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {
@@ -1760,8 +1770,10 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
+      "dataCollectorFlags": ["LANDMARK_PRESENT", "LANDMARK_BANNER_MISSING", "LANDMARK_NAVIGATION_MISSING", "LANDMARK_MAIN_MISSING", "LANDMARK_CONTENTINFO_MISSING", "LANDMARK_SEARCH_MISSING", "LANDMARK_MULTIPLE_MAIN"],
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier que les zones récurrentes sont identifiables et atteignables ou évitables au clavier."]
+      },
       "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
     },
     {

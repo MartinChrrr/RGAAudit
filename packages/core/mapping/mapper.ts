@@ -464,6 +464,40 @@ function extractElements(
     }
   }
 
+  // Shared DOM/CSS/form/navigation evidence for lot 1.
+  const structure = collectedData.structure;
+  if (structure) {
+    for (const [elementIndex, table] of structure.tables.entries()) {
+      const matchingFlags = table.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: table.selector, flags: matchingFlags, elementIndex });
+      }
+    }
+    for (const group of structure.fieldGroups) {
+      const matchingFlags = group.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: group.selector, flags: matchingFlags });
+      }
+    }
+    for (const color of structure.colors) {
+      const matchingFlags = color.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: color.selector, flags: matchingFlags });
+      }
+    }
+    for (const landmark of structure.landmarks) {
+      const matchingFlags = landmark.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: landmark.selector, flags: matchingFlags });
+      }
+    }
+    for (const flag of [...structure.pageFlags, ...structure.styles.flags]) {
+      if (relevantFlags.has(flag)) {
+        elements.push({ selector: 'document', flags: [flag] });
+      }
+    }
+  }
+
   return elements;
 }
 
