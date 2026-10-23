@@ -21,8 +21,8 @@ réintroduire un critère déjà présent dans le lot 0.
 
 | Lot runtime | Nombre | Identifiants RGAA |
 |---:|---:|---|
-| 0 — socle intégré | 27 | 1.1, 1.2, 1.9, 2.1, 3.2, 3.3, 5.4, 5.6, 6.1, 6.2, 7.1, 8.1, 8.3, 8.4, 8.5, 8.6, 8.8, 8.9, 9.1, 9.3, 10.6, 10.12, 11.1, 11.13, 12.7, 12.10, 13.9 |
-| 1 — prochain incrément | 6 | 5.8, 8.2, 10.1, 10.5, 11.6, 12.6 |
+| 0 — socle intégré | 33 | 1.1, 1.2, 1.9, 2.1, 3.2, 3.3, 5.4, 5.6, 5.8, 6.1, 6.2, 7.1, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.8, 8.9, 9.1, 9.3, 10.1, 10.5, 10.6, 10.12, 11.1, 11.6, 11.13, 12.6, 12.7, 12.10, 13.9 |
+| 1 — prochain incrément | 0 | — |
 | 2 — collecteurs et preuves | 28 | 1.3, 2.2, 4.10, 5.1–5.7, 8.7, 8.10, 9.2, 9.4, 10.2–10.4, 10.7, 10.8, 10.11, 10.14, 11.2, 11.4–11.9, 12.8, 13.5, 13.8 |
 | 3 — parcours et comparaisons | 17 | 4.7, 7.4, 7.5, 10.13, 11.3, 11.10–11.12, 12.1–12.5, 12.11, 13.1, 13.2, 13.6 |
 | 4 — interactions complexes | 13 | 3.1, 4.11–4.13, 7.2, 7.3, 10.9, 10.10, 12.9, 13.7, 13.10–13.12 |
@@ -64,7 +64,7 @@ Les tableaux emploient des intitulés abrégés pour rester lisibles. L'identifi
 
 | Lot | Contenu | Critères | Pourquoi cet ordre |
 |---|---|---:|---|
-| **0** | Consolider l'existant | 27 | Sécuriser ce qui est déjà visible avant d'augmenter le compteur. |
+| **0** | Consolider l'existant | 33 | Sécuriser ce qui est déjà visible avant d'augmenter le compteur. |
 | **1** | Gains rapides DOM / axe-core | 6 | Faible coût, preuves fiables, briques réutilisables par les lots suivants. |
 | **2** | Collecteurs et preuves visuelles | 28 | Forte valeur pour l'auditeur sans prétendre automatiser la pertinence. |
 | **3** | Parcours, formulaires et comparaisons | 17 | Demande un moteur de scénarios et des analyses inter-pages. |
@@ -76,7 +76,7 @@ Après le lot 1, RGAAudit afficherait **33 critères intégrés sur 106**. Aprè
 ## Lot 0 — critères déjà intégrés
 
 Les 12 critères ci-dessous détaillent les premiers contrôles historiques du
-socle. La liste exhaustive des 27 critères intégrés est celle du registre
+socle. La liste exhaustive des 33 critères intégrés est celle du registre
 canonique ci-dessus ; la colonne « suite » évite de considérer un critère
 partiel comme définitivement terminé.
 
@@ -95,7 +95,7 @@ partiel comme définitivement terminé.
 | **8.9** | Les balises ne sont-elles pas utilisées uniquement à des fins de présentation ? | **Intégré, partiel** | E2 | H2 | Heuristiques de faux titres, paragraphes et listes. Étendre aux autres détournements de balises et présenter la preuve visuelle. |
 | **9.1** | L'information est-elle structurée par une utilisation appropriée des titres ? | **Intégré, partiel** | E2 | H2 | axe et arbre des titres. Un saut de niveau est un indice, pas à lui seul une non-conformité ; garder la décision humaine. |
 
-### Garde-fous avant le lot 1
+### Garde-fous de progression
 
 Les métadonnées `coverage`, `humanLevel` et `implementationLot`, l'affichage
 des 106 critères et les contrôles d'identifiants uniques existent déjà dans le
@@ -106,13 +106,12 @@ second registre.
 2. Interdire qu'une absence de violation axe produise à elle seule une conformité RGAA lorsque tous les tests du critère ne sont pas couverts.
 3. Maintenir le test garantissant que chaque identifiant RGAA apparaît une seule fois et que le total de référence reste 106.
 
-## Lot 1 — gains rapides DOM et axe-core
+## Lot 1 — gains rapides DOM et axe-core (terminé)
 
-Le lot runtime ne contient plus que six critères réellement non couverts par le
-lot 0 : **5.8, 8.2, 10.1, 10.5, 11.6 et 12.6**. Les critères 8.1, 8.3, 8.4,
-8.8, 9.3, 10.6, 10.12, 11.1, 12.7, 12.10, 13.9, 1.9, 5.4 et 5.6 sont
-déjà intégrés au lot 0 et doivent être traités comme du hardening ou des
-extensions, jamais comme de nouvelles entrées de couverture.
+Les six critères **5.8, 8.2, 10.1, 10.5, 11.6 et 12.6** ont été intégrés au
+registre lot 0. Le collecteur structurel fournit leurs preuves localisées, mais
+leurs décisions restent humaines. Ils doivent désormais être traités comme du
+hardening ou des extensions, jamais comme de nouvelles entrées de couverture.
 
 | Ordre | Critère | Objet du critère (résumé) | Difficulté | Humain | Première tranche utile |
 |---:|---|---|---|---|---|

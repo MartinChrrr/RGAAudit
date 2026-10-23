@@ -15,6 +15,21 @@ export type HumanStatus =
   | 'non_compliant'
   | 'not_applicable';
 
+/** Lifecycle facts displayed alongside machine and human decisions. */
+export type CoverageStatus =
+  | 'planned'
+  | 'integrated'
+  | 'machine_signal'
+  | 'human_validated'
+  | 'not_tested';
+
+export interface CoverageStatusInput {
+  implementationLot: number;
+  coverage: CriterionCoverage;
+  humanStatus: HumanStatus;
+  machineSignal: boolean;
+}
+
 export interface AuditDecision {
   pageUrl: string;
   criterionId: string;
@@ -49,6 +64,26 @@ export interface AuditReviewState {
   /** Previous annex image decisions, retained for the same audit trail guarantee. */
   imageDecisionHistory?: ImageAuditDecision[];
   updatedAt: string;
+}
+
+/**
+ * Derive lifecycle badges without collapsing them into a single verdict.
+ *
+ * A criterion can be integrated and provide a machine signal while still
+ * requiring a human decision. Planned criteria are deliberately kept out of
+ * the machine-signal state until their implementation lot is delivered.
+ */
+export function coverageStatusesForCriterion(input: CoverageStatusInput): CoverageStatus[] {
+  const statuses: CoverageStatus[] = [
+    input.implementationLot === 0 ? 'integrated' : 'planned',
+  ];
+
+  if (input.machineSignal) {
+    statuses.push('machine_signal');
+  }
+
+  statuses.push(input.humanStatus === 'not_tested' ? 'not_tested' : 'human_validated');
+  return statuses;
 }
 
 export function machineStatusFromLegacyStatus(

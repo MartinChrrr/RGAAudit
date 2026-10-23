@@ -22,9 +22,11 @@ import type { PageComparison } from '@rgaaudit/core/report/comparison';
 import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
 import {
   aggregateHumanStatus,
+  coverageStatusesForCriterion,
   machineStatusFromLegacyStatus,
   type AuditDecision,
   type AuditReviewState,
+  type CoverageStatus,
   type HumanStatus,
   type ImageAuditDecision,
   type MachineStatus,
@@ -75,6 +77,7 @@ export interface ReviewCriterion {
   coverage: CriterionCoverage;
   humanLevel: HumanLevel;
   implementationLot: ImplementationLot;
+  coverageStatuses: CoverageStatus[];
   wcag: string[];
   machineStatus: MachineStatus;
   humanStatus: HumanStatus;
@@ -121,6 +124,7 @@ export interface ReviewData {
   pages: Array<{ url: string; pageId?: string; criteria: ReviewCriterion[] }>;
   criteria: Array<{
     rgaaId: string;
+    coverageStatuses: CoverageStatus[];
     machineStatus: MachineStatus;
     humanStatus: HumanStatus;
   }>;
@@ -381,6 +385,7 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
     url: page.url,
     criteria: page.criteria.map((criterion): ReviewCriterion => {
       const decision = decisionByCriterion.get(`${page.url}\u001f${criterion.rgaaId}`);
+      const mappingCriterion = getCriterion(criterion.rgaaId);
       return {
         rgaaId: criterion.rgaaId,
         title: criterion.title,
@@ -388,7 +393,14 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
         coverage: criterion.coverage,
         humanLevel: criterion.humanLevel,
         implementationLot: criterion.implementationLot,
-        wcag: getCriterion(criterion.rgaaId)?.wcag ?? [],
+        coverageStatuses: coverageStatusesForCriterion({
+          implementationLot: criterion.implementationLot,
+          coverage: criterion.coverage,
+          humanStatus: decision?.status ?? 'not_tested',
+          machineSignal: (mappingCriterion?.axeRules.length ?? 0) > 0
+            || (mappingCriterion?.dataCollectorFlags.length ?? 0) > 0,
+        }),
+        wcag: mappingCriterion?.wcag ?? [],
         machineStatus: machineStatusFromLegacyStatus(criterion.status, criterion.coverage),
         humanStatus: decision?.status ?? 'not_tested',
         comment: decision?.comment ?? '',
@@ -432,10 +444,20 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
         : pageCriteria.some((criterion) => criterion.machineStatus === 'needs_review')
           ? 'needs_review'
           : 'no_issue_detected';
+      const humanStatus = aggregateHumanStatus(pageCriteria.map((criterion) => criterion.humanStatus));
+      const mappingCriterion = getCriterion(rgaaId);
       return {
         rgaaId,
+        coverageStatuses: mappingCriterion
+          ? coverageStatusesForCriterion({
+            implementationLot: mappingCriterion.implementationLot,
+            coverage: mappingCriterion.coverage,
+            humanStatus,
+            machineSignal: mappingCriterion.axeRules.length > 0 || mappingCriterion.dataCollectorFlags.length > 0,
+          })
+          : ['not_tested'],
         machineStatus,
-        humanStatus: aggregateHumanStatus(pageCriteria.map((criterion) => criterion.humanStatus)),
+        humanStatus,
       };
     }),
     imageDecisions: state?.imageDecisions ?? [],

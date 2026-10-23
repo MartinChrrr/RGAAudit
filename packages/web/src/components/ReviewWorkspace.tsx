@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 export type MachineStatus = 'probable_issue' | 'needs_review' | 'no_issue_detected';
 export type HumanStatus = 'not_tested' | 'compliant' | 'non_compliant' | 'not_applicable';
+export type CoverageStatus = 'planned' | 'integrated' | 'machine_signal' | 'human_validated' | 'not_tested';
 export type CriterionCoverage = 'full' | 'partial' | 'manual_shell';
 export type HumanLevel = 'H0' | 'H1' | 'H2' | 'H3';
 
@@ -22,6 +23,7 @@ export interface ReviewCriterion {
   coverage: CriterionCoverage;
   humanLevel: HumanLevel;
   implementationLot: number;
+  coverageStatuses?: CoverageStatus[];
   wcag: string[];
   machineStatus: MachineStatus;
   humanStatus: HumanStatus;
@@ -149,6 +151,22 @@ const coverageColors: Record<CriterionCoverage, string> = {
   full: 'bg-blue-50 text-blue-800',
   partial: 'bg-amber-50 text-amber-900',
   manual_shell: 'bg-gray-100 text-gray-700',
+};
+
+const coverageStatusLabels: Record<CoverageStatus, string> = {
+  planned: 'Planifié',
+  integrated: 'Intégré',
+  machine_signal: 'Signal machine',
+  human_validated: 'Validé humainement',
+  not_tested: 'Non testé',
+};
+
+const coverageStatusColors: Record<CoverageStatus, string> = {
+  planned: 'bg-gray-100 text-gray-700',
+  integrated: 'bg-blue-50 text-blue-800',
+  machine_signal: 'bg-indigo-50 text-indigo-800',
+  human_validated: 'bg-green-50 text-green-800',
+  not_tested: 'bg-amber-50 text-amber-900',
 };
 
 function decisionKey(pageId: string, criterionId: string): string {
@@ -332,6 +350,11 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                     <span className={`rounded-full px-2 py-1 text-xs font-medium ${coverageColors[criterion.coverage]}`}>
                       {coverageLabels[criterion.coverage]}
                     </span>
+                    {(criterion.coverageStatuses ?? []).map((status) => (
+                      <span key={status} className={`rounded-full px-2 py-1 text-xs font-medium ${coverageStatusColors[status]}`}>
+                        {coverageStatusLabels[status]}
+                      </span>
+                    ))}
                     {criterion.humanStatus === 'not_tested' ? (
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${machineColors[criterion.machineStatus]}`}>
                         {machineLabels[criterion.machineStatus]}

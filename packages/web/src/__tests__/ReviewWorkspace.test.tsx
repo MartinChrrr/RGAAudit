@@ -151,6 +151,29 @@ describe('ReviewWorkspace', () => {
     expect(screen.getByText('À vérifier')).toBeInTheDocument();
   });
 
+  it('affiche les étapes de couverture sans les confondre avec le verdict humain', () => {
+    render(
+      <ReviewWorkspace
+        sessionId="session-1"
+        review={{
+          ...review,
+          pages: [{
+            ...review.pages[0],
+            criteria: [{
+              ...review.pages[0].criteria[0],
+              coverageStatuses: ['integrated', 'machine_signal', 'not_tested'],
+            }],
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Intégré')).toBeInTheDocument();
+    expect(screen.getByText('Signal machine')).toBeInTheDocument();
+    expect(screen.getByText('Non testé')).toBeInTheDocument();
+    expect(screen.getByText('À vérifier')).toBeInTheDocument();
+  });
+
   it('affiche l’historique quand une décision a été révisée', () => {
     render(
       <ReviewWorkspace

@@ -58,10 +58,10 @@ describe('loadMapping', () => {
     expect(mapping.coveredThemes).toContain('Couleurs');
 
     const implemented = mapping.criteria.filter((criterion) => criterion.implementationLot === 0);
-    expect(implemented).toHaveLength(27);
+    expect(implemented).toHaveLength(33);
     expect([0, 1, 2, 3, 4, 5].map((lot) => (
       mapping.criteria.filter((criterion) => criterion.implementationLot === lot).length
-    ))).toEqual([27, 6, 28, 17, 13, 15]);
+    ))).toEqual([33, 0, 28, 17, 13, 15]);
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.1')).toMatchObject({
       coverage: 'partial',
       humanLevel: 'H2',
@@ -88,7 +88,7 @@ describe('loadMapping', () => {
     expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '8.2')).toMatchObject({
       coverage: 'manual_shell',
       evaluationStrategy: 'MANUAL_ONLY',
-      implementationLot: 1,
+      implementationLot: 0,
     });
     expect(mapping.criteria.every((criterion) => (
       ['full', 'partial', 'manual_shell'].includes(criterion.coverage)
@@ -552,7 +552,7 @@ describe('aggregateResults', () => {
     expect(summary.coverage).toEqual(summarizeCoverage(loadMapping().criteria));
     expect(summary.coverage).toMatchObject({
       total: 106,
-      integrated: 27,
+      integrated: 33,
       machineSignal: 26,
       humanReview: 101,
     });
@@ -730,10 +730,10 @@ describe('buildReport', () => {
     expect(report.metadata.url).toBe('http://example.com');
     expect(report.metadata.coveredThemes).toContain('Images');
     expect(report.metadata.totalRgaaCriteria).toBe(106);
-    expect(report.metadata.coveredCriteria).toBe(27);
+    expect(report.metadata.coveredCriteria).toBe(33);
     expect(report.coverage).toMatchObject({
       total: 106,
-      integrated: 27,
+      integrated: 33,
       machineSignal: 26,
       humanReview: 101,
       full: 5,
@@ -743,7 +743,7 @@ describe('buildReport', () => {
     expect(summary.coverage).toEqual(report.coverage);
 
     // limitBanner comes from locale, not hardcoded
-    expect(report.limitBanner).toContain('79');
+    expect(report.limitBanner).toContain('73');
     expect(report.limitBanner).toContain('106');
     expect(report.limitBanner).not.toBe('');
 

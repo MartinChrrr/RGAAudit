@@ -214,7 +214,7 @@ describe('buildReportFromSession', () => {
 
     expect(data.report.coverage).toMatchObject({
       total: 106,
-      integrated: 27,
+      integrated: 33,
       machineSignal: 26,
       humanReview: 101,
     });
@@ -224,9 +224,13 @@ describe('buildReportFromSession', () => {
     expect(criterion11).toMatchObject({
       machineStatus: 'needs_review',
       humanStatus: 'not_tested',
+      coverageStatuses: ['integrated', 'machine_signal', 'not_tested'],
       proofStatus: 'missing',
     });
     expect(criterion11?.missingProofs).toHaveLength(1);
+
+    const plannedCriterion = data.review.pages[0]?.criteria.find((criterion) => criterion.rgaaId === '13.4');
+    expect(plannedCriterion?.coverageStatuses).toEqual(['planned', 'not_tested']);
   });
 });
 
