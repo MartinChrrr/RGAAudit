@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import JourneyRun from '../pages/JourneyRun';
 
@@ -106,5 +107,68 @@ describe('JourneyRun', () => {
 
     await waitFor(() => expect(screen.getByText(/Capture désactivée à partir d’une étape sensible/i)).toBeInTheDocument());
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('enregistre une décision humaine pour une preuve liée à un critère', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          run: {
+            runId: 'run-001',
+            journeyId: 'journey-001',
+            status: 'completed',
+            startedAt: '2026-10-21T10:00:00.000Z',
+            finishedAt: '2026-10-21T10:01:00.000Z',
+            run: {
+              steps: [{
+                stepId: 'step-1',
+                action: 'click',
+                url: 'https://example.com',
+                observedAt: '2026-10-21T10:00:30.000Z',
+                title: 'Accueil',
+                evidence: [{ selector: '#main', context: 'Contenu principal', criterionIds: ['1.1'] }],
+              }],
+            },
+          },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          run: {
+            runId: 'run-001',
+            journeyId: 'journey-001',
+            status: 'completed',
+            run: {
+              steps: [{
+                stepId: 'step-1',
+                action: 'click',
+                url: 'https://example.com',
+                observedAt: '2026-10-21T10:00:30.000Z',
+                title: 'Accueil',
+                evidence: [{ selector: '#main', context: 'Contenu principal', criterionIds: ['1.1'] }],
+              }],
+              decisions: [{
+                stepId: 'step-1', evidenceIndex: 0, criterionId: '1.1', status: 'compliant', comment: 'Vérifié', reviewedAt: '2026-10-21T10:02:00.000Z',
+              }],
+            },
+          },
+        }),
+      } as Response);
+
+    renderJourney();
+
+    await waitFor(() => expect(screen.getByLabelText('Statut 1.1')).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText('Statut 1.1'), 'compliant');
+    await user.type(screen.getByLabelText('Commentaire 1.1'), 'Vérifié');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer la décision' }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith('/api/journey-runs/run-001/decision', expect.objectContaining({
+      method: 'PATCH',
+      body: expect.stringContaining('"criterionId":"1.1"'),
+    })));
+    expect(await screen.findByText('Décision enregistrée.')).toBeInTheDocument();
   });
 });

@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
-import type { JourneyDefinition, JourneyRunState } from '../../core/journey/journey';
+import type { JourneyDefinition, JourneyEvidenceDecision, JourneyRunState } from '../../core/journey/journey';
 import { config } from '../config';
 import { parseJourney } from './journey.validation';
 import { redactUrl } from '../security/url.redaction';
@@ -103,6 +103,31 @@ export function getMissingSensitiveStepIds(journey: JourneyDefinition): string[]
 
 export async function saveJourneyRun(run: JourneyRunState): Promise<void> {
   await atomicWrite(getJourneyRunPath(run.runId), run);
+}
+
+/** Persist one human decision while retaining the replaced value in the run audit trail. */
+export async function saveJourneyEvidenceDecision(
+  runId: string,
+  decision: JourneyEvidenceDecision,
+): Promise<JourneyRunState | null> {
+  const run = await loadJourneyRun(runId);
+  if (!run?.run) return null;
+
+  const decisions = run.run.decisions ?? (run.run.decisions = []);
+  const decisionIndex = decisions.findIndex((current) => (
+    current.stepId === decision.stepId
+    && current.evidenceIndex === decision.evidenceIndex
+    && current.criterionId === decision.criterionId
+  ));
+  if (decisionIndex === -1) {
+    decisions.push(decision);
+  } else {
+    const history = run.run.decisionHistory ?? (run.run.decisionHistory = []);
+    history.push(decisions[decisionIndex]);
+    decisions[decisionIndex] = decision;
+  }
+  await saveJourneyRun(run);
+  return run;
 }
 
 export async function loadJourneyRun(runId: string): Promise<JourneyRunState | null> {

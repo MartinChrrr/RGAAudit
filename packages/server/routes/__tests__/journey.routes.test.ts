@@ -9,6 +9,7 @@ const {
   mockLoadJourney,
   mockLoadJourneyRun,
   mockReadJourneyScreenshot,
+  mockSaveJourneyEvidenceDecision,
   mockRedactJourney,
   mockGetMissingSensitiveStepIds,
   mockStartJourneyReplay,
@@ -17,6 +18,7 @@ const {
   mockLoadJourney: vi.fn(),
   mockLoadJourneyRun: vi.fn(),
   mockReadJourneyScreenshot: vi.fn(),
+  mockSaveJourneyEvidenceDecision: vi.fn(),
   mockGetMissingSensitiveStepIds: vi.fn<(journey: JourneyDefinition) => string[]>(() => []),
   mockRedactJourney: vi.fn((journey: JourneyDefinition) => ({
     ...journey,
@@ -30,6 +32,7 @@ vi.mock('../../services/journey.store', () => ({
   loadJourney: mockLoadJourney,
   loadJourneyRun: mockLoadJourneyRun,
   readJourneyScreenshot: mockReadJourneyScreenshot,
+  saveJourneyEvidenceDecision: mockSaveJourneyEvidenceDecision,
   getMissingSensitiveStepIds: mockGetMissingSensitiveStepIds,
   redactJourney: mockRedactJourney,
 }));
@@ -51,6 +54,7 @@ beforeEach(() => {
   mockLoadJourney.mockResolvedValue(null);
   mockLoadJourneyRun.mockResolvedValue(null);
   mockReadJourneyScreenshot.mockResolvedValue(null);
+  mockSaveJourneyEvidenceDecision.mockResolvedValue(null);
   mockGetMissingSensitiveStepIds.mockReturnValue([]);
   mockStartJourneyReplay.mockReturnValue('run-001');
 });
@@ -319,6 +323,102 @@ describe('journey replay and run retrieval', () => {
     }]);
     expect(JSON.stringify(response.body)).not.toContain('secret-before');
     expect(JSON.stringify(response.body)).not.toContain('run-comparison-0');
+  });
+
+  it('enregistre une décision humaine sur une preuve de parcours', async () => {
+    const timestamp = new Date().toISOString();
+    const run: JourneyRunState = {
+      runId: 'run-review',
+      journeyId: 'journey-001',
+      status: 'completed',
+      startedAt: timestamp,
+      finishedAt: timestamp,
+      run: {
+        runId: 'run-review',
+        journeyId: 'journey-001',
+        startedAt: timestamp,
+        finishedAt: timestamp,
+        steps: [{
+          stepId: 'step-1',
+          action: 'click',
+          url: 'https://example.com',
+          observedAt: timestamp,
+          title: 'Accueil',
+          evidence: [{
+            selector: '#main',
+            html: '<main id="main">Accueil</main>',
+            resultId: 'result-1',
+            proofId: 'proof-1',
+            criterionIds: ['1.1'],
+            elementIndex: 0,
+          }],
+          result: null,
+        }],
+      },
+    };
+    const decision = {
+      stepId: 'step-1',
+      evidenceIndex: 0,
+      criterionId: '1.1',
+      status: 'compliant',
+      comment: 'Vérifié par l’auditeur',
+      reviewedAt: timestamp,
+    } as const;
+    mockLoadJourneyRun.mockResolvedValue(run);
+    mockSaveJourneyEvidenceDecision.mockResolvedValue({
+      ...run,
+      run: { ...run.run!, decisions: [decision] },
+    });
+
+    const response = await request(app).patch('/api/journey-runs/run-review/decision').send({
+      stepId: 'step-1',
+      evidenceIndex: 0,
+      criterionId: '1.1',
+      status: 'compliant',
+      comment: 'Vérifié par l’auditeur',
+    });
+
+    expect(response.status).toBe(200);
+    expect(mockSaveJourneyEvidenceDecision).toHaveBeenCalledWith('run-review', expect.objectContaining({
+      ...decision,
+      reviewedAt: expect.any(String),
+    }));
+    expect(response.body.run.run.decisions).toEqual([expect.objectContaining({ criterionId: '1.1', status: 'compliant' })]);
+  });
+
+  it('refuse une décision qui ne correspond pas à la preuve observée', async () => {
+    mockLoadJourneyRun.mockResolvedValue({
+      runId: 'run-review',
+      journeyId: 'journey-001',
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      run: {
+        runId: 'run-review',
+        journeyId: 'journey-001',
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        steps: [{
+          stepId: 'step-1',
+          action: 'click',
+          url: 'https://example.com',
+          observedAt: new Date().toISOString(),
+          title: 'Accueil',
+          evidence: [],
+          result: null,
+        }],
+      },
+    });
+
+    const response = await request(app).patch('/api/journey-runs/run-review/decision').send({
+      stepId: 'step-1',
+      evidenceIndex: 0,
+      criterionId: '1.1',
+      status: 'compliant',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('preuve');
+    expect(mockSaveJourneyEvidenceDecision).not.toHaveBeenCalled();
   });
 
   it('sert une capture de contexte sans exposer le chemin serveur', async () => {

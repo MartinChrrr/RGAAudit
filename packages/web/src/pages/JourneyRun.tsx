@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { t } from '../locales';
 
 type JourneyStatus = 'running' | 'completed' | 'completed_with_errors' | 'failed';
+type HumanStatus = 'not_tested' | 'compliant' | 'non_compliant' | 'not_applicable';
 type ScreenshotSkippedReason = 'sensitive_step' | 'quota' | 'too_large' | 'capture_error';
 
 interface JourneyContext {
@@ -36,6 +37,15 @@ interface JourneyStep {
   error?: string;
 }
 
+interface JourneyEvidenceDecision {
+  stepId: string;
+  evidenceIndex: number;
+  criterionId: string;
+  status: HumanStatus;
+  comment: string;
+  reviewedAt: string | null;
+}
+
 interface JourneyComparison {
   before: { url: string; pageId?: string; observedAt: string | null; stepId?: string; available: boolean; selectors: string[] };
   after: { url: string; pageId?: string; observedAt: string | null; stepId?: string; available: boolean; selectors: string[] };
@@ -56,6 +66,7 @@ interface JourneyRunResponse {
     run?: {
       steps: JourneyStep[];
       comparisons?: JourneyComparison[];
+      decisions?: JourneyEvidenceDecision[];
     };
   };
 }
@@ -84,7 +95,112 @@ function skippedReasonLabel(reason: ScreenshotSkippedReason): string {
   return t(`journey.screenshotSkipped.${reason}`);
 }
 
-function JourneyStepCard({ step, index }: { step: JourneyStep; index: number }) {
+const humanStatusKeys: Record<HumanStatus, string> = {
+  not_tested: 'journey.humanStatuses.notTested',
+  compliant: 'journey.humanStatuses.compliant',
+  non_compliant: 'journey.humanStatuses.nonCompliant',
+  not_applicable: 'journey.humanStatuses.notApplicable',
+};
+
+function decisionKey(decision: Pick<JourneyEvidenceDecision, 'stepId' | 'evidenceIndex' | 'criterionId'>): string {
+  return `${decision.stepId}:${decision.evidenceIndex}:${decision.criterionId}`;
+}
+
+function JourneyEvidenceReview({
+  runId,
+  stepId,
+  evidenceIndex,
+  criterionId,
+  decision,
+  onSaved,
+}: {
+  runId: string;
+  stepId: string;
+  evidenceIndex: number;
+  criterionId: string;
+  decision?: JourneyEvidenceDecision;
+  onSaved: (decisions: JourneyEvidenceDecision[]) => void;
+}) {
+  const [status, setStatus] = useState<HumanStatus>(decision?.status ?? 'not_tested');
+  const [comment, setComment] = useState(decision?.comment ?? '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    setError('');
+    try {
+      const response = await fetch(`/api/journey-runs/${encodeURIComponent(runId)}/decision`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stepId, evidenceIndex, criterionId, status, comment }),
+      });
+      const payload = await response.json().catch(() => ({})) as JourneyRunResponse;
+      if (!response.ok) throw new Error(String(response.status));
+      onSaved(payload.run.run?.decisions ?? []);
+      setSaved(true);
+    } catch {
+      setError(t('journey.decisionSaveError'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <fieldset className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <legend className="px-1 text-xs font-semibold text-gray-700">{t('journey.humanDecision', { criterion: criterionId })}</legend>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-medium text-gray-700">
+          {t('journey.decisionStatus')}
+          <select
+            aria-label={`${t('journey.decisionStatus')} ${criterionId}`}
+            value={status}
+            onChange={(event) => { setStatus(event.target.value as HumanStatus); setSaved(false); }}
+            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm"
+          >
+            {(Object.keys(humanStatusKeys) as HumanStatus[]).map((option) => (
+              <option key={option} value={option}>{t(humanStatusKeys[option])}</option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-gray-700">
+          {t('journey.decisionComment')}
+          <textarea
+            aria-label={`${t('journey.decisionComment')} ${criterionId}`}
+            value={comment}
+            onChange={(event) => { setComment(event.target.value); setSaved(false); }}
+            rows={2}
+            maxLength={5000}
+            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm"
+          />
+        </label>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={save} disabled={saving} className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
+          {saving ? t('journey.savingDecision') : t('journey.saveDecision')}
+        </button>
+        {saved && <span role="status" className="text-xs text-green-800">{t('journey.decisionSaved')}</span>}
+        {error && <span role="alert" className="text-xs text-red-800">{error}</span>}
+      </div>
+    </fieldset>
+  );
+}
+
+function JourneyStepCard({
+  runId,
+  step,
+  index,
+  decisions,
+  onDecisionsSaved,
+}: {
+  runId: string;
+  step: JourneyStep;
+  index: number;
+  decisions: JourneyEvidenceDecision[];
+  onDecisionsSaved: (next: JourneyEvidenceDecision[]) => void;
+}) {
   const [screenshotUnavailable, setScreenshotUnavailable] = useState(false);
   const contextId = `journey-context-${step.stepId}`;
   const screenshotId = `journey-screenshot-${step.stepId}`;
@@ -196,18 +312,36 @@ function JourneyStepCard({ step, index }: { step: JourneyStep; index: number }) 
 
       {step.evidence.length > 0 && (
         <section className="mt-5 border-t border-gray-100 pt-4" aria-labelledby={`journey-evidence-${step.stepId}`}>
-          <h3 id={`journey-evidence-${step.stepId}`} className="text-base font-semibold text-gray-900">
-            {t('journey.evidenceTitle')}
-          </h3>
-          <ul className="mt-2 space-y-2 text-sm text-gray-700">
-            {step.evidence.map((evidence, evidenceIndex) => (
-              <li key={`${evidence.selector}-${evidenceIndex}`}>
-                <span className="font-medium">{evidence.selector}</span>
-                {evidence.context ? ` — ${evidence.context}` : ''}
-                {evidence.criterionIds.length > 0 ? ` (${evidence.criterionIds.join(', ')})` : ''}
-              </li>
-            ))}
-          </ul>
+            <h3 id={`journey-evidence-${step.stepId}`} className="text-base font-semibold text-gray-900">
+              {t('journey.evidenceTitle')}
+            </h3>
+            <ul className="mt-2 space-y-2 text-sm text-gray-700">
+              {step.evidence.map((evidence, evidenceIndex) => (
+                <li key={`${evidence.selector}-${evidenceIndex}`}>
+                  <span className="font-medium">{evidence.selector}</span>
+                  {evidence.context ? ` — ${evidence.context}` : ''}
+                  {evidence.criterionIds.length > 0 ? ` (${evidence.criterionIds.join(', ')})` : ''}
+                  {evidence.criterionIds.map((criterionId) => {
+                    const currentDecision = decisions.find((decision) => decisionKey(decision) === decisionKey({
+                      stepId: step.stepId,
+                      evidenceIndex,
+                      criterionId,
+                    }));
+                    return (
+                      <JourneyEvidenceReview
+                        key={`${evidenceIndex}-${criterionId}`}
+                        runId={runId}
+                        stepId={step.stepId}
+                        evidenceIndex={evidenceIndex}
+                        criterionId={criterionId}
+                        decision={currentDecision}
+                        onSaved={onDecisionsSaved}
+                      />
+                    );
+                  })}
+                </li>
+              ))}
+            </ul>
         </section>
       )}
     </article>
@@ -217,6 +351,7 @@ function JourneyStepCard({ step, index }: { step: JourneyStep; index: number }) 
 export default function JourneyRun() {
   const { runId } = useParams<{ runId: string }>();
   const [data, setData] = useState<JourneyRunResponse | null>(null);
+  const [decisions, setDecisions] = useState<JourneyEvidenceDecision[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -229,7 +364,10 @@ export default function JourneyRun() {
         return response.json() as Promise<JourneyRunResponse>;
       })
       .then((response) => {
-        if (!cancelled) setData(response);
+        if (!cancelled) {
+          setData(response);
+          setDecisions(response.run.run?.decisions ?? []);
+        }
       })
       .catch(() => {
         if (!cancelled) setError(t('journey.error'));
@@ -285,7 +423,16 @@ export default function JourneyRun() {
           <h2 id="journey-observations-title" className="text-xl font-semibold text-gray-900">{t('journey.observationsTitle')}</h2>
           <p className="mt-2 text-sm text-gray-700">{t('journey.observationsDescription')}</p>
           <div className="mt-4 space-y-4">
-            {steps.length === 0 ? <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">{t('journey.noSteps')}</p> : steps.map((step, index) => <JourneyStepCard key={step.stepId} step={step} index={index} />)}
+            {steps.length === 0 ? <p className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">{t('journey.noSteps')}</p> : steps.map((step, index) => (
+              <JourneyStepCard
+                key={step.stepId}
+                runId={run.runId}
+                step={step}
+                index={index}
+                decisions={decisions}
+                onDecisionsSaved={setDecisions}
+              />
+            ))}
           </div>
         </section>
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { JourneyDefinition } from '../../../core/journey/journey';
+import type { JourneyDefinition, JourneyEvidenceDecision, JourneyRunState } from '../../../core/journey/journey';
 
 const fsMock = vi.hoisted(() => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
@@ -17,6 +17,7 @@ import {
   readJourneyScreenshot,
   redactJourney,
   saveJourney,
+  saveJourneyEvidenceDecision,
 } from '../journey.store';
 
 const journey: JourneyDefinition = {
@@ -64,5 +65,44 @@ describe('journey store', () => {
 
     await expect(readJourneyScreenshot('run-001', 'capture.png')).rejects.toThrow('volumineuse');
     expect(fsMock.readFile).not.toHaveBeenCalled();
+  });
+
+  it('remplace une décision de preuve et conserve sa version précédente', async () => {
+    const previous: JourneyEvidenceDecision = {
+      stepId: 'step-1',
+      evidenceIndex: 0,
+      criterionId: '1.1',
+      status: 'not_tested',
+      comment: '',
+      reviewedAt: null,
+    };
+    const next: JourneyEvidenceDecision = {
+      ...previous,
+      status: 'compliant',
+      comment: 'Vérifié',
+      reviewedAt: new Date().toISOString(),
+    };
+    const run: JourneyRunState = {
+      runId: 'run-001',
+      journeyId: 'journey-001',
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      run: {
+        runId: 'run-001',
+        journeyId: 'journey-001',
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        steps: [],
+        decisions: [previous],
+      },
+    };
+    fsMock.readFile.mockResolvedValueOnce(JSON.stringify(run));
+
+    const updated = await saveJourneyEvidenceDecision('run-001', next);
+
+    expect(updated?.run?.decisions).toEqual([next]);
+    expect(updated?.run?.decisionHistory).toEqual([previous]);
+    const persisted = JSON.parse(fsMock.writeFile.mock.calls[0][1] as string) as JourneyRunState;
+    expect(persisted.run?.decisionHistory).toEqual([previous]);
   });
 });

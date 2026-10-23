@@ -4,6 +4,7 @@ import { mkdir, stat, unlink } from 'node:fs/promises';
 import { analyzeLoadedPage, type PageResult } from '../analyzer/analyzer';
 import { mapPageResults } from '../mapping/mapper';
 import type { PageComparison } from '../report/comparison';
+import type { HumanStatus } from '../domain/review';
 
 export const JOURNEY_ACTIONS = ['navigate', 'click', 'fill', 'press', 'wait'] as const;
 export type JourneyAction = typeof JOURNEY_ACTIONS[number];
@@ -107,6 +108,16 @@ export interface JourneyStepObservation {
   error?: string;
 }
 
+/** A human RGAA decision attached to one observed evidence item. */
+export interface JourneyEvidenceDecision {
+  stepId: string;
+  evidenceIndex: number;
+  criterionId: string;
+  status: HumanStatus;
+  comment: string;
+  reviewedAt: string | null;
+}
+
 export interface JourneyRun {
   runId: string;
   journeyId: string;
@@ -114,6 +125,8 @@ export interface JourneyRun {
   finishedAt: string;
   steps: JourneyStepObservation[];
   comparisons?: PageComparison[];
+  decisions?: JourneyEvidenceDecision[];
+  decisionHistory?: JourneyEvidenceDecision[];
 }
 
 export interface JourneyRunState {

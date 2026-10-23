@@ -1,7 +1,9 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import { basename, join, normalize } from 'node:path';
-import type { JourneyDefinition, JourneyRunState, JourneyStep } from '../../core/journey/journey';
+import { z } from 'zod';
+import { getCriterion } from '../../core/mapping';
+import type { JourneyDefinition, JourneyEvidenceDecision, JourneyRunState, JourneyStep } from '../../core/journey/journey';
 import { asyncHandler, HttpError } from '../middleware/error.handler';
 import { validateBody } from '../middleware/validate';
 import { journeyInputSchema, validateJourneySteps } from '../services/journey.validation';
@@ -12,6 +14,7 @@ import {
   readJourneyScreenshot,
   redactJourney,
   saveJourney,
+  saveJourneyEvidenceDecision,
 } from '../services/journey.store';
 import { startJourneyReplay } from '../services/journey.service';
 import { redactStructuredText, redactTextUrls, redactUrl } from '../security/url.redaction';
@@ -19,6 +22,14 @@ import { redactCollectedData, toPublicComparisons } from '../services/report.ser
 import { compareCollectedData } from '../../core/report/comparison';
 
 export const journeyRouter = Router();
+
+const journeyDecisionSchema = z.object({
+  stepId: z.string().trim().min(1).max(128),
+  evidenceIndex: z.number().int().min(0).max(500),
+  criterionId: z.string().regex(/^\d{1,2}\.\d{1,2}$/),
+  status: z.enum(['not_tested', 'compliant', 'non_compliant', 'not_applicable']),
+  comment: z.string().trim().max(5_000).default(''),
+});
 
 function exposeJourneyRun(run: JourneyRunState): JourneyRunState {
   if (!run.run) return run.error ? { ...run, error: redactTextUrls(run.error) } : run;
@@ -79,6 +90,14 @@ function exposeJourneyRun(run: JourneyRunState): JourneyRunState {
           screenshotUrl: `/api/journey-runs/${run.runId}/screenshots/${encodeURIComponent(filename)}`,
         };
       }),
+      decisions: run.run.decisions?.map((decision) => ({
+        ...decision,
+        comment: redactTextUrls(decision.comment),
+      })),
+      decisionHistory: run.run.decisionHistory?.map((decision) => ({
+        ...decision,
+        comment: redactTextUrls(decision.comment),
+      })),
     },
   };
 }
@@ -153,6 +172,37 @@ journeyRouter.get('/api/journey-runs/:runId', asyncHandler(async (req, res) => {
   if (!run) throw new HttpError(404, 'Exécution de parcours introuvable.');
   res.json({ run: exposeJourneyRun(run) });
 }));
+
+journeyRouter.patch(
+  '/api/journey-runs/:runId/decision',
+  validateBody(journeyDecisionSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const runId = String(req.params.runId);
+    const run = await loadJourneyRun(runId);
+    if (!run) throw new HttpError(404, 'Exécution de parcours introuvable.');
+    if (!run.run) throw new HttpError(409, 'Les preuves de cette exécution ne sont pas encore disponibles.');
+
+    const { stepId, evidenceIndex, criterionId, status, comment } = req.body;
+    if (!getCriterion(criterionId)) throw new HttpError(400, 'Critère RGAA inconnu.');
+    const step = run.run.steps.find((candidate) => candidate.stepId === stepId);
+    const evidence = step?.evidence[evidenceIndex];
+    if (!evidence || !evidence.criterionIds.includes(criterionId)) {
+      throw new HttpError(400, 'Cette preuve ne correspond pas au critère indiqué.');
+    }
+
+    const decision: JourneyEvidenceDecision = {
+      stepId,
+      evidenceIndex,
+      criterionId,
+      status,
+      comment,
+      reviewedAt: status === 'not_tested' ? null : new Date().toISOString(),
+    };
+    const updated = await saveJourneyEvidenceDecision(runId, decision);
+    if (!updated) throw new HttpError(404, 'Exécution de parcours introuvable.');
+    res.json({ run: exposeJourneyRun(updated) });
+  }),
+);
 
 journeyRouter.get('/api/journey-runs/:runId/screenshots/:filename', asyncHandler(async (req, res) => {
   let screenshot: Buffer | null;

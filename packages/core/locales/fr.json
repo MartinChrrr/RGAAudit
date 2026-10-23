@@ -133,7 +133,20 @@
       "too_large": "Capture non conservée : le fichier dépassait la taille maximale autorisée.",
       "capture_error": "Capture non disponible en raison d’une erreur technique."
     },
-    "evidenceTitle": "Preuves textuelles"
+    "evidenceTitle": "Preuves textuelles",
+    "humanDecision": "Décision humaine — critère {criterion}",
+    "decisionStatus": "Statut",
+    "decisionComment": "Commentaire",
+    "saveDecision": "Enregistrer la décision",
+    "savingDecision": "Enregistrement…",
+    "decisionSaved": "Décision enregistrée.",
+    "decisionSaveError": "Impossible d’enregistrer la décision.",
+    "humanStatuses": {
+      "notTested": "Non testé",
+      "compliant": "Conforme",
+      "nonCompliant": "Non conforme",
+      "notApplicable": "Non applicable"
+    }
   },
   "journeyBuilder": {
     "title": "Créer un parcours d’audit",
