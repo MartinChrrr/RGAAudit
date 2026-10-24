@@ -29,6 +29,7 @@ export default function JourneyBuilder() {
   const [steps, setSteps] = useState<JourneyStep[]>([newStep(0)]);
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
+  const [replaying, setReplaying] = useState(false);
   const [error, setError] = useState('');
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -81,6 +82,22 @@ export default function JourneyBuilder() {
       setError(t('journeyBuilder.saveError', { error: cause instanceof Error ? cause.message : String(cause) }));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function startReplay() {
+    if (!journeyId) return;
+    setError('');
+    setReplaying(true);
+    try {
+      const response = await fetch(`/api/journeys/${encodeURIComponent(journeyId)}/replay`, { method: 'POST' });
+      const payload = await response.json().catch(() => ({})) as { runId?: string; error?: string };
+      if (!response.ok || !payload.runId) throw new Error(payload.error ?? String(response.status));
+      navigate(`/journey-runs/${encodeURIComponent(payload.runId)}`);
+    } catch (cause) {
+      setError(t('journeyBuilder.replayError', { error: cause instanceof Error ? cause.message : String(cause) }));
+    } finally {
+      setReplaying(false);
     }
   }
 
@@ -156,8 +173,11 @@ export default function JourneyBuilder() {
           </section>
 
           {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-          <div className="flex justify-end">
-            <button type="submit" disabled={saving} className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
+          <div className="flex flex-wrap justify-end gap-3">
+            {editing && <button type="button" onClick={startReplay} disabled={saving || replaying} className="rounded-lg border border-primary-600 px-5 py-2.5 text-sm font-medium text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
+              {replaying ? t('journeyBuilder.replaying') : t('journeyBuilder.replay')}
+            </button>}
+            <button type="submit" disabled={saving || replaying} className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
               {saving ? t('journeyBuilder.saving') : t('journeyBuilder.save')}
             </button>
           </div>

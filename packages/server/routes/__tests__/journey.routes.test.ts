@@ -114,6 +114,19 @@ describe('POST /api/journeys', () => {
     expect(response.body.error).toContain('uniques');
     expect(mockSaveJourney).not.toHaveBeenCalled();
   });
+
+  it('ignore une référence de secret fournie par le client', async () => {
+    const response = await request(app).post('/api/journeys').send({
+      name: 'Parcours sensible',
+      startUrl: 'https://example.com',
+      steps: [{ action: 'fill', selector: '#password', sensitive: true, secretRef: 'client-secret-ref' }],
+    });
+
+    expect(response.status).toBe(201);
+    expect(mockSaveJourney).toHaveBeenCalledWith(expect.objectContaining({
+      steps: [expect.not.objectContaining({ secretRef: 'client-secret-ref' })],
+    }));
+  });
 });
 
 describe('PUT /api/journeys/:journeyId', () => {

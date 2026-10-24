@@ -9,7 +9,6 @@ const commonStepFields = {
   selector: z.string().trim().min(1).max(2_000).optional(),
   value: z.string().max(10_000).optional(),
   sensitive: z.boolean().optional(),
-  secretRef: z.string().trim().min(1).max(128).optional(),
   key: z.string().trim().min(1).max(100).optional(),
   waitMs: z.number().int().min(0).max(30_000).optional(),
 };
@@ -25,11 +24,16 @@ export const journeyInputSchema = z.object({
   steps: z.array(journeyStepInputSchema).min(1).max(100),
 });
 
+const persistedStepFields = {
+  ...commonStepFields,
+  secretRef: z.string().trim().min(1).max(128).optional(),
+};
+
 export const journeyDefinitionSchema = z.object({
   id: z.string().trim().min(1).max(128),
   name: z.string().trim().min(1).max(200),
   startUrl: z.string().url().refine(isAllowedAuditUrl, 'URL publique http(s) invalide.'),
-  steps: z.array(z.object(commonStepFields)).min(1).max(100),
+  steps: z.array(z.object(persistedStepFields)).min(1).max(100),
   createdAt: z.string().datetime(),
 });
 
