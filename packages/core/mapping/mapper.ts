@@ -522,6 +522,27 @@ function extractElements(
     }
   }
 
+  // Presentation-state probes are page-level evidence. They intentionally
+  // remain manual because metrics and screenshots cannot decide readability,
+  // information loss or interaction equivalence.
+  for (const snapshot of collectedData.presentation?.snapshots ?? []) {
+    const matchingFlags = snapshot.flags.filter((flag) => relevantFlags.has(flag));
+    if (matchingFlags.length > 0) {
+      elements.push({ selector: `document[${snapshot.scenario}]`, flags: matchingFlags });
+    }
+  }
+  for (const hidden of collectedData.presentation?.hiddenContent ?? []) {
+    const matchingFlags = hidden.flags.filter((flag) => relevantFlags.has(flag));
+    if (matchingFlags.length > 0) {
+      elements.push({ selector: hidden.selector, flags: matchingFlags });
+    }
+  }
+  for (const flag of collectedData.presentation?.flags ?? []) {
+    if (relevantFlags.has(flag) && !elements.some((element) => element.flags.includes(flag))) {
+      elements.push({ selector: 'document', flags: [flag] });
+    }
+  }
+
   return elements;
 }
 

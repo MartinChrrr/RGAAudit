@@ -506,6 +506,48 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
 // ---------------------------------------------------------------------------
 
 describe('mapPageResults — robustesse', () => {
+  it('mappe les preuves des scénarios de présentation sur les critères concernés', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        presentation: {
+          snapshots: [
+            {
+              scenario: 'viewport-320x256',
+              status: 'observed',
+              viewportWidth: 320,
+              viewportHeight: 256,
+              devicePixelRatio: 1,
+              visualViewportScale: 1,
+              documentScrollWidth: 480,
+              documentScrollHeight: 256,
+              documentClientWidth: 320,
+              documentClientHeight: 256,
+              bodyTextLength: 20,
+              visibleTextLength: 20,
+              focusableCount: 1,
+              visibleFocusableCount: 1,
+              cssZoom: '1',
+              flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
+            },
+          ],
+          flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
+          manualChecks: [],
+        },
+      }),
+      'http://example.com/presentation',
+    );
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '10.11')).toMatchObject({
+      status: 'manual',
+      elements: [{
+        selector: 'document[viewport-320x256]',
+        flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
+      }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '10.4')?.elements).toEqual([]);
+  });
+
   it('ne throw jamais si un critère du mapping n\'a pas de résultat axe correspondant', () => {
     // Pass empty axe results — no rules at all
     const axeResults = makeAxeResult();

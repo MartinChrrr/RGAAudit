@@ -1310,9 +1310,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PRESENTATION_STYLES_DISABLED_CAPTURED", "PRESENTATION_TEXT_INVENTORY_CHANGED"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer le contenu visible porteur d’information avec et sans feuilles de styles ; les métriques collectées sont une preuve à confirmer, pas un verdict."]
+      },
+      "limits": "La désactivation temporaire des feuilles de styles et la comparaison d’inventaires sont fournies comme preuves ; la présence et la pertinence du contenu visible restent à valider manuellement."
     },
     {
       "rgaa": {
@@ -1326,9 +1328,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PRESENTATION_STYLES_DISABLED_CAPTURED", "PRESENTATION_TEXT_INVENTORY_CHANGED"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer l’ordre de lecture et la compréhension de l’information avec et sans feuilles de styles."]
+      },
+      "limits": "La comparaison automatique porte sur des métriques DOM ; elle ne conclut pas à la compréhension de l’information."
     },
     {
       "rgaa": {
@@ -1342,9 +1346,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PRESENTATION_ZOOM_200_PROBE"],
+      "heuristicPatterns": {
+        "manualChecks": ["Confirmer avec le zoom texte du navigateur à 200 % que le texte reste lisible, sans perte d’information ni de fonctionnalité ; la sonde CSS zoom est seulement indicative."]
+      },
+      "limits": "Le moteur ne peut pas déduire la lisibilité du texte ni reproduire tous les mécanismes de zoom navigateur ; une validation humaine à 200 % est obligatoire."
     },
     {
       "rgaa": {
@@ -1408,9 +1414,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["HIDDEN_CONTENT_REVIEW", "HIDDEN_FOCUSABLE_CONTENT"],
+      "heuristicPatterns": {
+        "manualChecks": ["Inventorier les contenus cachés et vérifier que chaque masquage a vocation à être ignoré par les technologies d’assistance."]
+      },
+      "limits": "L’inventaire exhaustif des états cachés et la pertinence de leur masquage restent à confirmer dans un scénario dédié."
     },
     {
       "rgaa": {
@@ -1456,9 +1464,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PRESENTATION_VIEWPORT_320_CAPTURED", "PRESENTATION_HORIZONTAL_OVERFLOW"],
+      "heuristicPatterns": {
+        "manualChecks": ["Confirmer à 320 × 256 px que le contenu reste utilisable sans perte d’information ou de fonctionnalité ; un débordement horizontal est un signal à analyser, pas un verdict automatique."]
+      },
+      "limits": "Le scénario capture le viewport 320 × 256 et les dimensions du document ; la perte de fonctionnalité et les cas particuliers nécessitent une revue humaine."
     },
     {
       "rgaa": {
@@ -1505,8 +1515,10 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "heuristicPatterns": {
+        "manualChecks": ["Tester les contenus additionnels créés par CSS dans les états :hover et :focus, avec le clavier et un dispositif de pointage."]
+      },
+      "limits": "Les états CSS additionnels et leur contrôlabilité ne sont pas déduits automatiquement ; un scénario clavier/pointeur reste nécessaire."
     },
     {
       "rgaa": {

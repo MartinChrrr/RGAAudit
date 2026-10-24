@@ -312,6 +312,52 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Critères : 4.1, 4.3');
   });
 
+  it('affiche l’annexe des états de présentation', () => {
+    const collected = makeCollectedData();
+    collected.presentation = {
+      snapshots: [{
+        scenario: 'viewport-320x256',
+        status: 'observed',
+        viewportWidth: 320,
+        viewportHeight: 256,
+        devicePixelRatio: 1,
+        visualViewportScale: 1,
+        documentScrollWidth: 480,
+        documentScrollHeight: 256,
+        documentClientWidth: 320,
+        documentClientHeight: 256,
+        bodyTextLength: 40,
+        visibleTextLength: 40,
+        focusableCount: 2,
+        visibleFocusableCount: 2,
+        cssZoom: '1',
+        flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
+        note: 'Revue humaine requise',
+      }],
+      hiddenContent: [{
+        selector: '#hidden-panel',
+        reasons: ['hidden-attribute'],
+        focusable: false,
+        flags: ['HIDDEN_CONTENT_REVIEW'],
+      }],
+      flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
+      manualChecks: [],
+    };
+
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
+    });
+
+    expect(html).toContain('data-testid="presentation-section"');
+    expect(html).toContain('Annexe — Présentation et responsive');
+    expect(html).toContain('Viewport 320 × 256');
+    expect(html).toContain('PRESENTATION_HORIZONTAL_OVERFLOW');
+    expect(html).toContain('#hidden-panel');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain('défilement horizontal disponible');
+  });
+
   it('affiche le bilan des contenus spécialisés avec le statut de revue', () => {
     const collected = makeCollectedData();
     collected.specializedContent = [{

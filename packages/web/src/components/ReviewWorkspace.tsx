@@ -392,6 +392,20 @@ export default function ReviewWorkspace({ sessionId, review, onOpenAnnex }: Prop
                       {criterion.violationsCount} anomalie(s) automatisée(s), {criterion.elements.length} élément(s) à examiner.
                     </p>
                   )}
+                  {criterion.elements.length > 0 && (
+                    <details className="mt-2 rounded-md border border-gray-200 bg-gray-50 p-2 text-xs" data-testid={`criterion-signals-${criterion.rgaaId}`}>
+                      <summary className="cursor-pointer font-medium text-gray-700">
+                        Signaux de collecte localisés — critère {criterion.rgaaId}
+                      </summary>
+                      <ul className="mt-1 space-y-1 text-gray-600">
+                        {criterion.elements.map((element, index) => (
+                          <li key={`${element.selector}-${index}`}>
+                            <code>{element.selector}</code>{element.flags.length > 0 ? ` — ${element.flags.join(', ')}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                   {(criterion.evidence?.length ?? 0) > 0 && (
                     <div className="mt-3 space-y-2" data-testid={`criterion-evidence-${criterion.rgaaId}`}>
                       <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700">Preuves automatisées</h4>

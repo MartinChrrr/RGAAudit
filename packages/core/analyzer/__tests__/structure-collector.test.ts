@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser, type Page } from 'playwright';
-import { collectStructure } from '../data-collector';
+import { collectPresentation, collectStructure } from '../data-collector';
 
 describe('collectStructure', () => {
   let browser: Browser;
@@ -63,5 +63,38 @@ describe('collectStructure', () => {
     expect(structure.landmarks.map((landmark) => landmark.role)).toEqual(
       expect.arrayContaining(['banner', 'navigation', 'main', 'search', 'contentinfo']),
     );
+  });
+
+  it('capture les états de présentation sans laisser la page modifiée', async () => {
+    await page.setViewportSize({ width: 900, height: 700 });
+    await page.setContent(`<!doctype html><html><head>
+      <style>body { margin: 0; } .wide { width: 1400px; } .only-styled { display: none; }</style>
+    </head><body><main><p class="wide">Information visible</p><button>Action</button>
+      <div id="hidden-panel" hidden><button tabindex="0">Hidden action</button></div>
+      <p class="only-styled">Visible without styles</p>
+    </main></body></html>`);
+
+    const presentation = await collectPresentation(page);
+
+    expect(presentation.snapshots.map((snapshot) => snapshot.scenario)).toEqual([
+      'baseline', 'styles-disabled', 'viewport-320x256', 'zoom-200-probe',
+    ]);
+    expect(presentation.snapshots.find((snapshot) => snapshot.scenario === 'styles-disabled')?.flags)
+      .toContain('PRESENTATION_STYLES_DISABLED_CAPTURED');
+    expect(presentation.snapshots.find((snapshot) => snapshot.scenario === 'styles-disabled')?.flags)
+      .toContain('PRESENTATION_TEXT_INVENTORY_CHANGED');
+    const baseline = presentation.snapshots.find((snapshot) => snapshot.scenario === 'baseline');
+    const stylesDisabled = presentation.snapshots.find((snapshot) => snapshot.scenario === 'styles-disabled');
+    expect(baseline?.documentScrollWidth).toBeGreaterThan(stylesDisabled?.documentScrollWidth ?? 0);
+    expect(presentation.snapshots.find((snapshot) => snapshot.scenario === 'viewport-320x256'))
+      .toMatchObject({ status: 'observed', viewportWidth: 320, viewportHeight: 256 });
+    expect(presentation.snapshots.find((snapshot) => snapshot.scenario === 'zoom-200-probe')?.note)
+      .toMatch(/CSS zoom/i);
+    expect(presentation.hiddenContent).toEqual(expect.arrayContaining([
+      expect.objectContaining({ selector: '#hidden-panel', reasons: expect.arrayContaining(['hidden-attribute']) }),
+    ]));
+    expect(presentation.flags).toContain('HIDDEN_FOCUSABLE_CONTENT');
+    expect(page.viewportSize()).toMatchObject({ width: 900, height: 700 });
+    await expect(page.locator('.wide').evaluate((element) => getComputedStyle(element).width)).resolves.toBe('1400px');
   });
 });

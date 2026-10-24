@@ -187,6 +187,50 @@ export interface CitationObservationData {
   flags: string[];
 }
 
+/**
+ * A bounded set of presentation-state observations. These snapshots are
+ * evidence for the manual RGAA presentation checks; they are not conformance
+ * decisions. The 200% probe uses CSS zoom and must therefore be confirmed with
+ * the browser's text-zoom setting by an auditor.
+ */
+export type PresentationScenario = 'baseline' | 'styles-disabled' | 'viewport-320x256' | 'zoom-200-probe';
+
+export interface PresentationSnapshot {
+  scenario: PresentationScenario;
+  status: 'observed' | 'not_observed';
+  viewportWidth: number | null;
+  viewportHeight: number | null;
+  devicePixelRatio: number | null;
+  visualViewportScale: number | null;
+  documentScrollWidth: number | null;
+  documentScrollHeight: number | null;
+  documentClientWidth: number | null;
+  documentClientHeight: number | null;
+  bodyTextLength: number | null;
+  visibleTextLength: number | null;
+  focusableCount: number | null;
+  visibleFocusableCount: number | null;
+  cssZoom: string | null;
+  flags: string[];
+  note?: string;
+}
+
+export interface HiddenContentObservation {
+  selector: string;
+  reasons: Array<'hidden-attribute' | 'aria-hidden' | 'inert' | 'css-hidden'>;
+  focusable: boolean;
+  flags: string[];
+}
+
+/** Presentation probes used by RGAA 10.2–10.4 and 10.11. */
+export interface PresentationData {
+  snapshots: PresentationSnapshot[];
+  /** Optional for presentation collections persisted before hidden inventory was added. */
+  hiddenContent?: HiddenContentObservation[];
+  flags: string[];
+  manualChecks: string[];
+}
+
 /** Evidence shared by the DOM/CSS/form/navigation criteria of lot 1. */
 export interface StructureData {
   pageFlags: string[];
@@ -254,6 +298,8 @@ export interface CollectedData {
   forms?: FormDataItem[];
   /** Optional for backwards-compatible persisted sessions. */
   figcaptions?: FigureCaptionData[];
+  /** Optional presentation-state probes, absent in older persisted sessions. */
+  presentation?: PresentationData;
 }
 
 const SPECIALIZED_IMAGE_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
@@ -1563,6 +1609,257 @@ export async function collectFigureCaptions(page: Page): Promise<FigureCaptionDa
 }
 
 // ---------------------------------------------------------------------------
+// collectPresentation
+// ---------------------------------------------------------------------------
+
+/** Read one presentation state without deciding whether it is conformant. */
+async function readPresentationSnapshot(
+  page: Page,
+  scenario: PresentationScenario,
+  note?: string,
+): Promise<PresentationSnapshot> {
+  return page.evaluate(({ scenario: currentScenario, note: currentNote }) => {
+    const root = document.documentElement;
+    const body = document.body;
+    const normalizeTextLength = (value: string | null | undefined): number | null => (
+      value == null ? null : value.replace(/\s+/g, ' ').trim().length
+    );
+    const isVisible = (element: Element): boolean => {
+      const style = getComputedStyle(element);
+      return style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && style.visibility !== 'collapse'
+        && element.getClientRects().length > 0;
+    };
+    const focusableSelector = [
+      'a[href]', 'area[href]', 'button', 'input:not([type="hidden"])',
+      'select', 'textarea', 'summary', '[contenteditable="true"]',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const focusable = body ? Array.from(body.querySelectorAll(focusableSelector)) : [];
+    const scrollWidth = root?.scrollWidth ?? null;
+    const clientWidth = root?.clientWidth ?? null;
+    const flags: string[] = ['PRESENTATION_METRICS_CAPTURED'];
+    if (scrollWidth !== null && clientWidth !== null && scrollWidth > clientWidth + 1) {
+      flags.push('PRESENTATION_HORIZONTAL_OVERFLOW');
+    }
+    if (currentScenario === 'baseline') flags.push('PRESENTATION_BASELINE_CAPTURED');
+    if (currentScenario === 'styles-disabled') flags.push('PRESENTATION_STYLES_DISABLED_CAPTURED');
+    if (currentScenario === 'viewport-320x256') flags.push('PRESENTATION_VIEWPORT_320_CAPTURED');
+    if (currentScenario === 'zoom-200-probe') flags.push('PRESENTATION_ZOOM_200_PROBE');
+    return {
+      scenario: currentScenario,
+      status: 'observed' as const,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      devicePixelRatio: Number.isFinite(window.devicePixelRatio) ? window.devicePixelRatio : null,
+      visualViewportScale: window.visualViewport?.scale ?? null,
+      documentScrollWidth: scrollWidth,
+      documentScrollHeight: root?.scrollHeight ?? null,
+      documentClientWidth: clientWidth,
+      documentClientHeight: root?.clientHeight ?? null,
+      bodyTextLength: normalizeTextLength(body?.textContent),
+      visibleTextLength: normalizeTextLength(body?.innerText),
+      focusableCount: focusable.length,
+      visibleFocusableCount: focusable.filter(isVisible).length,
+      cssZoom: root ? getComputedStyle(root).zoom || null : null,
+      flags,
+      ...(currentNote ? { note: currentNote } : {}),
+    };
+  }, { scenario, note });
+}
+
+function notObservedPresentationSnapshot(
+  scenario: PresentationScenario,
+  note: string,
+): PresentationSnapshot {
+  return {
+    scenario,
+    status: 'not_observed',
+    viewportWidth: null,
+    viewportHeight: null,
+    devicePixelRatio: null,
+    visualViewportScale: null,
+    documentScrollWidth: null,
+    documentScrollHeight: null,
+    documentClientWidth: null,
+    documentClientHeight: null,
+    bodyTextLength: null,
+    visibleTextLength: null,
+    focusableCount: null,
+    visibleFocusableCount: null,
+    cssZoom: null,
+    flags: [],
+    note,
+  };
+}
+
+/**
+ * Capture the baseline, no-stylesheet, 320×256 and bounded 200% CSS-zoom
+ * states. Every temporary mutation is restored before returning so replay and
+ * the other collectors keep seeing the original page state.
+ */
+export async function collectPresentation(page: Page): Promise<PresentationData> {
+  const snapshots: PresentationSnapshot[] = [];
+  const initialViewport = page.viewportSize();
+  const baseline = await readPresentationSnapshot(page, 'baseline');
+  snapshots.push(baseline);
+
+  const hiddenContent = await page.evaluate(() => {
+    const MAX_ITEMS = 200;
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+    const focusableSelector = [
+      'a[href]', 'area[href]', 'button', 'input:not([type="hidden"])',
+      'select', 'textarea', 'summary', '[contenteditable="true"]',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const isFocusable = (element: Element): boolean => element.matches(focusableSelector);
+    return Array.from(document.querySelectorAll('body *')).flatMap((element) => {
+      const reasons: HiddenContentObservation['reasons'] = [];
+      let current: Element | null = element;
+      while (current) {
+        if (current.hasAttribute('hidden')) reasons.push('hidden-attribute');
+        if (current.getAttribute('aria-hidden')?.trim().toLowerCase() === 'true') reasons.push('aria-hidden');
+        if (current.hasAttribute('inert')) reasons.push('inert');
+        const style = getComputedStyle(current);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') reasons.push('css-hidden');
+        current = current.parentElement;
+      }
+      if (reasons.length === 0) return [];
+      return [{
+        selector: getUniqueSelector(element),
+        reasons: [...new Set(reasons)],
+        focusable: isFocusable(element),
+        flags: [
+          'HIDDEN_CONTENT_REVIEW',
+          ...(isFocusable(element) ? ['HIDDEN_FOCUSABLE_CONTENT'] : []),
+        ],
+      }];
+    }).slice(0, MAX_ITEMS);
+  });
+
+  const styleState = await page.evaluate(() => Array.from(
+    document.querySelectorAll('link[rel~="stylesheet"], style'),
+  ).map((element) => {
+    const stylesheet = element as HTMLLinkElement | HTMLStyleElement;
+    return {
+    attributeDisabled: 'disabled' in element
+      ? Boolean(stylesheet.disabled)
+      : false,
+    sheetDisabled: stylesheet.sheet?.disabled ?? false,
+    };
+  }));
+  try {
+    await page.evaluate(() => {
+      for (const element of Array.from(document.querySelectorAll('link[rel~="stylesheet"], style'))) {
+        const stylesheet = element as HTMLLinkElement | HTMLStyleElement;
+        if ('disabled' in element) stylesheet.disabled = true;
+        if (stylesheet.sheet) stylesheet.sheet.disabled = true;
+      }
+    });
+    const withoutStyles = await readPresentationSnapshot(
+      page,
+      'styles-disabled',
+      'La comparaison porte sur les métriques DOM ; la décision sur le contenu visible reste humaine.',
+    );
+    if (baseline.bodyTextLength !== withoutStyles.bodyTextLength
+      || baseline.visibleTextLength !== withoutStyles.visibleTextLength) {
+      withoutStyles.flags.push('PRESENTATION_TEXT_INVENTORY_CHANGED');
+    }
+    snapshots.push(withoutStyles);
+  } catch (error) {
+    snapshots.push(notObservedPresentationSnapshot(
+      'styles-disabled',
+      `Désactivation temporaire des feuilles de styles impossible : ${error instanceof Error ? error.message : String(error)}`,
+    ));
+  } finally {
+    await page.evaluate((states) => {
+      const elements = Array.from(document.querySelectorAll('link[rel~="stylesheet"], style'));
+      elements.forEach((element, index) => {
+        const state = states[index];
+        if (state !== undefined) {
+          const stylesheet = element as HTMLLinkElement | HTMLStyleElement;
+          if ('disabled' in element) {
+            stylesheet.disabled = state.attributeDisabled;
+          }
+          if (stylesheet.sheet) stylesheet.sheet.disabled = state.sheetDisabled;
+        }
+      });
+    }, styleState);
+  }
+
+  if (!initialViewport) {
+    snapshots.push(notObservedPresentationSnapshot(
+      'viewport-320x256',
+      'Le contexte Playwright ne fournit pas de viewport redimensionnable ; le scénario 320×256 n’a pas été exécuté.',
+    ));
+  } else {
+    try {
+      await page.setViewportSize({ width: 320, height: 256 });
+      snapshots.push(await readPresentationSnapshot(
+        page,
+        'viewport-320x256',
+        'Le verdict RGAA 10.11 doit confirmer la perte éventuelle de contenu ou de fonctionnalité.',
+      ));
+    } catch (error) {
+      snapshots.push(notObservedPresentationSnapshot(
+        'viewport-320x256',
+        `Viewport 320×256 impossible à appliquer : ${error instanceof Error ? error.message : String(error)}`,
+      ));
+    } finally {
+      await page.setViewportSize(initialViewport).catch(() => undefined);
+    }
+  }
+
+  let previousZoom: string | null = null;
+  try {
+    previousZoom = await page.evaluate(() => document.documentElement.style.zoom || null);
+    await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
+    snapshots.push(await readPresentationSnapshot(
+      page,
+      'zoom-200-probe',
+      'Cette sonde utilise CSS zoom ; elle ne remplace pas la vérification du zoom texte navigateur à 200%.',
+    ));
+  } catch (error) {
+    snapshots.push(notObservedPresentationSnapshot(
+      'zoom-200-probe',
+      `Sonde de zoom 200% impossible à appliquer : ${error instanceof Error ? error.message : String(error)}`,
+    ));
+  } finally {
+    await page.evaluate((zoom) => {
+      document.documentElement.style.zoom = zoom ?? '';
+    }, previousZoom).catch(() => undefined);
+  }
+
+  return {
+    snapshots,
+    hiddenContent,
+    flags: [...new Set([
+      ...snapshots.flatMap((snapshot) => snapshot.flags),
+      ...hiddenContent.flatMap((item) => item.flags),
+    ])],
+    manualChecks: [
+      'Comparer visuellement le contenu porteur d’information et son ordre de lecture avec les feuilles de styles désactivées (RGAA 10.2 et 10.3).',
+      'Confirmer avec le zoom texte du navigateur à 200% que le texte reste lisible, sans perte d’information ni de fonctionnalité (RGAA 10.4).',
+      'Confirmer à 320×256 que le contenu reste utilisable ; un débordement horizontal est un signal à analyser, pas un verdict automatique (RGAA 10.11).',
+      'Vérifier manuellement les contenus additionnels exposés par :hover/:focus et leur accès clavier/pointeur (RGAA 10.14).',
+    ],
+  };
+}
+
+// ---------------------------------------------------------------------------
 // collectAll
 // ---------------------------------------------------------------------------
 
@@ -1579,5 +1876,6 @@ export async function collectAll(page: Page): Promise<CollectedData> {
   ]);
 
   const specializedContent = await collectSpecializedContent(page, media, images);
-  return { images, media, specializedContent, frames, links, headings, structure, forms, figcaptions };
+  const presentation = await collectPresentation(page);
+  return { images, media, specializedContent, frames, links, headings, structure, forms, figcaptions, presentation };
 }

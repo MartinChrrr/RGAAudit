@@ -8,6 +8,8 @@ import type {
   CollectedData,
   FormDataItem,
   MediaData,
+  HiddenContentObservation,
+  PresentationSnapshot,
   SpecializedContentData,
 } from '../analyzer/data-collector';
 import { runReportExtractor, type ReportExtractor } from './extractors';
@@ -84,6 +86,7 @@ export interface RenderOptions {
 type CollectedPage = { url: string; pageId?: string; collectedData: CollectedData | null };
 type FormAnnexItem = { url: string; pageId?: string; form: FormDataItem };
 type MediaAnnexItem = { url: string; pageId?: string; item: MediaData };
+type PresentationAnnexItem = { url: string; pageId?: string; snapshot: PresentationSnapshot; hiddenContent: HiddenContentObservation[] };
 type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
 type ComparisonItem = NonNullable<Report['comparisons']>[number];
 
@@ -111,6 +114,20 @@ const SPECIALIZED_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], SpecializedA
   maxItems: 2_000,
   extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
     (collectedData?.specializedContent ?? []).map((item) => ({ url, pageId, item }))
+  )),
+};
+
+const PRESENTATION_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], PresentationAnnexItem> = {
+  id: 'annex-presentation',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.presentation?.snapshots ?? []).map((snapshot) => ({
+      url,
+      pageId,
+      snapshot,
+      hiddenContent: snapshot.scenario === 'baseline' ? (collectedData?.presentation?.hiddenContent ?? []) : [],
+    }))
   )),
 };
 
@@ -255,6 +272,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
   const collectedPages = allCollected ?? [];
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
+  const presentationSection = buildPresentationSection(runReportExtractor(PRESENTATION_ANNEX_EXTRACTOR, collectedPages).items);
   const specializedSection = buildSpecializedContentSection(runReportExtractor(SPECIALIZED_ANNEX_EXTRACTOR, collectedPages).items);
   const comparisonSection = buildComparisonSection(runReportExtractor(COMPARISON_EXTRACTOR, report.comparisons ?? []).items);
   const journeySection = buildJourneySection(journeyAnnex);
@@ -385,6 +403,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
 
     ${mediaSection}
 
+    ${presentationSection}
+
     ${specializedSection}
 
     ${journeySection}
@@ -484,6 +504,51 @@ function buildJourneySection(annex?: JourneyReportAnnex): string {
       <div class="mt-4" data-testid="journey-evidence-details">
         <h3 class="text-sm font-semibold text-gray-800 mb-2">${escapeHtml(t('report.journeyEvidenceDetails'))}</h3>
         ${evidenceDetails}
+      </div>
+    </section>`;
+}
+
+function buildPresentationSection(items: PresentationAnnexItem[]): string {
+  if (items.length === 0) return '';
+
+  const scenarioLabel = (scenario: PresentationSnapshot['scenario']): string => (
+    t(`report.presentationScenario.${scenario}`)
+  );
+  const rows = items.map(({ url, pageId, snapshot, hiddenContent }) => `
+    ${(() => {
+      const hiddenSummary = hiddenContent.length > 0
+        ? `<div class="mt-1">${escapeHtml(t('report.presentationHiddenSummary', { count: hiddenContent.length }))}</div><ul class="mt-1 list-disc list-inside">${hiddenContent.map((item) => `<li><code>${escapeHtml(item.selector)}</code> — ${escapeHtml(item.reasons.join(', '))}${item.focusable ? ` — ${escapeHtml(t('report.presentationHiddenFocusable'))}` : ''}</li>`).join('')}</ul>`
+        : '';
+      return `<tr>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(scenarioLabel(snapshot.scenario))}<br><code>${escapeHtml(snapshot.scenario)}</code></td>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(pageLabel(url, pageId))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${snapshot.viewportWidth === null || snapshot.viewportHeight === null ? '—' : `${snapshot.viewportWidth} × ${snapshot.viewportHeight}`}<br>${escapeHtml(t('report.presentationDeviceScale', { value: snapshot.devicePixelRatio ?? '—' }))}<br>${escapeHtml(t('report.presentationVisualScale', { value: snapshot.visualViewportScale ?? '—' }))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${snapshot.documentClientWidth === null || snapshot.documentScrollWidth === null ? '—' : `${snapshot.documentScrollWidth} / ${snapshot.documentClientWidth}`}<br>${snapshot.documentScrollHeight === null || snapshot.documentClientHeight === null ? '—' : `${snapshot.documentScrollHeight} / ${snapshot.documentClientHeight}`}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${snapshot.bodyTextLength ?? '—'} / ${snapshot.visibleTextLength ?? '—'}<br>${snapshot.focusableCount ?? '—'} / ${snapshot.visibleFocusableCount ?? '—'}</td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(snapshot.flags.join(', ') || t('report.presentationNoSignal'))}<br>${escapeHtml(snapshot.note ?? t('report.presentationManualReview'))}${hiddenSummary}</td>
+    </tr>`;
+    })()}
+  `).join('');
+
+  return `
+    <section class="mb-8" data-testid="presentation-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexePresentation'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('report.presentationAnnexDescription'))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" tabindex="0" aria-label="${escapeHtml(t('report.presentationTableScrollLabel'))}">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexePresentation'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationScenarioLabel'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationPage'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationViewport'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationDocument'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationInventory'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationSignals'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
       </div>
     </section>`;
 }

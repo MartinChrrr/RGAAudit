@@ -56,6 +56,8 @@ describe('ReviewWorkspace', () => {
       />,
     );
 
+    expect(screen.getByTestId('criterion-signals-1.1')).toHaveTextContent('img#logo');
+
     await user.click(screen.getByRole('button', { name: /examiner dans l’annexe images/i }));
 
     expect(onOpenAnnex).toHaveBeenCalledWith({

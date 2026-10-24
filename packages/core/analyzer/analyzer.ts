@@ -133,11 +133,12 @@ export async function analyzeLoadedPage(
 ): Promise<PageResult> {
   try {
     const engine = getEngine({ timeout: options?.timeout, disableRules: options?.disableRules });
-    const [axeResults, collectedData, heuristicResults] = await Promise.all([
-      engine.analyze(page),
-      collectAll(page),
-      runAllHeuristics(page),
-    ]);
+    // collectPresentation temporarily changes styles, viewport and CSS zoom.
+    // Run the engine and heuristics before collection so those probes cannot
+    // race with another consumer of the same Playwright page.
+    const axeResults = await engine.analyze(page);
+    const heuristicResults = await runAllHeuristics(page);
+    const collectedData = await collectAll(page);
 
     return {
       url,
