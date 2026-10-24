@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { t } from '../locales';
 
@@ -30,6 +30,11 @@ export default function JourneyBuilder() {
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (!loading) headingRef.current?.focus();
+  }, [editing, journeyId, loading]);
 
   useEffect(() => {
     if (!journeyId) return;
@@ -84,9 +89,9 @@ export default function JourneyBuilder() {
   return (
     <main id="main-content" className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-4xl">
-        <Link to="/" className="text-sm text-primary-700 underline">{t('journeyBuilder.backHome')}</Link>
+        <Link to="/" className="text-sm text-primary-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">{t('journeyBuilder.backHome')}</Link>
         <header className="mt-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">{editing ? t('journeyBuilder.editTitle') : t('journeyBuilder.title')}</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">{editing ? t('journeyBuilder.editTitle') : t('journeyBuilder.title')}</h1>
           <p className="mt-2 text-sm text-gray-600">{t('journeyBuilder.description')}</p>
         </header>
 
@@ -95,10 +100,10 @@ export default function JourneyBuilder() {
             <h2 className="text-lg font-semibold text-gray-900">{t('journeyBuilder.definition')}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.name')}
-                <input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                <input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
               </label>
               <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.startUrl')}
-                <input required type="url" value={startUrl} onChange={(event) => setStartUrl(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                <input required type="url" value={startUrl} onChange={(event) => setStartUrl(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
               </label>
             </div>
           </section>
@@ -106,52 +111,53 @@ export default function JourneyBuilder() {
           <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="journey-steps-title">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 id="journey-steps-title" className="text-lg font-semibold text-gray-900">{t('journeyBuilder.steps')}</h2>
-              <button type="button" onClick={() => setSteps((current) => [...current, newStep(current.length)])} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700">{t('journeyBuilder.addStep')}</button>
+              <button type="button" onClick={() => setSteps((current) => [...current, newStep(current.length)])} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">{t('journeyBuilder.addStep')}</button>
             </div>
             <div className="mt-4 space-y-4">
               {steps.map((step, index) => (
-                <article key={`${step.id}-${index}`} className="rounded-lg border border-gray-200 p-4">
+                <fieldset key={`${step.id}-${index}`} className="rounded-lg border border-gray-200 p-4">
+                  <legend className="px-1 font-medium text-gray-900">{t('journeyBuilder.step', { index: index + 1 })}</legend>
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-medium text-gray-900">{t('journeyBuilder.step', { index: index + 1 })}</h3>
-                    {steps.length > 1 && <button type="button" onClick={() => setSteps((current) => current.filter((_, stepIndex) => stepIndex !== index))} className="text-sm text-red-700 underline">{t('journeyBuilder.removeStep')}</button>}
+                    <span aria-hidden="true" />
+                    {steps.length > 1 && <button type="button" onClick={() => setSteps((current) => current.filter((_, stepIndex) => stepIndex !== index))} className="text-sm text-red-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">{t('journeyBuilder.removeStep')}</button>}
                   </div>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.action')}
-                      <select value={step.action} onChange={(event) => updateStep(index, { action: event.target.value as JourneyAction })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2">
+                      <select value={step.action} onChange={(event) => updateStep(index, { action: event.target.value as JourneyAction })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                         {ACTIONS.map((action) => <option key={action} value={action}>{action}</option>)}
                       </select>
                     </label>
                     <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.stepId')}
-                      <input required value={step.id} onChange={(event) => updateStep(index, { id: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <input required value={step.id} onChange={(event) => updateStep(index, { id: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                     </label>
                     {step.action === 'navigate' && <label className="text-sm font-medium text-gray-700 sm:col-span-2">{t('journeyBuilder.url')}
-                      <input required type="url" value={step.url ?? ''} onChange={(event) => updateStep(index, { url: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <input required type="url" value={step.url ?? ''} onChange={(event) => updateStep(index, { url: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                     </label>}
                     {['click', 'fill', 'press'].includes(step.action) && <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.selector')}
-                      <input required value={step.selector ?? ''} onChange={(event) => updateStep(index, { selector: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <input required value={step.selector ?? ''} onChange={(event) => updateStep(index, { selector: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                     </label>}
                     {step.action === 'fill' && <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.value')}
-                      <input value={step.value ?? ''} onChange={(event) => updateStep(index, { value: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <input value={step.value ?? ''} onChange={(event) => updateStep(index, { value: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                     </label>}
                     {step.action === 'press' && <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.key')}
-                      <input required value={step.key ?? ''} onChange={(event) => updateStep(index, { key: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <input required value={step.key ?? ''} onChange={(event) => updateStep(index, { key: event.target.value })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                     </label>}
                     {step.action === 'wait' && <label className="text-sm font-medium text-gray-700">{t('journeyBuilder.waitMs')}
-                      <input required type="number" min="0" max="30000" value={step.waitMs ?? 500} onChange={(event) => updateStep(index, { waitMs: Number(event.target.value) })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <input required type="number" min="0" max="30000" value={step.waitMs ?? 500} onChange={(event) => updateStep(index, { waitMs: Number(event.target.value) })} className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                     </label>}
                     {step.action === 'fill' && <label className="flex items-center gap-2 text-sm text-gray-700 sm:col-span-2">
-                      <input type="checkbox" checked={step.sensitive ?? false} onChange={(event) => updateStep(index, { sensitive: event.target.checked })} />
+                      <input type="checkbox" checked={step.sensitive ?? false} onChange={(event) => updateStep(index, { sensitive: event.target.checked })} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                       {t('journeyBuilder.sensitive')}
                     </label>}
                   </div>
-                </article>
+                </fieldset>
               ))}
             </div>
           </section>
 
           {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
           <div className="flex justify-end">
-            <button type="submit" disabled={saving} className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">
+            <button type="submit" disabled={saving} className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
               {saving ? t('journeyBuilder.saving') : t('journeyBuilder.save')}
             </button>
           </div>

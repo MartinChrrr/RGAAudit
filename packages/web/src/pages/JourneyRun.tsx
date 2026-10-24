@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { t } from '../locales';
 
@@ -126,6 +126,7 @@ function JourneyEvidenceReview({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const groupRef = useRef<HTMLFieldSetElement>(null);
 
   async function save() {
     setSaving(true);
@@ -141,6 +142,7 @@ function JourneyEvidenceReview({
       if (!response.ok) throw new Error(String(response.status));
       onSaved(payload.run.run?.decisions ?? []);
       setSaved(true);
+      requestAnimationFrame(() => groupRef.current?.focus());
     } catch {
       setError(t('journey.decisionSaveError'));
     } finally {
@@ -149,16 +151,16 @@ function JourneyEvidenceReview({
   }
 
   return (
-    <fieldset className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+    <fieldset ref={groupRef} tabIndex={-1} className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
       <legend className="px-1 text-xs font-semibold text-gray-700">{t('journey.humanDecision', { criterion: criterionId })}</legend>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-medium text-gray-700">
           {t('journey.decisionStatus')}
           <select
-            aria-label={`${t('journey.decisionStatus')} ${criterionId}`}
+            aria-label={t('journey.decisionStatusLabel', { stepId, evidence: evidenceIndex + 1, criterion: criterionId })}
             value={status}
             onChange={(event) => { setStatus(event.target.value as HumanStatus); setSaved(false); }}
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
           >
             {(Object.keys(humanStatusKeys) as HumanStatus[]).map((option) => (
               <option key={option} value={option}>{t(humanStatusKeys[option])}</option>
@@ -168,17 +170,17 @@ function JourneyEvidenceReview({
         <label className="text-xs font-medium text-gray-700">
           {t('journey.decisionComment')}
           <textarea
-            aria-label={`${t('journey.decisionComment')} ${criterionId}`}
+            aria-label={t('journey.decisionCommentLabel', { stepId, evidence: evidenceIndex + 1, criterion: criterionId })}
             value={comment}
             onChange={(event) => { setComment(event.target.value); setSaved(false); }}
             rows={2}
             maxLength={5000}
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
           />
         </label>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={save} disabled={saving} className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
+        <button type="button" onClick={save} disabled={saving} className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
           {saving ? t('journey.savingDecision') : t('journey.saveDecision')}
         </button>
         {saved && <span role="status" className="text-xs text-green-800">{t('journey.decisionSaved')}</span>}

@@ -160,9 +160,9 @@ describe('JourneyRun', () => {
 
     renderJourney();
 
-    await waitFor(() => expect(screen.getByLabelText('Statut 1.1')).toBeInTheDocument());
-    await user.selectOptions(screen.getByLabelText('Statut 1.1'), 'compliant');
-    await user.type(screen.getByLabelText('Commentaire 1.1'), 'Vérifié');
+    await waitFor(() => expect(screen.getByLabelText('Statut — étape step-1 — preuve 1 — critère 1.1')).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText('Statut — étape step-1 — preuve 1 — critère 1.1'), 'compliant');
+    await user.type(screen.getByLabelText('Commentaire — étape step-1 — preuve 1 — critère 1.1'), 'Vérifié');
     await user.click(screen.getByRole('button', { name: 'Enregistrer la décision' }));
 
     await waitFor(() => expect(fetch).toHaveBeenCalledWith('/api/journey-runs/run-001/decision', expect.objectContaining({

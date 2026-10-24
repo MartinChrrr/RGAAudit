@@ -137,6 +137,8 @@
     "humanDecision": "Décision humaine — critère {criterion}",
     "decisionStatus": "Statut",
     "decisionComment": "Commentaire",
+    "decisionStatusLabel": "Statut — étape {stepId} — preuve {evidence} — critère {criterion}",
+    "decisionCommentLabel": "Commentaire — étape {stepId} — preuve {evidence} — critère {criterion}",
     "saveDecision": "Enregistrer la décision",
     "savingDecision": "Enregistrement…",
     "decisionSaved": "Décision enregistrée.",
