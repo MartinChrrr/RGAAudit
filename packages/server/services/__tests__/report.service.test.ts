@@ -163,6 +163,23 @@ describe('buildReportFromSession', () => {
             frames: [],
             links: [],
             headings: { documentTitle: 'Test', headings: [], flags: [] },
+            structure: {
+              pageFlags: [],
+              tables: [{
+                selector: 'table[data-proof="https://example.com/table?token=secret-value"]',
+                dataFeatures: ['https://example.com/feature?token=secret-value'],
+                flags: ['TABLE_DATA_CANDIDATE'],
+                tableKind: 'data_candidate',
+                complexitySignals: ['COLSPAN_PRESENT'],
+                captionText: 'Titre https://example.com/caption?token=secret-value',
+                summaryText: 'Résumé https://example.com/summary?token=secret-value',
+                linearizedText: 'Cellule https://example.com/text?token=secret-value',
+              }],
+              styles: { stylesheetCount: 0, inlineStyleCount: 0, presentationMarkupCount: 0, flags: [] },
+              colors: [],
+              fieldGroups: [],
+              landmarks: [],
+            },
             presentation: {
               snapshots: [],
               perceptualCues: [{
@@ -217,6 +234,12 @@ describe('buildReportFromSession', () => {
       selector: '[data-proof="https://example.com/cue"]',
       text: 'État https://example.com/text',
       accessibleName: 'État https://example.com/name',
+    });
+    expect(publicData.allCollected[0]?.collectedData?.structure?.tables[0]).toMatchObject({
+      selector: 'table[data-proof="https://example.com/table"]',
+      captionText: 'Titre https://example.com/caption',
+      summaryText: 'Résumé https://example.com/summary',
+      linearizedText: 'Cellule https://example.com/text',
     });
     expect(JSON.stringify(publicData)).not.toContain('secret-value');
     expect(JSON.stringify(publicData)).not.toContain('/var/lib/rgaaudit/screenshots/secret.png');

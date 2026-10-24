@@ -121,6 +121,12 @@ export interface StructureTableData {
   selector: string;
   dataFeatures: string[];
   flags: string[];
+  /** Candidate classification only; the table's actual purpose remains human-reviewed. */
+  tableKind?: 'data_candidate' | 'presentation_candidate' | 'undetermined';
+  complexitySignals?: string[];
+  captionText?: string | null;
+  summaryText?: string | null;
+  linearizedText?: string;
 }
 
 export interface StructureFieldGroupData {
@@ -1214,12 +1220,47 @@ export async function collectStructure(page: Page): Promise<StructureData> {
           : attribute === 'th'
             ? Boolean(table.querySelector('th'))
             : table.hasAttribute(attribute));
+      const captionText = normalize(table.querySelector('caption')?.textContent);
+      const summaryText = normalize(table.getAttribute('summary'));
+      const rows = Array.from(table.rows);
+      const headerRows = rows.filter((row) => row.querySelector('th')).length;
+      const cells = Array.from(table.querySelectorAll('th, td')) as HTMLTableCellElement[];
+      const complexitySignals: string[] = [];
+      if (cells.some((cell) => cell.rowSpan > 1)) complexitySignals.push('ROWSPAN_PRESENT');
+      if (cells.some((cell) => cell.colSpan > 1)) complexitySignals.push('COLSPAN_PRESENT');
+      if (headerRows > 1) complexitySignals.push('MULTIPLE_HEADER_ROWS');
+      if (cells.some((cell) => cell.hasAttribute('headers'))) complexitySignals.push('HEADERS_ATTRIBUTE_PRESENT');
+      const hasDataSemantics = Boolean(
+        table.querySelector('th, [scope], [headers], [summary]')
+        || summaryText,
+      );
+      const tableKind: StructureTableData['tableKind'] = cells.length === 0
+        ? 'undetermined'
+        : hasDataSemantics ? 'data_candidate' : 'presentation_candidate';
+      const flags = dataFeatures.length > 0
+        ? ['TABLE_LAYOUT_DATA_FEATURE']
+        : ['TABLE_LAYOUT_NO_DATA_FEATURE'];
+      if (tableKind === 'data_candidate') flags.push('TABLE_DATA_CANDIDATE');
+      if (tableKind === 'presentation_candidate') flags.push('TABLE_PRESENTATION_CANDIDATE');
+      if (tableKind === 'undetermined') flags.push('TABLE_CLASSIFICATION_REVIEW');
+      if (complexitySignals.length > 0) flags.push('TABLE_COMPLEX_CANDIDATE');
+      if (complexitySignals.length > 0 && summaryText) flags.push('TABLE_COMPLEX_SUMMARY_PRESENT');
+      if (complexitySignals.length > 0 && !summaryText) flags.push('TABLE_COMPLEX_SUMMARY_ABSENT');
+      if (tableKind === 'data_candidate' && captionText) flags.push('TABLE_DATA_TITLE_PRESENT');
+      if (tableKind === 'data_candidate' && !captionText) flags.push('TABLE_DATA_TITLE_ABSENT');
+      if (tableKind === 'data_candidate') flags.push('TABLE_HEADER_ASSOCIATION_REVIEW');
+      const linearizedText = rows.map((row) => Array.from(row.cells)
+        .map((cell) => normalize(cell.textContent, 160) ?? '')
+        .join(' | ')).join(' / ').slice(0, 2_000);
       return {
         selector: getUniqueSelector(table),
         dataFeatures,
-        flags: dataFeatures.length > 0
-          ? ['TABLE_LAYOUT_DATA_FEATURE']
-          : ['TABLE_LAYOUT_NO_DATA_FEATURE'],
+        flags,
+        tableKind,
+        complexitySignals,
+        captionText,
+        summaryText,
+        linearizedText,
       };
     });
 

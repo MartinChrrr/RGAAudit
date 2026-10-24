@@ -13,6 +13,7 @@ import type {
   PresentationCueObservation,
   PresentationSnapshot,
   SpecializedContentData,
+  StructureTableData,
 } from '../analyzer/data-collector';
 import { runReportExtractor, type ReportExtractor } from './extractors';
 
@@ -92,6 +93,7 @@ type PresentationAnnexItem = { url: string; pageId?: string; snapshot: Presentat
 type PresentationCueAnnexItem = { url: string; pageId?: string; cue: PresentationCueObservation };
 type NavigationAnnexItem = { url: string; pageId?: string; system: NavigationSystemData };
 type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
+type TableAnnexItem = { url: string; pageId?: string; table: StructureTableData };
 type ComparisonItem = NonNullable<Report['comparisons']>[number];
 
 const FORM_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], FormAnnexItem> = {
@@ -109,6 +111,15 @@ const MEDIA_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], MediaAnnexItem> = 
   maxItems: 2_000,
   extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
     (collectedData?.media ?? []).map((item) => ({ url, pageId, item }))
+  )),
+};
+
+const TABLE_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], TableAnnexItem> = {
+  id: 'annex-tables',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.structure?.tables ?? []).map((table) => ({ url, pageId, table }))
   )),
 };
 
@@ -294,6 +305,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
   const collectedPages = allCollected ?? [];
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
+  const tablesSection = buildTablesSection(runReportExtractor(TABLE_ANNEX_EXTRACTOR, collectedPages).items);
   const presentationSection = buildPresentationSection(
     runReportExtractor(PRESENTATION_ANNEX_EXTRACTOR, collectedPages).items,
     runReportExtractor(PRESENTATION_CUE_EXTRACTOR, collectedPages).items,
@@ -428,6 +440,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
     ${buildContrastSection(contrastViolations ?? [])}
 
     ${mediaSection}
+
+    ${tablesSection}
 
     ${presentationSection}
 
@@ -693,6 +707,45 @@ function buildMediaSection(media: MediaAnnexItem[]): string {
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colAlternatives'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colTracks'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.manualChecks'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function buildTablesSection(items: TableAnnexItem[]): string {
+  if (items.length === 0) return '';
+
+  const kindLabel = (kind: StructureTableData['tableKind']): string => {
+    if (kind === 'data_candidate') return t('report.tableKindData');
+    if (kind === 'presentation_candidate') return t('report.tableKindPresentation');
+    return t('report.tableKindUndetermined');
+  };
+  const rows = items.map(({ url, pageId, table }) => `
+    <tr>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(pageLabel(url, pageId))}<br><code>${escapeHtml(table.selector)}</code></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(kindLabel(table.tableKind))}<br>${escapeHtml(table.captionText ?? t('report.tableNoCaption'))}<br><span class="text-gray-500">${escapeHtml(table.summaryText ?? t('report.tableNoSummary'))}</span></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(t('report.tableObservedFeatures'))} : ${escapeHtml(table.dataFeatures.join(', ') || 'aucune')}<br>${escapeHtml(table.complexitySignals?.join(', ') || t('report.tableNoComplexity'))}<br>${escapeHtml(table.flags.join(', ') || t('report.presentationNoSignal'))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700 whitespace-pre-wrap">${escapeHtml(table.linearizedText ?? '—')}</td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(t('report.tableReviewRequired'))}</td>
+    </tr>`).join('');
+
+  return `
+    <section class="mb-8" data-testid="tables-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeTables'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('report.tablesAnnexDescription'))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(t('report.tablesTableScrollLabel'))}">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeTables'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.tableSelectorPage'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.tableClassification'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.tableSignals'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.tableLinearized'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.tableReview'))}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">${rows}</tbody>

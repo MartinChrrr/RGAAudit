@@ -155,7 +155,7 @@ describe('navigation entre un critère et son annexe', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/1 élément\(s\) lié\(s\) au critère 2\.1/i)).toBeInTheDocument();
-      expect(screen.getByText('iframe#missing-title')).toBeInTheDocument();
+      expect(screen.getAllByText('iframe#missing-title').length).toBeGreaterThan(0);
       expect(screen.getByText('Attribut title absent')).toBeInTheDocument();
     });
   });

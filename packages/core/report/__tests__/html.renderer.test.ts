@@ -505,6 +505,44 @@ describe('renderReportHtml', () => {
     expect(html).toContain('[]');
   });
 
+  it('affiche l’annexe des tableaux avec les preuves et la décision humaine', () => {
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{
+        url: 'https://example.com/tables',
+        pageId: 'page-table',
+        collectedData: {
+          ...makeCollectedData(),
+          structure: {
+            pageFlags: [],
+            tables: [{
+              selector: '#complex-data',
+              dataFeatures: ['TH', 'SCOPE'],
+              flags: ['TABLE_COMPLEX_CANDIDATE'],
+              tableKind: 'data_candidate',
+              complexitySignals: ['ROWSPAN_PRESENT', 'MULTIPLE_HEADER_ROWS'],
+              captionText: 'Résultats',
+              summaryText: 'Résumé du tableau',
+              linearizedText: 'Nom | Score',
+            }],
+            styles: { stylesheetCount: 0, inlineStyleCount: 0, presentationMarkupCount: 0, flags: [] },
+            colors: [],
+            fieldGroups: [],
+            landmarks: [],
+          },
+        },
+      }],
+    });
+
+    expect(html).toContain('data-testid="tables-section"');
+    expect(html).toContain('#complex-data');
+    expect(html).toContain('Nom | Score');
+    expect(html).toContain('Caractéristiques observées');
+    expect(html).toContain('Revue humaine requise');
+    expect(html).toContain('role="region"');
+    expect(html).toContain('<th scope="col"');
+  });
+
   it('affiche une jauge pour un contraste insuffisant', () => {
     const html = renderReportHtml({
       report: makeReport(),

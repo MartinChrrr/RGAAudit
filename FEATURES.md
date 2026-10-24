@@ -20,12 +20,13 @@ site.
 | Mapping RGAA | Relie les résultats aux 106 critères RGAA 4.1.2 et aux règles WCAG disponibles | Disponible |
 | Preuves | Conserve les éléments concernés, leur contexte, les identifiants de résultat et les horodatages | Disponible |
 | Revue humaine | Décisions `non testé`, `conforme`, `non conforme` et `non applicable`, avec commentaire et historique | Disponible |
-| Annexes | Images, médias, cadres, liens, titres, formulaires, heuristiques et contenus spécialisés | Disponible |
+| Annexes | Images, médias, tableaux, cadres, liens, titres, formulaires, heuristiques et contenus spécialisés | Disponible |
 | Comparaison | Compare des observations appartenant au même groupe de comparaison | Disponible |
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |
 | Repères visuels candidats | Inventaire des indices DOM/CSS de couleur, forme, taille et position pour la revue humaine des critères 3.1, 10.9 et 10.10 | Disponible avec limites documentées |
 | Pertinence des alternatives d’image | Signal de revue pour les alternatives non vides du critère 1.3, avec distinction des cas absents/vides | Partiel — synchronisation de la décision 1.3 à décider |
+| Tableaux complexes et de mise en forme | Candidats de tableaux, signaux de complexité, titre/résumé, lecture linéarisée et preuves des associations d’en-têtes pour les critères 5.1, 5.2, 5.3, 5.5 et 5.7 | Disponible avec limites documentées |
 | Scénarios contrôlés d’interaction | Observations de focus, flash, pointer/touch et APIs de mouvement rattachées aux parcours pour revue humaine | Disponible avec limites documentées |
 | Progression d’audit | Suivi temps réel d’une session et reprise depuis les fichiers persistés | Disponible |
 | Parcours interactifs | Création, édition, rejeu, captures contextuelles, preuves et décisions par exécution | En cours de finalisation (US-23) |

@@ -53,7 +53,8 @@ partiellement couvert ou manuel.
 ## 5. Faire la revue humaine
 
 Les annexes permettent de retrouver les éléments observés : images, liens,
-titres, cadres, formulaires, médias, contenus spécialisés et heuristiques.
+tableaux, titres, cadres, formulaires, médias, contenus spécialisés et
+heuristiques.
 
 Pour chaque élément ou critère concerné :
 
@@ -123,7 +124,25 @@ Le signal ne juge pas si le texte décrit correctement l’image. L’auditeur d
 ouvrir la preuve, consulter le contexte et enregistrer sa décision dans la
 revue du critère.
 
-## 11. Scénarios contrôlés clavier, flash et gestes (US-31)
+## 11. Tableaux complexes et de mise en forme (US-42)
+
+Dans l’onglet **Tableaux**, chaque tableau observé est présenté comme un
+candidat : tableau de données, tableau de mise en forme ou classification à
+déterminer. L’annexe conserve les caractéristiques observées (`caption`, `th`,
+`scope`, `headers`, `summary`), les signaux de complexité, le titre, le résumé
+et une lecture linéarisée du contenu.
+
+Utiliser le lien **Examiner dans l’annexe** depuis un critère 5.x pour ouvrir
+la page et le tableau concernés. La colonne **Décision** rappelle qu’une revue
+humaine est requise : les critères 5.1, 5.2, 5.3, 5.5 et 5.7 restent manuels.
+Un tableau sans caractéristique de données est seulement un candidat de mise
+en forme ; il n’est jamais déclaré automatiquement conforme ou non applicable.
+
+Vérifier notamment la nature réelle du tableau, la nécessité et la pertinence
+du résumé, la compréhension de la lecture linéarisée, le titre et
+l’association effective des cellules avec leurs en-têtes.
+
+## 12. Scénarios contrôlés clavier, flash et gestes (US-31)
 
 Lorsqu’un parcours déclenche un changement de contexte, le rapport peut afficher
 des candidats pour les critères RGAA 12.9, 13.7 et 13.10 à 13.12 : cycles de
@@ -137,7 +156,7 @@ geste, ne vérifie pas son annulation et ne remplace pas un essai sur appareil
 pour les capteurs. Aucun geste supplémentaire ni action authentifiée n’est
 exécuté automatiquement.
 
-## 12. Interpréter les limites
+## 13. Interpréter les limites
 
 RGAAudit aide à organiser un audit ; il ne remplace pas l’auditeur. Les points
 suivants nécessitent fréquemment une intervention humaine :
@@ -151,7 +170,7 @@ suivants nécessitent fréquemment une intervention humaine :
 Toujours conserver le contexte de la page, la preuve consultée et la décision
 prise pour rendre l’audit reproductible.
 
-## 13. Données locales et confidentialité
+## 14. Données locales et confidentialité
 
 Les sessions, décisions et parcours sont stockés localement. Ne pas saisir dans
 un parcours une URL ou une valeur sensible qui ne devrait pas être conservée

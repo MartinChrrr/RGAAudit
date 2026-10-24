@@ -55,7 +55,7 @@ reportRouter.get('/api/report/:sessionId/pdf', asyncHandler(async (req, res) => 
   }
 
   // Check if PDF already exists
-  const pdfCacheVersion = 'journey-annex-v1';
+  const pdfCacheVersion = 'tables-annex-v1';
   const existingPath = await getPdfPathIfExists(sessionId, session.startedAt, pdfCacheVersion);
   if (existingPath) {
     res.setHeader('Content-Type', 'application/pdf');

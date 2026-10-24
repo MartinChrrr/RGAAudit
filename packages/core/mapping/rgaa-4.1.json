@@ -670,9 +670,15 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "TABLE_COMPLEX_CANDIDATE"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque tableau candidat complexe, vérifier si un résumé est nécessaire et s’il est présent."
+        ]
+      },
+      "limits": "Les cellules fusionnées, en-têtes multiples ou attributs headers sélectionnent un candidat complexe ; la qualification et l’applicabilité restent humaines."
     },
     {
       "rgaa": {
@@ -686,9 +692,16 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "TABLE_COMPLEX_SUMMARY_PRESENT",
+        "TABLE_COMPLEX_SUMMARY_ABSENT"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Vérifier manuellement que le résumé du tableau de données complexe décrit correctement sa structure et son contenu."
+        ]
+      },
+      "limits": "La présence d’un attribut summary ne prouve pas sa pertinence ; la décision reste humaine."
     },
     {
       "rgaa": {
@@ -702,9 +715,15 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "TABLE_PRESENTATION_CANDIDATE"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Examiner le contenu linéarisé du tableau candidat de mise en forme et confirmer qu’il reste compréhensible."
+        ]
+      },
+      "limits": "L’absence de caractéristiques de données est un indice de tableau de mise en forme ; la nature réelle et la compréhension linéarisée restent humaines."
     },
     {
       "rgaa": {
@@ -734,9 +753,16 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "TABLE_DATA_TITLE_PRESENT",
+        "TABLE_DATA_TITLE_ABSENT"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque titre de tableau de données observé, vérifier manuellement sa pertinence par rapport au contenu du tableau."
+        ]
+      },
+      "limits": "La présence d’une légende caption est une preuve de titre observé ; sa pertinence éditoriale reste à décider."
     },
     {
       "rgaa": {
@@ -766,9 +792,15 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "TABLE_HEADER_ASSOCIATION_REVIEW"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Vérifier que chaque cellule du tableau de données est associée à ses en-têtes par la technique appropriée au cas rencontré."
+        ]
+      },
+      "limits": "Les attributs scope, headers et la présence de th sont inventoriés comme preuves ; leur association effective et les cas particuliers restent humains."
     },
     {
       "rgaa": {

@@ -382,6 +382,19 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
       documentTitle: redactTextUrls(collectedData.headings.documentTitle),
       headings: collectedData.headings.headings.map((heading) => ({ ...heading, text: redactTextUrls(heading.text) })),
     } : collectedData.headings,
+    structure: collectedData.structure ? {
+      ...collectedData.structure,
+      tables: collectedData.structure.tables.map((table) => ({
+        ...table,
+        selector: redactTextUrls(table.selector),
+        dataFeatures: table.dataFeatures.map(redactTextUrls),
+        flags: table.flags.map(redactTextUrls),
+        complexitySignals: table.complexitySignals?.map(redactTextUrls),
+        captionText: table.captionText ? redactTextUrls(table.captionText) : table.captionText,
+        summaryText: table.summaryText ? redactTextUrls(table.summaryText) : table.summaryText,
+        linearizedText: table.linearizedText ? redactTextUrls(table.linearizedText) : table.linearizedText,
+      })),
+    } : collectedData.structure,
     figcaptions: collectedData.figcaptions?.map((caption) => ({
       ...caption,
       text: redactTextUrls(caption.text),

@@ -458,6 +458,7 @@ describe('GET /api/report/:sessionId/pdf', () => {
     expect(res.headers['content-type']).toContain('application/pdf');
     expect(res.headers['content-disposition']).toContain('attachment');
     expect(res.headers['content-disposition']).toContain('rapport-rgaa-pdf-test-session.pdf');
+    expect(mockGeneratePDF).toHaveBeenCalledWith(expect.objectContaining({ cacheVersion: 'tables-annex-v1' }));
   });
 
   it('retourne 404 si session introuvable', async () => {

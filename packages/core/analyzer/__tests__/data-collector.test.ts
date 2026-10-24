@@ -342,6 +342,39 @@ describe('collectForms', () => {
 // ───────────────────────────────────────────────────────────────
 
 describe('collectStructure — preuves manuelles des critères 8.7, 8.10, 9.2 et 9.4', () => {
+  it('expose les preuves candidates des tableaux complexes et de mise en forme', async () => {
+    const structure = await withPage(`${baseUrl}/tables/us-42-complex-and-layout.html`, collectStructure);
+
+    expect(structure.tables).toHaveLength(3);
+    expect(structure.tables[0]).toMatchObject({
+      selector: '#complex-data',
+      tableKind: 'data_candidate',
+      captionText: 'Résultats trimestriels par catégorie',
+      summaryText: 'Organisation des résultats par période et catégorie',
+      complexitySignals: expect.arrayContaining(['ROWSPAN_PRESENT', 'COLSPAN_PRESENT', 'MULTIPLE_HEADER_ROWS', 'HEADERS_ATTRIBUTE_PRESENT']),
+      flags: expect.arrayContaining([
+        'TABLE_COMPLEX_CANDIDATE',
+        'TABLE_COMPLEX_SUMMARY_PRESENT',
+        'TABLE_DATA_TITLE_PRESENT',
+        'TABLE_HEADER_ASSOCIATION_REVIEW',
+      ]),
+      linearizedText: expect.stringContaining('T1'),
+    });
+    expect(structure.tables[1]).toMatchObject({
+      selector: '#complex-no-summary',
+      tableKind: 'data_candidate',
+      summaryText: null,
+      flags: expect.arrayContaining(['TABLE_COMPLEX_SUMMARY_ABSENT', 'TABLE_DATA_TITLE_ABSENT']),
+    });
+    expect(structure.tables[2]).toMatchObject({
+      selector: '#presentation-layout',
+      tableKind: 'presentation_candidate',
+      complexitySignals: [],
+      flags: expect.arrayContaining(['TABLE_PRESENTATION_CANDIDATE']),
+      linearizedText: expect.stringContaining('Navigation'),
+    });
+  });
+
   it('inventorie les changements de langue, directions, régions et citations sans verdict', async () => {
     const structure = await withPage(`${baseUrl}/structure/manual-evidence.html`, collectStructure);
 

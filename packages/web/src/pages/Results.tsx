@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { t } from '../locales';
 import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
 import AnnexeMedias, { type MediaItem } from '../components/annexes/AnnexeMedias';
+import AnnexeTableaux, { type TableItem } from '../components/annexes/AnnexeTableaux';
 import AnnexeContenusSpecialises, { type SpecializedContentItem } from '../components/annexes/AnnexeContenusSpecialises';
 import AnnexeCadres, { type FrameItem } from '../components/annexes/AnnexeCadres';
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
@@ -110,6 +111,7 @@ interface ReportData {
       frames: FrameItem[];
       links: LinkItem[];
       forms?: Omit<FormItem, 'pageUrl'>[];
+      structure?: { tables: TableItem[] };
       headings: {
         documentTitle: string;
         headings: Array<{
@@ -174,6 +176,34 @@ export default function Results() {
   const [annexTarget, setAnnexTarget] = useState<AnnexTarget | null>(null);
   const [uncoveredOpen, setUncoveredOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const tabRefs = useRef<Partial<Record<AnnexTab, HTMLButtonElement | null>>>({});
+  const annexPanelRef = useRef<HTMLDivElement | null>(null);
+  const hasMountedAnnexTabs = useRef(false);
+  const annexTabs: AnnexTab[] = ['images', 'media', 'tables', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'];
+
+  useEffect(() => {
+    if (!hasMountedAnnexTabs.current) {
+      hasMountedAnnexTabs.current = true;
+      return;
+    }
+    annexPanelRef.current?.focus({ preventScroll: true });
+  }, [activeTab]);
+
+  const handleAnnexTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: AnnexTab) => {
+    const currentIndex = annexTabs.indexOf(tab);
+    if (currentIndex < 0) return;
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % annexTabs.length;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + annexTabs.length) % annexTabs.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = annexTabs.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextTab = annexTabs[nextIndex];
+    setActiveTab(nextTab);
+    setAnnexTarget(null);
+    requestAnimationFrame(() => tabRefs.current[nextTab]?.focus());
+  };
 
   const loadReport = useCallback(async () => {
     if (!sessionId) return;
@@ -285,6 +315,9 @@ export default function Results() {
   );
   const allMedia: MediaItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.media ?? []).map((media) => ({ ...media, pageUrl: entry.url, pageId: entry.pageId })),
+  );
+  const allTables: TableItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.structure?.tables ?? []).map((table) => ({ ...table, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allSpecialized: SpecializedContentItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.specializedContent ?? []).map((item) => ({ ...item, pageUrl: entry.url, pageId: entry.pageId })),
@@ -621,15 +654,17 @@ export default function Results() {
         {/* Annexes tabs */}
         <section id="annexes" tabIndex={-1} className="mb-8 scroll-mt-4 focus:outline-none">
           <div className="flex border-b border-gray-200 mb-4" role="tablist" aria-label="Annexes du rapport">
-            {(['images', 'media', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'] as const).map((tab) => (
+            {annexTabs.map((tab) => (
               <button
                 key={tab}
                 id={`annex-tab-${tab}`}
+                ref={(element) => { tabRefs.current[tab] = element; }}
                 type="button"
                 onClick={() => {
                   setActiveTab(tab);
                   setAnnexTarget(null);
                 }}
+                onKeyDown={(event) => handleAnnexTabKeyDown(event, tab)}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-primary-600 text-primary-700'
@@ -637,6 +672,7 @@ export default function Results() {
                 }`}
                 aria-selected={activeTab === tab}
                 aria-controls="annex-panel"
+                tabIndex={activeTab === tab ? 0 : -1}
                 role="tab"
               >
                 {tab === 'heuristics'
@@ -645,7 +681,7 @@ export default function Results() {
               </button>
             ))}
           </div>
-          <div id="annex-panel" role="tabpanel" aria-labelledby={`annex-tab-${activeTab}`} tabIndex={0} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div ref={annexPanelRef} id="annex-panel" role="tabpanel" aria-labelledby={`annex-tab-${activeTab}`} tabIndex={-1} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             {activeTab === 'images' && (
               <AnnexeImages
                 images={allImages}
@@ -664,6 +700,15 @@ export default function Results() {
                 media={allMedia}
                 initialPageUrl={annexTarget?.tab === 'media' ? annexTarget.pageUrl : undefined}
                 initialPageId={annexTarget?.tab === 'media' ? annexTarget.pageId : undefined}
+              />
+            )}
+            {activeTab === 'tables' && (
+              <AnnexeTableaux
+                tables={allTables}
+                initialPageUrl={annexTarget?.tab === 'tables' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'tables' ? annexTarget.pageId : undefined}
+                focusedSelectors={annexTarget?.tab === 'tables' ? annexTarget.selectors : undefined}
+                focusedCriterionId={annexTarget?.tab === 'tables' ? annexTarget.criterionId : undefined}
               />
             )}
             {activeTab === 'specialized' && (

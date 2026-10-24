@@ -400,6 +400,75 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
     });
   });
 
+  it('mappe les candidats de tableaux complexes et de mise en forme sans verdict', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        structure: {
+          pageFlags: [],
+          tables: [{
+            selector: '#complex-data',
+            dataFeatures: ['caption', 'th', 'scope', 'headers', 'summary'],
+            flags: [
+              'TABLE_LAYOUT_DATA_FEATURE',
+              'TABLE_DATA_CANDIDATE',
+              'TABLE_COMPLEX_CANDIDATE',
+              'TABLE_COMPLEX_SUMMARY_PRESENT',
+              'TABLE_DATA_TITLE_PRESENT',
+              'TABLE_HEADER_ASSOCIATION_REVIEW',
+            ],
+            tableKind: 'data_candidate',
+            complexitySignals: ['ROWSPAN_PRESENT'],
+            captionText: 'Résultats',
+            summaryText: 'Organisation',
+            linearizedText: 'Période | Valeur',
+          }, {
+            selector: '#complex-no-summary',
+            dataFeatures: ['th', 'scope'],
+            flags: [
+              'TABLE_LAYOUT_DATA_FEATURE',
+              'TABLE_DATA_CANDIDATE',
+              'TABLE_COMPLEX_CANDIDATE',
+              'TABLE_COMPLEX_SUMMARY_ABSENT',
+              'TABLE_DATA_TITLE_ABSENT',
+              'TABLE_HEADER_ASSOCIATION_REVIEW',
+            ],
+            tableKind: 'data_candidate',
+            complexitySignals: ['COLSPAN_PRESENT'],
+            captionText: null,
+            summaryText: null,
+            linearizedText: 'Mesures sans résumé | A | 10',
+          }, {
+            selector: '#layout',
+            dataFeatures: [],
+            flags: ['TABLE_LAYOUT_NO_DATA_FEATURE', 'TABLE_PRESENTATION_CANDIDATE'],
+            tableKind: 'presentation_candidate',
+            complexitySignals: [],
+            captionText: null,
+            summaryText: null,
+            linearizedText: 'Navigation | Contenu',
+          }],
+          styles: { stylesheetCount: 0, inlineStyleCount: 0, presentationMarkupCount: 0, flags: [] },
+          colors: [],
+          fieldGroups: [],
+          landmarks: [],
+        },
+      }),
+      'http://example.com/tables',
+    );
+
+    for (const id of ['5.1', '5.2', '5.5', '5.7']) {
+      expect(result.criteria.find((criterion) => criterion.rgaaId === id)).toMatchObject({
+        status: 'manual',
+        elements: expect.arrayContaining([expect.objectContaining({ selector: '#complex-data' })]),
+      });
+    }
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '5.3')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: '#layout', flags: ['TABLE_PRESENTATION_CANDIDATE'] }],
+    });
+  });
+
   it('signale un doctype absent et distingue une page sans signal', () => {
     const withoutDoctype = mapPageResults(
       makeAxeResult(),

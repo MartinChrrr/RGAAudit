@@ -35,7 +35,7 @@ describe('collectStructure', () => {
     ]));
     expect(structure.tables[0]).toMatchObject({
       dataFeatures: ['caption', 'th'],
-      flags: ['TABLE_LAYOUT_DATA_FEATURE'],
+      flags: expect.arrayContaining(['TABLE_LAYOUT_DATA_FEATURE', 'TABLE_DATA_CANDIDATE']),
     });
     expect(structure.styles.flags).toEqual(expect.arrayContaining([
       'STYLESHEET_PRESENT',

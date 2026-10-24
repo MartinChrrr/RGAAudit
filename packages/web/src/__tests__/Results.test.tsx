@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Results from '../pages/Results';
 
@@ -39,6 +39,27 @@ const mockReport = {
   uncoveredThemes: [
     { name: 'Tableaux', manualChecklist: ['Vérifier les tableaux de données'] },
   ],
+  allCollected: [{
+    url: 'https://example.com/',
+    collectedData: {
+      images: [],
+      frames: [],
+      links: [],
+      headings: { documentTitle: 'Test', headings: [], flags: [] },
+      structure: {
+        tables: [{
+          selector: '#complex-data',
+          dataFeatures: ['th'],
+          flags: ['TABLE_COMPLEX_CANDIDATE'],
+          tableKind: 'data_candidate',
+          complexitySignals: ['ROWSPAN_PRESENT'],
+          captionText: 'Résultats',
+          summaryText: null,
+          linearizedText: 'Nom | Score',
+        }],
+      },
+    },
+  }],
 };
 
 beforeEach(() => {
@@ -132,7 +153,7 @@ describe('Results', () => {
     });
   });
 
-  it('affiche les 6 onglets annexes', async () => {
+  it('affiche les onglets annexes, dont les tableaux', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockReport),
@@ -147,6 +168,29 @@ describe('Results', () => {
       expect(screen.getByRole('tab', { name: /formulaires/i })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /titres/i })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: /sémantique html/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /tableaux/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('tab', { name: /tableaux/i }));
+      expect(screen.getByText('#complex-data')).toBeInTheDocument();
+    });
+  });
+
+  it('permet de parcourir les onglets annexes au clavier', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockReport),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => expect(screen.getByRole('tab', { name: /images/i })).toHaveAttribute('tabindex', '0'));
+    const imagesTab = screen.getByRole('tab', { name: /images/i });
+    fireEvent.keyDown(imagesTab, { key: 'ArrowRight' });
+
+    await waitFor(() => {
+      const mediaTab = screen.getByRole('tab', { name: /médias/i });
+      expect(mediaTab).toHaveAttribute('aria-selected', 'true');
+      expect(mediaTab).toHaveAttribute('tabindex', '0');
+      expect(imagesTab).toHaveAttribute('tabindex', '-1');
     });
   });
 
