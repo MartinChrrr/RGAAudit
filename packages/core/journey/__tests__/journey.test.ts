@@ -94,6 +94,7 @@ describe('replayJourney', () => {
       after: expect.objectContaining({ selector: '#name', withinComponent: false }),
     });
     expect(run.steps[1].keyboard?.after?.focusVisible).toEqual(expect.any(Boolean));
+    expect(run.steps[1].keyboard?.viewport).toEqual(expect.objectContaining({ width: expect.any(Number), height: expect.any(Number) }));
     expect(run.steps[3].keyboard).toMatchObject({ key: 'Enter', componentSelector: '#name' });
     expect(run.steps[5].keyboard).toMatchObject({
       key: 'Tab',

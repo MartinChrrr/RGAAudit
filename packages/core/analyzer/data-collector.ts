@@ -203,6 +203,16 @@ export interface CitationObservationData {
  */
 export type PresentationScenario = 'baseline' | 'styles-disabled' | 'viewport-320x256' | 'zoom-200-probe';
 
+/** Focus candidates observed in one presentation state; never a compliance verdict. */
+export interface PresentationFocusObservation {
+  selector: string;
+  tagName: string;
+  role: string | null;
+  text: string | null;
+  focusVisible: boolean;
+  flags: string[];
+}
+
 export interface PresentationSnapshot {
   scenario: PresentationScenario;
   status: 'observed' | 'not_observed';
@@ -219,6 +229,8 @@ export interface PresentationSnapshot {
   focusableCount: number | null;
   visibleFocusableCount: number | null;
   cssZoom: string | null;
+  /** Focus evidence is state-specific (baseline, viewport and zoom). */
+  focusObservations?: PresentationFocusObservation[];
   flags: string[];
   note?: string;
 }
@@ -1726,12 +1738,68 @@ async function readPresentationSnapshot(
         && style.visibility !== 'collapse'
         && element.getClientRects().length > 0;
     };
+    const hasHiddenAncestor = (element: Element): boolean => {
+      let current: Element | null = element;
+      while (current) {
+        if (current.hasAttribute('hidden')
+          || current.getAttribute('aria-hidden')?.toLowerCase() === 'true'
+          || current.hasAttribute('inert')) {
+          return true;
+        }
+        current = current.parentElement;
+      }
+      return false;
+    };
     const focusableSelector = [
       'a[href]', 'area[href]', 'button', 'input:not([type="hidden"])',
       'select', 'textarea', 'summary', '[contenteditable="true"]',
       '[tabindex]:not([tabindex="-1"])',
     ].join(',');
-    const focusable = body ? Array.from(body.querySelectorAll(focusableSelector)) : [];
+    const allFocusable = body ? Array.from(body.querySelectorAll(focusableSelector)) : [];
+    const visibleFocusable = allFocusable.filter((element) => isVisible(element) && !hasHiddenAncestor(element));
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+    const focusTarget = document.activeElement;
+    const focusObservations = visibleFocusable.slice(0, 200).map((element) => {
+      const previous = document.activeElement;
+      (element as HTMLElement).focus({ preventScroll: true });
+      const style = getComputedStyle(element);
+      let focusVisible = style.outlineStyle !== 'none'
+        && style.outlineWidth !== '0px'
+        && style.outlineColor !== 'transparent';
+      focusVisible = focusVisible || style.boxShadow !== 'none';
+      try {
+        focusVisible = focusVisible || element.matches(':focus-visible');
+      } catch {
+        // Older browser engines may not implement :focus-visible.
+      }
+      const text = (element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160) || null;
+      const observation = {
+        selector: getUniqueSelector(element),
+        tagName: element.tagName.toLowerCase(),
+        role: element.getAttribute('role'),
+        text,
+        focusVisible,
+        flags: [
+          'PRESENTATION_FOCUS_REVIEW',
+          focusVisible ? 'PRESENTATION_FOCUS_VISIBLE' : 'PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED',
+        ],
+      };
+      if (previous && previous !== element && previous instanceof HTMLElement) previous.focus({ preventScroll: true });
+      return observation;
+    });
+    if (focusTarget && focusTarget instanceof HTMLElement) focusTarget.focus({ preventScroll: true });
     const scrollWidth = root?.scrollWidth ?? null;
     const clientWidth = root?.clientWidth ?? null;
     const flags: string[] = ['PRESENTATION_METRICS_CAPTURED'];
@@ -1742,6 +1810,10 @@ async function readPresentationSnapshot(
     if (currentScenario === 'styles-disabled') flags.push('PRESENTATION_STYLES_DISABLED_CAPTURED');
     if (currentScenario === 'viewport-320x256') flags.push('PRESENTATION_VIEWPORT_320_CAPTURED');
     if (currentScenario === 'zoom-200-probe') flags.push('PRESENTATION_ZOOM_200_PROBE');
+    if (focusObservations.length > 0) flags.push('PRESENTATION_FOCUS_REVIEW');
+    if (focusObservations.length === 0) flags.push('PRESENTATION_FOCUS_NO_TARGET');
+    if (focusObservations.some((observation) => !observation.focusVisible)) flags.push('PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED');
+    if (focusObservations.some((observation) => observation.focusVisible)) flags.push('PRESENTATION_FOCUS_VISIBLE');
     return {
       scenario: currentScenario,
       status: 'observed' as const,
@@ -1755,9 +1827,10 @@ async function readPresentationSnapshot(
       documentClientHeight: root?.clientHeight ?? null,
       bodyTextLength: normalizeTextLength(body?.textContent),
       visibleTextLength: normalizeTextLength(body?.innerText),
-      focusableCount: focusable.length,
-      visibleFocusableCount: focusable.filter(isVisible).length,
+      focusableCount: allFocusable.length,
+      visibleFocusableCount: visibleFocusable.length,
       cssZoom: root ? getComputedStyle(root).zoom || null : null,
+      focusObservations,
       flags,
       ...(currentNote ? { note: currentNote } : {}),
     };
@@ -1784,6 +1857,7 @@ function notObservedPresentationSnapshot(
     focusableCount: null,
     visibleFocusableCount: null,
     cssZoom: null,
+    focusObservations: [],
     flags: [],
     note,
   };

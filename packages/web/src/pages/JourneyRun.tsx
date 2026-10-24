@@ -38,6 +38,16 @@ interface JourneyStep {
   observedAt: string;
   title: string;
   evidence: Array<{ selector: string; context?: string; criterionIds: string[] }>;
+  keyboard?: {
+    key: string;
+    componentSelector: string;
+    before: { selector: string; focusVisible: boolean } | null;
+    after: { selector: string; focusVisible: boolean } | null;
+    focusVisible: boolean;
+    blocked: boolean;
+    criterionIds: string[];
+    viewport?: { width: number; height: number } | null;
+  };
   context?: JourneyContext;
   screenshotUrl?: string;
   screenshotSkippedReason?: ScreenshotSkippedReason;
@@ -233,6 +243,15 @@ function JourneyStepCard({
           <dd className="break-all">{step.url}</dd>
         </div>
       </dl>
+
+      {step.keyboard && (
+        <section className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" aria-label={t('journey.keyboardObservationTitle')}>
+          <h3 className="font-semibold">{t('journey.keyboardObservationTitle')}</h3>
+          <p className="mt-1">{t('journey.keyboardKey')}: <code>{step.keyboard.key}</code> · {t('journey.keyboardViewport')}: {step.keyboard.viewport ? `${step.keyboard.viewport.width} × ${step.keyboard.viewport.height}` : '—'}</p>
+          <p className="mt-1">{t('journey.keyboardFocus')}: {step.keyboard.focusVisible ? t('journey.keyboardFocusVisible') : t('journey.keyboardFocusNotVisible')} · {t('journey.manualReview')}</p>
+          {step.keyboard.criterionIds.length > 0 && <p className="mt-1">{t('journey.criteria')}: {step.keyboard.criterionIds.join(', ')}</p>}
+        </section>
+      )}
 
       {step.error && (
         <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">

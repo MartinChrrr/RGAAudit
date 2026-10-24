@@ -58,6 +58,25 @@ const mockReport = {
           linearizedText: 'Nom | Score',
         }],
       },
+      presentation: {
+        snapshots: [{
+          scenario: 'viewport-320x256',
+          status: 'observed',
+          viewportWidth: 320,
+          viewportHeight: 256,
+          documentScrollWidth: 480,
+          documentClientWidth: 320,
+          focusObservations: [{
+            selector: '#action',
+            tagName: 'button',
+            role: null,
+            text: 'Action',
+            focusVisible: false,
+            flags: ['PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'],
+          }],
+          flags: ['PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'],
+        }],
+      },
     },
   }],
 };
@@ -171,6 +190,9 @@ describe('Results', () => {
       expect(screen.getByRole('tab', { name: /tableaux/i })).toBeInTheDocument();
       fireEvent.click(screen.getByRole('tab', { name: /tableaux/i }));
       expect(screen.getByText('#complex-data')).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /présentation et focus/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('tab', { name: /présentation et focus/i }));
+      expect(screen.getByText('#action')).toBeInTheDocument();
     });
   });
 

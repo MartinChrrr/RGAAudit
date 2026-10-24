@@ -1438,9 +1438,17 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "PRESENTATION_FOCUS_REVIEW",
+        "PRESENTATION_FOCUS_VISIBLE",
+        "PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Parcourir au clavier chaque état et chaque viewport observé, puis vérifier visuellement la prise de focus."
+        ]
+      },
+      "limits": "Les styles calculés et les sondes de clavier fournissent des preuves candidates par état ; seule une revue humaine confirme la visibilité du focus et la conformité RGAA."
     },
     {
       "rgaa": {

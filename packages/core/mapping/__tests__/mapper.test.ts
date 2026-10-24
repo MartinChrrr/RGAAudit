@@ -655,6 +655,50 @@ describe('mapPageResults — robustesse', () => {
     expect(result.criteria.find((criterion) => criterion.rgaaId === '10.4')?.elements).toEqual([]);
   });
 
+  it('mappe les observations de visibilité du focus par état sans verdict automatique', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        presentation: {
+          snapshots: [{
+            scenario: 'viewport-320x256',
+            status: 'observed',
+            viewportWidth: 320,
+            viewportHeight: 256,
+            devicePixelRatio: 1,
+            visualViewportScale: 1,
+            documentScrollWidth: 320,
+            documentScrollHeight: 256,
+            documentClientWidth: 320,
+            documentClientHeight: 256,
+            bodyTextLength: 10,
+            visibleTextLength: 10,
+            focusableCount: 1,
+            visibleFocusableCount: 1,
+            cssZoom: '1',
+            focusObservations: [{
+              selector: '#action',
+              tagName: 'button',
+              role: null,
+              text: 'Action',
+              focusVisible: false,
+              flags: ['PRESENTATION_FOCUS_REVIEW', 'PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'],
+            }],
+            flags: ['PRESENTATION_FOCUS_REVIEW', 'PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'],
+          }],
+          flags: ['PRESENTATION_FOCUS_REVIEW', 'PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'],
+          manualChecks: [],
+        },
+      }),
+      'http://example.com/focus',
+    );
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '10.7')).toMatchObject({
+      status: 'manual',
+      elements: expect.arrayContaining([{ selector: '#action[viewport-320x256]', flags: ['PRESENTATION_FOCUS_REVIEW', 'PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'] }]),
+    });
+  });
+
   it('mappe les repères visuels candidats vers 3.1, 10.9 et 10.10 sans verdict automatique', () => {
     const result = mapPageResults(
       makeAxeResult(),

@@ -530,6 +530,12 @@ function extractElements(
     if (matchingFlags.length > 0) {
       elements.push({ selector: `document[${snapshot.scenario}]`, flags: matchingFlags });
     }
+    for (const focus of snapshot.focusObservations ?? []) {
+      const focusFlags = focus.flags.filter((flag) => relevantFlags.has(flag));
+      if (focusFlags.length > 0) {
+        elements.push({ selector: `${focus.selector}[${snapshot.scenario}]`, flags: focusFlags });
+      }
+    }
   }
   for (const cue of collectedData.presentation?.perceptualCues ?? []) {
     const matchingFlags = cue.flags.filter((flag) => relevantFlags.has(flag));

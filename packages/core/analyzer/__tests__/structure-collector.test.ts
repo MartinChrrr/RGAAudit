@@ -71,6 +71,8 @@ describe('collectStructure', () => {
       <style>body { margin: 0; } .wide { width: 1400px; } .only-styled { display: none; }</style>
     </head><body><main><p class="wide">Information visible</p><p id="visual-cue" aria-label="État important" style="color: red; border-radius: 4px; font-size: 20px; position: relative; left: 2px">Alerte</p><button>Action</button>
       <div id="hidden-panel" hidden><button tabindex="0">Hidden action</button></div>
+      <div id="aria-hidden-panel" aria-hidden="true"><button tabindex="0">ARIA hidden action</button></div>
+      <div id="inert-panel" inert><button tabindex="0">Inert action</button></div>
       <p class="only-styled">Visible without styles</p>
     </main></body></html>`);
 
@@ -86,6 +88,14 @@ describe('collectStructure', () => {
     const baseline = presentation.snapshots.find((snapshot) => snapshot.scenario === 'baseline');
     const stylesDisabled = presentation.snapshots.find((snapshot) => snapshot.scenario === 'styles-disabled');
     expect(baseline?.documentScrollWidth).toBeGreaterThan(stylesDisabled?.documentScrollWidth ?? 0);
+    expect(baseline?.focusObservations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ tagName: 'button', flags: expect.arrayContaining(['PRESENTATION_FOCUS_REVIEW']) }),
+    ]));
+    expect(baseline?.focusObservations?.some((observation) => observation.selector.includes('hidden-panel'))).toBe(false);
+    expect(baseline?.focusObservations?.some((observation) => observation.selector.includes('aria-hidden-panel'))).toBe(false);
+    expect(baseline?.focusObservations?.some((observation) => observation.selector.includes('inert-panel'))).toBe(false);
+    expect(baseline?.focusableCount).toBeGreaterThan(baseline?.visibleFocusableCount ?? 0);
+    expect(presentation.flags).toContain('PRESENTATION_FOCUS_REVIEW');
     expect(presentation.snapshots.find((snapshot) => snapshot.scenario === 'viewport-320x256'))
       .toMatchObject({ status: 'observed', viewportWidth: 320, viewportHeight: 256 });
     expect(presentation.snapshots.find((snapshot) => snapshot.scenario === 'zoom-200-probe')?.note)

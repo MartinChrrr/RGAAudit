@@ -249,6 +249,19 @@ describe('renderReportHtml', () => {
               observedAt: '2026-10-20T00:00:10.000Z',
               title: 'Accueil',
               evidence: [],
+              keyboard: {
+                key: 'Tab',
+                componentSelector: '#slider',
+                before: null,
+                after: { selector: '#slider', tagName: 'button', role: null, text: 'Slider', withinComponent: true, focusVisible: false },
+                entered: true,
+                exited: false,
+                focusVisible: false,
+                blocked: false,
+                criterionIds: ['10.7'],
+                viewport: { width: 320, height: 256 },
+                requiresHumanReview: true,
+              },
               context: {
                 trigger: { stepId: 'step-1', action: 'wait' },
                 urlBefore: 'https://example.com',
@@ -280,6 +293,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('photographie versionnée');
     expect(html).toContain('Flash ou variation lumineuse candidate');
     expect(html).toContain('Geste complexe candidat');
+    expect(html).toContain('320 × 256');
+    expect(html).toContain('indicateur non observé');
   });
 
   it('affiche l’annexe formulaires dans le rapport HTML', () => {
@@ -352,6 +367,14 @@ describe('renderReportHtml', () => {
         focusableCount: 2,
         visibleFocusableCount: 2,
         cssZoom: '1',
+        focusObservations: [{
+          selector: '#action',
+          tagName: 'button',
+          role: null,
+          text: 'Action',
+          focusVisible: false,
+          flags: ['PRESENTATION_FOCUS_REVIEW', 'PRESENTATION_FOCUS_INDICATOR_NOT_OBSERVED'],
+        }],
         flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
         note: 'Revue humaine requise',
       }],
@@ -394,6 +417,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Repères visuels candidats');
     expect(html).toContain('#visual-cue');
     expect(html).toContain('État important');
+    expect(html).toContain('#action');
+    expect(html).toContain('indicateur non observé');
   });
 
   it('affiche l’inventaire des systèmes de navigation', () => {

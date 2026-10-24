@@ -411,6 +411,15 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
     })),
     presentation: collectedData.presentation ? {
       ...collectedData.presentation,
+      snapshots: collectedData.presentation.snapshots.map((snapshot) => ({
+        ...snapshot,
+        note: snapshot.note ? redactTextUrls(snapshot.note) : snapshot.note,
+        focusObservations: snapshot.focusObservations?.map((focus) => ({
+          ...focus,
+          selector: redactTextUrls(focus.selector),
+          text: focus.text ? redactTextUrls(focus.text) : focus.text,
+        })),
+      })),
       perceptualCues: collectedData.presentation.perceptualCues?.map((cue) => ({
         ...cue,
         selector: redactTextUrls(cue.selector),

@@ -65,6 +65,8 @@ export interface JourneyKeyboardObservation {
   focusVisible: boolean;
   blocked: boolean;
   criterionIds: string[];
+  /** Viewport at which the focus transition was observed. */
+  viewport?: { width: number; height: number } | null;
   /** Keyboard and focus heuristics never replace a human RGAA decision. */
   requiresHumanReview: true;
 }
@@ -243,7 +245,7 @@ export async function replayJourney(
           ? await collectStepEvidence(page, step.selector, resultId, mappedCriteria)
           : [];
         const keyboard = step.action === 'press' && step.selector && step.key
-          ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory)
+          ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory, page.viewportSize())
           : undefined;
         const context = buildContextObservation(step, beforeSignals, afterSignals);
         const screenshotBlockedBySensitiveStep = sensitiveStepObserved;
@@ -537,6 +539,7 @@ function buildKeyboardObservation(
   before: JourneyFocusTarget | null,
   after: JourneyFocusTarget | null,
   focusHistory: string[],
+  viewport: { width: number; height: number } | null,
 ): JourneyKeyboardObservation {
   const componentSelector = step.selector!;
   const key = step.key!;
@@ -569,6 +572,7 @@ function buildKeyboardObservation(
       ...(blocked ? ['7.3', '12.9'] : []),
       ...(after && !after.focusVisible ? ['10.7'] : []),
     ],
+    viewport,
     requiresHumanReview: true,
   };
 }

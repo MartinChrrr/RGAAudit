@@ -4,6 +4,7 @@ import { t } from '../locales';
 import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
 import AnnexeMedias, { type MediaItem } from '../components/annexes/AnnexeMedias';
 import AnnexeTableaux, { type TableItem } from '../components/annexes/AnnexeTableaux';
+import AnnexePresentation, { type PresentationSnapshotItem } from '../components/annexes/AnnexePresentation';
 import AnnexeContenusSpecialises, { type SpecializedContentItem } from '../components/annexes/AnnexeContenusSpecialises';
 import AnnexeCadres, { type FrameItem } from '../components/annexes/AnnexeCadres';
 import AnnexeLiens, { type LinkItem } from '../components/annexes/AnnexeLiens';
@@ -112,6 +113,7 @@ interface ReportData {
       links: LinkItem[];
       forms?: Omit<FormItem, 'pageUrl'>[];
       structure?: { tables: TableItem[] };
+      presentation?: { snapshots: PresentationSnapshotItem[] };
       headings: {
         documentTitle: string;
         headings: Array<{
@@ -179,7 +181,7 @@ export default function Results() {
   const tabRefs = useRef<Partial<Record<AnnexTab, HTMLButtonElement | null>>>({});
   const annexPanelRef = useRef<HTMLDivElement | null>(null);
   const hasMountedAnnexTabs = useRef(false);
-  const annexTabs: AnnexTab[] = ['images', 'media', 'tables', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'];
+  const annexTabs: AnnexTab[] = ['images', 'media', 'tables', 'presentation', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'];
 
   useEffect(() => {
     if (!hasMountedAnnexTabs.current) {
@@ -318,6 +320,9 @@ export default function Results() {
   );
   const allTables: TableItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.structure?.tables ?? []).map((table) => ({ ...table, pageUrl: entry.url, pageId: entry.pageId })),
+  );
+  const allPresentation: PresentationSnapshotItem[] = (report.allCollected ?? []).flatMap((entry) =>
+    (entry.collectedData?.presentation?.snapshots ?? []).map((snapshot) => ({ ...snapshot, pageUrl: entry.url, pageId: entry.pageId })),
   );
   const allSpecialized: SpecializedContentItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.specializedContent ?? []).map((item) => ({ ...item, pageUrl: entry.url, pageId: entry.pageId })),
@@ -709,6 +714,15 @@ export default function Results() {
                 initialPageId={annexTarget?.tab === 'tables' ? annexTarget.pageId : undefined}
                 focusedSelectors={annexTarget?.tab === 'tables' ? annexTarget.selectors : undefined}
                 focusedCriterionId={annexTarget?.tab === 'tables' ? annexTarget.criterionId : undefined}
+              />
+            )}
+            {activeTab === 'presentation' && (
+              <AnnexePresentation
+                snapshots={allPresentation}
+                initialPageUrl={annexTarget?.tab === 'presentation' ? annexTarget.pageUrl : undefined}
+                initialPageId={annexTarget?.tab === 'presentation' ? annexTarget.pageId : undefined}
+                focusedSelectors={annexTarget?.tab === 'presentation' ? annexTarget.selectors : undefined}
+                focusedCriterionId={annexTarget?.tab === 'presentation' ? annexTarget.criterionId : undefined}
               />
             )}
             {activeTab === 'specialized' && (

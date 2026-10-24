@@ -142,7 +142,22 @@ Vérifier notamment la nature réelle du tableau, la nécessité et la pertinenc
 du résumé, la compréhension de la lecture linéarisée, le titre et
 l’association effective des cellules avec leurs en-têtes.
 
-## 12. Scénarios contrôlés clavier, flash et gestes (US-31)
+## 12. Visibilité du focus et responsive (US-43)
+
+Dans l’onglet **Présentation et focus**, RGAAudit affiche, pour chaque état sondé
+(`État initial`, feuilles de style désactivées, viewport 320 × 256 et sonde de
+zoom 200 %), les dimensions observées, le débordement éventuel et les éléments
+interactifs visibles dont le focus a été sondé. Depuis un critère 10.7, le lien
+**Examiner dans l’annexe** limite l’affichage aux états et sélecteurs associés.
+
+Ces observations sont des preuves candidates : elles ne produisent aucun
+verdict automatique. La sonde déplace le focus par programmation et ne simule
+pas une séquence réelle avec la touche Tab, la modalité `:focus-visible`, un
+piège de focus ou l’usage d’une technologie d’assistance. Refaire le parcours
+au clavier et avec le zoom du navigateur dans chaque état avant d’enregistrer
+une décision humaine.
+
+## 13. Scénarios contrôlés clavier, flash et gestes (US-31)
 
 Lorsqu’un parcours déclenche un changement de contexte, le rapport peut afficher
 des candidats pour les critères RGAA 12.9, 13.7 et 13.10 à 13.12 : cycles de
@@ -156,7 +171,7 @@ geste, ne vérifie pas son annulation et ne remplace pas un essai sur appareil
 pour les capteurs. Aucun geste supplémentaire ni action authentifiée n’est
 exécuté automatiquement.
 
-## 13. Interpréter les limites
+## 14. Interpréter les limites
 
 RGAAudit aide à organiser un audit ; il ne remplace pas l’auditeur. Les points
 suivants nécessitent fréquemment une intervention humaine :
@@ -170,7 +185,7 @@ suivants nécessitent fréquemment une intervention humaine :
 Toujours conserver le contexte de la page, la preuve consultée et la décision
 prise pour rendre l’audit reproductible.
 
-## 14. Données locales et confidentialité
+## 15. Données locales et confidentialité
 
 Les sessions, décisions et parcours sont stockés localement. Ne pas saisir dans
 un parcours une URL ou une valeur sensible qui ne devrait pas être conservée

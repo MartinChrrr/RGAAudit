@@ -181,7 +181,32 @@ describe('buildReportFromSession', () => {
               landmarks: [],
             },
             presentation: {
-              snapshots: [],
+              snapshots: [{
+                scenario: 'baseline',
+                status: 'observed',
+                viewportWidth: 1280,
+                viewportHeight: 720,
+                devicePixelRatio: 1,
+                visualViewportScale: 1,
+                documentScrollWidth: 1280,
+                documentScrollHeight: 720,
+                documentClientWidth: 1280,
+                documentClientHeight: 720,
+                bodyTextLength: 10,
+                visibleTextLength: 10,
+                focusableCount: 1,
+                visibleFocusableCount: 1,
+                cssZoom: null,
+                focusObservations: [{
+                  selector: '[data-focus="https://example.com/focus?token=secret-value"]',
+                  tagName: 'button',
+                  role: null,
+                  text: 'Action https://example.com/focus-text?token=secret-value',
+                  focusVisible: false,
+                  flags: ['PRESENTATION_FOCUS_REVIEW'],
+                }],
+                flags: ['PRESENTATION_FOCUS_REVIEW'],
+              }],
               perceptualCues: [{
                 selector: '[data-proof="https://example.com/cue?token=secret-value"]',
                 tagName: 'p',
@@ -234,6 +259,10 @@ describe('buildReportFromSession', () => {
       selector: '[data-proof="https://example.com/cue"]',
       text: 'État https://example.com/text',
       accessibleName: 'État https://example.com/name',
+    });
+    expect(publicData.allCollected[0]?.collectedData?.presentation?.snapshots[0]?.focusObservations?.[0]).toMatchObject({
+      selector: '[data-focus="https://example.com/focus"]',
+      text: 'Action https://example.com/focus-text',
     });
     expect(publicData.allCollected[0]?.collectedData?.structure?.tables[0]).toMatchObject({
       selector: 'table[data-proof="https://example.com/table"]',

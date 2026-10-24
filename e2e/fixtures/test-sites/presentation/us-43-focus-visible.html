@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Focus visible — variantes de revue</title>
+  <style>
+    body { font-family: sans-serif; margin: 1rem; }
+    .responsive-card { max-width: 32rem; padding: 1rem; border: 1px solid #888; }
+    .conform:focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
+    .nonconform:focus { outline: none; box-shadow: none; }
+    @media (max-width: 320px) { .responsive-card { padding: .5rem; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Focus visible</h1>
+    <section class="responsive-card" aria-labelledby="variants-title">
+      <h2 id="variants-title">Variantes à vérifier</h2>
+      <button class="conform" type="button">Focus visible candidat</button>
+      <button class="nonconform" type="button">Focus non visible candidat</button>
+    </section>
+  </main>
+</body>
+</html>
