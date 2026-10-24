@@ -368,9 +368,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PERCEPTUAL_COLOR_CUE"],
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier que chaque information portée par la couleur dispose d’une formulation ou d’une alternative non visuelle."]
+      },
+      "limits": "Les déclarations CSS de couleur et les alternatives textuelles candidates sont inventoriées ; le sens de l’information et sa compréhension sans couleur restent à confirmer humainement."
     },
     {
       "rgaa": {
@@ -1432,9 +1434,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PERCEPTUAL_SHAPE_CUE", "PERCEPTUAL_SIZE_CUE", "PERCEPTUAL_POSITION_CUE"],
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier que les repères de forme, de taille ou de position disposent d’une formulation ou d’une alternative compréhensible."]
+      },
+      "limits": "Les propriétés CSS explicites et le texte ou nom accessible présent sont des candidats de revue ; ils ne démontrent ni le sens ni la compréhension de l’information."
     },
     {
       "rgaa": {
@@ -1448,9 +1452,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["PERCEPTUAL_SHAPE_CUE", "PERCEPTUAL_SIZE_CUE", "PERCEPTUAL_POSITION_CUE"],
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier que l’usage d’une forme, d’une taille ou d’une position est pertinent et accompagné d’une alternative lorsque nécessaire."]
+      },
+      "limits": "Les repères visuels candidats sont réutilisés pour la revue ; la pertinence éditoriale et l’alternative disponible restent une décision humaine."
     },
     {
       "rgaa": {

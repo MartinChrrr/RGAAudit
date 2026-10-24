@@ -334,6 +334,20 @@ describe('renderReportHtml', () => {
         flags: ['PRESENTATION_VIEWPORT_320_CAPTURED', 'PRESENTATION_HORIZONTAL_OVERFLOW'],
         note: 'Revue humaine requise',
       }],
+      perceptualCues: [{
+        selector: '#visual-cue',
+        tagName: 'p',
+        text: 'Alerte',
+        accessibleName: 'État important',
+        kinds: ['color', 'shape', 'size', 'position'],
+        color: 'rgb(255, 0, 0)',
+        backgroundColor: 'rgb(255, 255, 255)',
+        fontSize: '20px',
+        borderRadius: '4px',
+        position: 'relative',
+        dimensions: { width: 120, height: 24 },
+        flags: ['PERCEPTUAL_CUE_REVIEW', 'PERCEPTUAL_COLOR_CUE'],
+      }],
       hiddenContent: [{
         selector: '#hidden-panel',
         reasons: ['hidden-attribute'],
@@ -356,6 +370,9 @@ describe('renderReportHtml', () => {
     expect(html).toContain('#hidden-panel');
     expect(html).toContain('tabindex="0"');
     expect(html).toContain('défilement horizontal disponible');
+    expect(html).toContain('Repères visuels candidats');
+    expect(html).toContain('#visual-cue');
+    expect(html).toContain('État important');
   });
 
   it('affiche l’inventaire des systèmes de navigation', () => {

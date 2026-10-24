@@ -69,7 +69,7 @@ describe('collectStructure', () => {
     await page.setViewportSize({ width: 900, height: 700 });
     await page.setContent(`<!doctype html><html><head>
       <style>body { margin: 0; } .wide { width: 1400px; } .only-styled { display: none; }</style>
-    </head><body><main><p class="wide">Information visible</p><button>Action</button>
+    </head><body><main><p class="wide">Information visible</p><p id="visual-cue" aria-label="État important" style="color: red; border-radius: 4px; font-size: 20px; position: relative; left: 2px">Alerte</p><button>Action</button>
       <div id="hidden-panel" hidden><button tabindex="0">Hidden action</button></div>
       <p class="only-styled">Visible without styles</p>
     </main></body></html>`);
@@ -92,6 +92,13 @@ describe('collectStructure', () => {
       .toMatch(/CSS zoom/i);
     expect(presentation.hiddenContent).toEqual(expect.arrayContaining([
       expect.objectContaining({ selector: '#hidden-panel', reasons: expect.arrayContaining(['hidden-attribute']) }),
+    ]));
+    expect(presentation.perceptualCues).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        selector: '#visual-cue',
+        kinds: expect.arrayContaining(['color', 'shape', 'size', 'position']),
+        flags: expect.arrayContaining(['PERCEPTUAL_COLOR_CUE', 'PERCEPTUAL_TEXT_ALTERNATIVE_PRESENT']),
+      }),
     ]));
     expect(presentation.flags).toContain('HIDDEN_FOCUSABLE_CONTENT');
     expect(page.viewportSize()).toMatchObject({ width: 900, height: 700 });

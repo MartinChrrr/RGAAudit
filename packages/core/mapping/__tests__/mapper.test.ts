@@ -548,6 +548,48 @@ describe('mapPageResults — robustesse', () => {
     expect(result.criteria.find((criterion) => criterion.rgaaId === '10.4')?.elements).toEqual([]);
   });
 
+  it('mappe les repères visuels candidats vers 3.1, 10.9 et 10.10 sans verdict automatique', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        presentation: {
+          snapshots: [],
+          perceptualCues: [{
+            selector: '#visual-cue',
+            tagName: 'p',
+            text: 'Alerte',
+            accessibleName: 'État important',
+            kinds: ['color', 'shape', 'size', 'position'],
+            color: 'rgb(255, 0, 0)',
+            backgroundColor: 'rgb(255, 255, 255)',
+            fontSize: '20px',
+            borderRadius: '4px',
+            position: 'relative',
+            dimensions: { width: 120, height: 24 },
+            flags: [
+              'PERCEPTUAL_CUE_REVIEW',
+              'PERCEPTUAL_COLOR_CUE',
+              'PERCEPTUAL_SHAPE_CUE',
+              'PERCEPTUAL_SIZE_CUE',
+              'PERCEPTUAL_POSITION_CUE',
+              'PERCEPTUAL_TEXT_ALTERNATIVE_PRESENT',
+            ],
+          }],
+          flags: [],
+          manualChecks: [],
+        },
+      }),
+      'http://example.com/perceptual-cues',
+    );
+
+    for (const id of ['3.1', '10.9', '10.10']) {
+      expect(result.criteria.find((criterion) => criterion.rgaaId === id)).toMatchObject({
+        status: 'manual',
+        elements: [expect.objectContaining({ selector: '#visual-cue' })],
+      });
+    }
+  });
+
   it('mappe les systèmes de navigation candidats sur les critères 12.1 à 12.5', () => {
     const result = mapPageResults(
       makeAxeResult(),

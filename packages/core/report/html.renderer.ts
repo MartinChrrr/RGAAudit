@@ -10,6 +10,7 @@ import type {
   MediaData,
   HiddenContentObservation,
   NavigationSystemData,
+  PresentationCueObservation,
   PresentationSnapshot,
   SpecializedContentData,
 } from '../analyzer/data-collector';
@@ -88,6 +89,7 @@ type CollectedPage = { url: string; pageId?: string; collectedData: CollectedDat
 type FormAnnexItem = { url: string; pageId?: string; form: FormDataItem };
 type MediaAnnexItem = { url: string; pageId?: string; item: MediaData };
 type PresentationAnnexItem = { url: string; pageId?: string; snapshot: PresentationSnapshot; hiddenContent: HiddenContentObservation[] };
+type PresentationCueAnnexItem = { url: string; pageId?: string; cue: PresentationCueObservation };
 type NavigationAnnexItem = { url: string; pageId?: string; system: NavigationSystemData };
 type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
 type ComparisonItem = NonNullable<Report['comparisons']>[number];
@@ -130,6 +132,15 @@ const PRESENTATION_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], Presentatio
       snapshot,
       hiddenContent: snapshot.scenario === 'baseline' ? (collectedData?.presentation?.hiddenContent ?? []) : [],
     }))
+  )),
+};
+
+const PRESENTATION_CUE_EXTRACTOR: ReportExtractor<CollectedPage[], PresentationCueAnnexItem> = {
+  id: 'annex-presentation-cues',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.presentation?.perceptualCues ?? []).map((cue) => ({ url, pageId, cue }))
   )),
 };
 
@@ -283,7 +294,10 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
   const collectedPages = allCollected ?? [];
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
-  const presentationSection = buildPresentationSection(runReportExtractor(PRESENTATION_ANNEX_EXTRACTOR, collectedPages).items);
+  const presentationSection = buildPresentationSection(
+    runReportExtractor(PRESENTATION_ANNEX_EXTRACTOR, collectedPages).items,
+    runReportExtractor(PRESENTATION_CUE_EXTRACTOR, collectedPages).items,
+  );
   const navigationSection = buildNavigationSection(runReportExtractor(NAVIGATION_ANNEX_EXTRACTOR, collectedPages).items);
   const specializedSection = buildSpecializedContentSection(runReportExtractor(SPECIALIZED_ANNEX_EXTRACTOR, collectedPages).items);
   const comparisonSection = buildComparisonSection(runReportExtractor(COMPARISON_EXTRACTOR, report.comparisons ?? []).items);
@@ -522,8 +536,8 @@ function buildJourneySection(annex?: JourneyReportAnnex): string {
     </section>`;
 }
 
-function buildPresentationSection(items: PresentationAnnexItem[]): string {
-  if (items.length === 0) return '';
+function buildPresentationSection(items: PresentationAnnexItem[], cueItems: PresentationCueAnnexItem[]): string {
+  if (items.length === 0 && cueItems.length === 0) return '';
 
   const scenarioLabel = (scenario: PresentationSnapshot['scenario']): string => (
     t(`report.presentationScenario.${scenario}`)
@@ -543,12 +557,40 @@ function buildPresentationSection(items: PresentationAnnexItem[]): string {
     </tr>`;
     })()}
   `).join('');
+  const cueRows = cueItems.map(({ url, pageId, cue }) => `
+    <tr>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(pageLabel(url, pageId))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(cue.kinds.map((kind) => t(`report.presentationCueKind.${kind}`)).join(', '))}<br><code>${escapeHtml(cue.selector)}</code></td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(cue.text ?? '—')}<br>${escapeHtml(cue.accessibleName ?? t('report.presentationCueNoAlternative'))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(cue.color ?? '—')} / ${escapeHtml(cue.backgroundColor ?? '—')}<br>${escapeHtml(cue.fontSize ?? '—')} · ${escapeHtml(cue.borderRadius ?? '—')} · ${escapeHtml(cue.position ?? '—')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${cue.dimensions ? `${cue.dimensions.width} × ${cue.dimensions.height}` : '—'}</td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(cue.flags.join(', ') || t('report.presentationNoSignal'))}</td>
+    </tr>`).join('');
+  const cueSection = cueItems.length > 0 ? `
+      <h3 class="text-sm font-semibold text-gray-800 mt-5 mb-2">${escapeHtml(t('report.presentationCuesTitle'))}</h3>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('report.presentationCuesDescription'))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(t('report.presentationCuesTableScrollLabel'))}">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.presentationCuesTitle'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationPage'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationCueType'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationCueText'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationCueCss'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationCueDimensions'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationSignals'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${cueRows}</tbody>
+        </table>
+      </div>` : '';
 
   return `
     <section class="mb-8" data-testid="presentation-section">
       <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexePresentation'))}</h2>
       <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('report.presentationAnnexDescription'))}</p>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" tabindex="0" aria-label="${escapeHtml(t('report.presentationTableScrollLabel'))}">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(t('report.presentationTableScrollLabel'))}">
         <table class="w-full text-sm text-left">
           <caption class="sr-only">${escapeHtml(t('report.htmlAnnexePresentation'))}</caption>
           <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
@@ -564,6 +606,7 @@ function buildPresentationSection(items: PresentationAnnexItem[]): string {
           <tbody class="divide-y divide-gray-100">${rows}</tbody>
         </table>
       </div>
+      ${cueSection}
     </section>`;
 }
 

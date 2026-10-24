@@ -215,6 +215,24 @@ export interface PresentationSnapshot {
   note?: string;
 }
 
+export type PresentationCueKind = 'color' | 'shape' | 'size' | 'position';
+
+/** Observable visual cues retained for the manual review of RGAA 3.1, 10.9 and 10.10. */
+export interface PresentationCueObservation {
+  selector: string;
+  tagName: string;
+  text: string | null;
+  accessibleName: string | null;
+  kinds: PresentationCueKind[];
+  color: string | null;
+  backgroundColor: string | null;
+  fontSize: string | null;
+  borderRadius: string | null;
+  position: string | null;
+  dimensions: { width: number; height: number } | null;
+  flags: string[];
+}
+
 export interface HiddenContentObservation {
   selector: string;
   reasons: Array<'hidden-attribute' | 'aria-hidden' | 'inert' | 'css-hidden'>;
@@ -244,6 +262,8 @@ export interface NavigationData {
 /** Presentation probes used by RGAA 10.2–10.4 and 10.11. */
 export interface PresentationData {
   snapshots: PresentationSnapshot[];
+  /** Optional inventory of CSS/DOM cues; it never determines a criterion verdict. */
+  perceptualCues?: PresentationCueObservation[];
   /** Optional for presentation collections persisted before hidden inventory was added. */
   hiddenContent?: HiddenContentObservation[];
   flags: string[];
@@ -1715,6 +1735,75 @@ function notObservedPresentationSnapshot(
   };
 }
 
+async function collectPresentationCues(page: Page): Promise<PresentationCueObservation[]> {
+  return page.evaluate(() => {
+    const MAX_ITEMS = 200;
+    const normalize = (value: string | null | undefined, max = 240): string | null => {
+      const text = (value ?? '').replace(/\s+/g, ' ').trim();
+      return text ? text.slice(0, max) : null;
+    };
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+    const accessibleName = (element: Element): string | null => {
+      const labelledBy = (element.getAttribute('aria-labelledby') ?? '')
+        .split(/\s+/).filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ');
+      return normalize(labelledBy)
+        ?? normalize(element.getAttribute('aria-label'))
+        ?? normalize(element.getAttribute('title'));
+    };
+    const cues: PresentationCueObservation[] = [];
+    for (const element of Array.from(document.querySelectorAll('body *'))) {
+      if (cues.length >= MAX_ITEMS) break;
+      const inlineStyle = element.getAttribute('style') ?? '';
+      const has = (pattern: RegExp): boolean => pattern.test(inlineStyle);
+      const kinds: PresentationCueKind[] = [];
+      if (has(/(?:^|;)\s*(?:color|background(?:-color)?):/i)) kinds.push('color');
+      if (has(/(?:^|;)\s*(?:border(?:-[\w-]+)?|border-radius|box-shadow|clip-path):/i)) kinds.push('shape');
+      if (has(/(?:^|;)\s*(?:font-size|width|height|padding|margin):/i)
+        || has(/(?:^|;)\s*transform:\s*[^;]*scale/i)) kinds.push('size');
+      if (has(/(?:^|;)\s*(?:position|inset|top|right|bottom|left):/i)
+        || has(/(?:^|;)\s*transform:\s*[^;]*translate/i)) kinds.push('position');
+      if (kinds.length === 0) continue;
+      const computed = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      cues.push({
+        selector: getUniqueSelector(element),
+        tagName: element.tagName.toLowerCase(),
+        text: normalize(element.textContent),
+        accessibleName: accessibleName(element),
+        kinds,
+        color: computed.color || null,
+        backgroundColor: computed.backgroundColor || null,
+        fontSize: computed.fontSize || null,
+        borderRadius: computed.borderRadius || null,
+        position: computed.position || null,
+        dimensions: [rect.width, rect.height].every(Number.isFinite)
+          ? { width: Math.round(rect.width), height: Math.round(rect.height) }
+          : null,
+        flags: [
+          'PERCEPTUAL_CUE_REVIEW',
+          ...kinds.map((kind) => `PERCEPTUAL_${kind.toUpperCase()}_CUE`),
+          ...(accessibleName(element) || normalize(element.textContent) ? ['PERCEPTUAL_TEXT_ALTERNATIVE_PRESENT'] : []),
+        ],
+      });
+    }
+    return cues;
+  });
+}
+
 /**
  * Capture the baseline, no-stylesheet, 320×256 and bounded 200% CSS-zoom
  * states. Every temporary mutation is restored before returning so replay and
@@ -1723,6 +1812,7 @@ function notObservedPresentationSnapshot(
 export async function collectPresentation(page: Page): Promise<PresentationData> {
   const snapshots: PresentationSnapshot[] = [];
   const initialViewport = page.viewportSize();
+  const perceptualCues = await collectPresentationCues(page);
   const baseline = await readPresentationSnapshot(page, 'baseline');
   snapshots.push(baseline);
 
@@ -1866,12 +1956,17 @@ export async function collectPresentation(page: Page): Promise<PresentationData>
 
   return {
     snapshots,
+    perceptualCues,
     hiddenContent,
     flags: [...new Set([
       ...snapshots.flatMap((snapshot) => snapshot.flags),
+      ...perceptualCues.flatMap((cue) => cue.flags),
       ...hiddenContent.flatMap((item) => item.flags),
     ])],
     manualChecks: [
+      'Vérifier que toute information portée par la couleur dispose d’une formulation ou d’une alternative non visuelle (RGAA 3.1).',
+      'Vérifier que les repères de forme, de taille ou de position disposent d’une formulation ou d’une alternative compréhensible (RGAA 10.9).',
+      'Vérifier que l’usage d’une forme, d’une taille ou d’une position est pertinent et accompagné d’une alternative lorsque nécessaire (RGAA 10.10).',
       'Comparer visuellement le contenu porteur d’information et son ordre de lecture avec les feuilles de styles désactivées (RGAA 10.2 et 10.3).',
       'Confirmer avec le zoom texte du navigateur à 200% que le texte reste lisible, sans perte d’information ni de fonctionnalité (RGAA 10.4).',
       'Confirmer à 320×256 que le contenu reste utilisable ; un débordement horizontal est un signal à analyser, pas un verdict automatique (RGAA 10.11).',

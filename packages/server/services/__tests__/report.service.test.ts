@@ -131,6 +131,25 @@ describe('buildReportFromSession', () => {
             frames: [],
             links: [],
             headings: { documentTitle: 'Test', headings: [], flags: [] },
+            presentation: {
+              snapshots: [],
+              perceptualCues: [{
+                selector: '[data-proof="https://example.com/cue?token=secret-value"]',
+                tagName: 'p',
+                text: 'État https://example.com/text?token=secret-value',
+                accessibleName: 'État https://example.com/name?token=secret-value',
+                kinds: ['color'],
+                color: 'rgb(255, 0, 0)',
+                backgroundColor: 'rgb(255, 255, 255)',
+                fontSize: '16px',
+                borderRadius: '0px',
+                position: 'static',
+                dimensions: { width: 100, height: 20 },
+                flags: ['PERCEPTUAL_COLOR_CUE'],
+              }],
+              flags: [],
+              manualChecks: [],
+            },
             navigation: {
               systems: [{
                 kind: 'search',
@@ -161,6 +180,11 @@ describe('buildReportFromSession', () => {
     expect(publicData.allCollected[0]?.collectedData?.navigation?.systems[0]).toMatchObject({
       href: 'https://example.com/recherche',
       label: 'Rechercher https://example.com/label',
+    });
+    expect(publicData.allCollected[0]?.collectedData?.presentation?.perceptualCues?.[0]).toMatchObject({
+      selector: '[data-proof="https://example.com/cue"]',
+      text: 'État https://example.com/text',
+      accessibleName: 'État https://example.com/name',
     });
     expect(JSON.stringify(publicData)).not.toContain('secret-value');
     expect(JSON.stringify(publicData)).not.toContain('/var/lib/rgaaudit/screenshots/secret.png');

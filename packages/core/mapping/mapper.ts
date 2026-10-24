@@ -531,6 +531,12 @@ function extractElements(
       elements.push({ selector: `document[${snapshot.scenario}]`, flags: matchingFlags });
     }
   }
+  for (const cue of collectedData.presentation?.perceptualCues ?? []) {
+    const matchingFlags = cue.flags.filter((flag) => relevantFlags.has(flag));
+    if (matchingFlags.length > 0) {
+      elements.push({ selector: cue.selector, flags: matchingFlags });
+    }
+  }
   for (const hidden of collectedData.presentation?.hiddenContent ?? []) {
     const matchingFlags = hidden.flags.filter((flag) => relevantFlags.has(flag));
     if (matchingFlags.length > 0) {

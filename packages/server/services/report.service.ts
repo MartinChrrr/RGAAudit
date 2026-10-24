@@ -391,6 +391,15 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
         errorMessage: control.errorMessage ? redactTextUrls(control.errorMessage) : control.errorMessage,
       })),
     })),
+    presentation: collectedData.presentation ? {
+      ...collectedData.presentation,
+      perceptualCues: collectedData.presentation.perceptualCues?.map((cue) => ({
+        ...cue,
+        selector: redactTextUrls(cue.selector),
+        text: cue.text ? redactTextUrls(cue.text) : cue.text,
+        accessibleName: cue.accessibleName ? redactTextUrls(cue.accessibleName) : cue.accessibleName,
+      })),
+    } : collectedData.presentation,
     navigation: collectedData.navigation ? {
       ...collectedData.navigation,
       systems: collectedData.navigation.systems.map((system) => ({
