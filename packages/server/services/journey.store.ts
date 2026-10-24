@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
-import type { JourneyDefinition, JourneyEvidenceDecision, JourneyRunState } from '../../core/journey/journey';
+import { JOURNEY_RUN_SCHEMA_VERSION, type JourneyDefinition, type JourneyEvidenceDecision, type JourneyRunState } from '../../core/journey/journey';
 import { config } from '../config';
 import { parseJourney } from './journey.validation';
 import { redactUrl } from '../security/url.redaction';
@@ -105,6 +105,59 @@ export async function saveJourneyRun(run: JourneyRunState): Promise<void> {
   await atomicWrite(getJourneyRunPath(run.runId), run);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isJourneyEvidenceDecision(value: unknown): value is JourneyEvidenceDecision {
+  if (!isRecord(value)) return false;
+  return typeof value.stepId === 'string'
+    && Number.isInteger(value.evidenceIndex)
+    && typeof value.criterionId === 'string'
+    && ['not_tested', 'compliant', 'non_compliant', 'not_applicable'].includes(String(value.status))
+    && typeof value.comment === 'string'
+    && (value.reviewedAt === null || typeof value.reviewedAt === 'string');
+}
+
+/** Migrate and minimally validate persisted runs before exposing them to routes. */
+export function migrateJourneyRunState(value: unknown, expectedRunId: string): JourneyRunState | null {
+  if (!isRecord(value)) return null;
+  if (value.runId !== expectedRunId || typeof value.journeyId !== 'string' || typeof value.startedAt !== 'string') return null;
+  if (!['running', 'completed', 'completed_with_errors', 'failed'].includes(String(value.status))) return null;
+  const rawVersion = typeof value.schemaVersion === 'number' ? value.schemaVersion : 0;
+  if (rawVersion > JOURNEY_RUN_SCHEMA_VERSION) return null;
+
+  const rawRun = value.run;
+  if (rawRun !== undefined) {
+    if (!isRecord(rawRun) || !Array.isArray(rawRun.steps)) return null;
+    if (rawRun.steps.some((step) => !isRecord(step) || typeof step.stepId !== 'string' || !Array.isArray(step.evidence))) {
+      return null;
+    }
+  }
+
+  const run = rawRun && isRecord(rawRun)
+    ? {
+      ...rawRun,
+      ...(Array.isArray(rawRun.decisions)
+        ? { decisions: rawRun.decisions.filter(isJourneyEvidenceDecision) }
+        : {}),
+      ...(Array.isArray(rawRun.decisionHistory)
+        ? { decisionHistory: rawRun.decisionHistory.filter(isJourneyEvidenceDecision) }
+        : {}),
+    }
+    : undefined;
+
+  return {
+    ...value,
+    schemaVersion: JOURNEY_RUN_SCHEMA_VERSION,
+    journeyDefinitionHash: typeof value.journeyDefinitionHash === 'string' && value.journeyDefinitionHash.length > 0
+      ? value.journeyDefinitionHash
+      : 'legacy',
+    ...(typeof value.sessionId === 'string' ? { sessionId: value.sessionId } : {}),
+    ...(run ? { run } : {}),
+  } as JourneyRunState;
+}
+
 /** Persist one human decision while retaining the replaced value in the run audit trail. */
 export async function saveJourneyEvidenceDecision(
   runId: string,
@@ -132,7 +185,7 @@ export async function saveJourneyEvidenceDecision(
 
 export async function loadJourneyRun(runId: string): Promise<JourneyRunState | null> {
   try {
-    return JSON.parse(await readFile(getJourneyRunPath(runId), 'utf-8')) as JourneyRunState;
+    return migrateJourneyRunState(JSON.parse(await readFile(getJourneyRunPath(runId), 'utf-8')), runId);
   } catch {
     return null;
   }

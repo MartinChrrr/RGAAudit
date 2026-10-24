@@ -15,7 +15,7 @@ vi.mock('../journey.store', () => ({
   saveJourneyRun: mockSaveJourneyRun,
 }));
 
-import { getActiveJourneyReplays, startJourneyReplay } from '../journey.service';
+import { getActiveJourneyReplays, journeyDefinitionHash, startJourneyReplay } from '../journey.service';
 
 const journey: JourneyDefinition = {
   id: 'journey-001',
@@ -51,6 +51,19 @@ beforeEach(() => {
 });
 
 describe('startJourneyReplay', () => {
+  it('empreinte la définition sans inclure les secrets sensibles', () => {
+    const first = journeyDefinitionHash({
+      ...journey,
+      steps: [{ id: 'secret', action: 'fill', selector: '#password', sensitive: true, value: 'one' }],
+    });
+    const second = journeyDefinitionHash({
+      ...journey,
+      steps: [{ id: 'secret', action: 'fill', selector: '#password', sensitive: true, value: 'two', secretRef: 'ref-2' }],
+    });
+
+    expect(first).toBe(second);
+  });
+
   it('enregistre running avant de lancer le rejeu puis completed', async () => {
     const runId = await startJourneyReplay(journey);
 

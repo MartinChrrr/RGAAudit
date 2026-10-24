@@ -8,6 +8,7 @@ import type { HumanStatus } from '../domain/review';
 
 export const JOURNEY_ACTIONS = ['navigate', 'click', 'fill', 'press', 'wait'] as const;
 export type JourneyAction = typeof JOURNEY_ACTIONS[number];
+export const JOURNEY_RUN_SCHEMA_VERSION = 1 as const;
 
 export interface JourneyStep {
   id: string;
@@ -130,8 +131,13 @@ export interface JourneyRun {
 }
 
 export interface JourneyRunState {
+  schemaVersion: typeof JOURNEY_RUN_SCHEMA_VERSION;
   runId: string;
   journeyId: string;
+  /** SHA-256 of the non-secret journey definition used for this run. */
+  journeyDefinitionHash: string;
+  /** Optional audit session to which the run may later be attached. */
+  sessionId?: string;
   status: 'running' | 'completed' | 'completed_with_errors' | 'failed';
   startedAt: string;
   finishedAt?: string;

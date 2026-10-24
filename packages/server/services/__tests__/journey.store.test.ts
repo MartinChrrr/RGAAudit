@@ -14,6 +14,7 @@ vi.mock('node:fs/promises', () => fsMock);
 import {
   getMissingSensitiveStepIds,
   MAX_JOURNEY_SCREENSHOT_BYTES,
+  migrateJourneyRunState,
   readJourneyScreenshot,
   redactJourney,
   saveJourney,
@@ -83,8 +84,10 @@ describe('journey store', () => {
       reviewedAt: new Date().toISOString(),
     };
     const run: JourneyRunState = {
+      schemaVersion: 1,
       runId: 'run-001',
       journeyId: 'journey-001',
+      journeyDefinitionHash: 'hash-run-001',
       status: 'completed',
       startedAt: new Date().toISOString(),
       run: {
@@ -104,5 +107,22 @@ describe('journey store', () => {
     expect(updated?.run?.decisionHistory).toEqual([previous]);
     const persisted = JSON.parse(fsMock.writeFile.mock.calls[0][1] as string) as JourneyRunState;
     expect(persisted.run?.decisionHistory).toEqual([previous]);
+  });
+
+  it('migre une exécution legacy et rejette une structure corrompue', () => {
+    const legacy = migrateJourneyRunState({
+      runId: 'run-legacy',
+      journeyId: 'journey-001',
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      run: { steps: [] },
+    }, 'run-legacy');
+
+    expect(legacy).toMatchObject({
+      schemaVersion: 1,
+      journeyDefinitionHash: 'legacy',
+      runId: 'run-legacy',
+    });
+    expect(migrateJourneyRunState({ runId: 'run-legacy', status: 'completed' }, 'run-legacy')).toBeNull();
   });
 });

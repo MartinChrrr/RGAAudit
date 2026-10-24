@@ -243,8 +243,10 @@ describe('journey replay and run retrieval', () => {
 
   it('retourne le statut et les observations d’une exécution', async () => {
     const run: JourneyRunState = {
+      schemaVersion: 1,
       runId: 'run-001',
       journeyId: 'journey-001',
+      journeyDefinitionHash: 'hash-run-001',
       status: 'completed',
       startedAt: new Date().toISOString(),
       finishedAt: new Date().toISOString(),
@@ -284,8 +286,10 @@ describe('journey replay and run retrieval', () => {
   it('expose la comparaison ordonnée des étapes sans données internes', async () => {
     const timestamp = new Date().toISOString();
     const run: JourneyRunState = {
+      schemaVersion: 1,
       runId: 'run-comparison',
       journeyId: 'journey-001',
+      journeyDefinitionHash: 'hash-run-comparison',
       status: 'completed',
       startedAt: timestamp,
       finishedAt: timestamp,
@@ -341,8 +345,10 @@ describe('journey replay and run retrieval', () => {
   it('enregistre une décision humaine sur une preuve de parcours', async () => {
     const timestamp = new Date().toISOString();
     const run: JourneyRunState = {
+      schemaVersion: 1,
       runId: 'run-review',
       journeyId: 'journey-001',
+      journeyDefinitionHash: 'hash-run-review',
       status: 'completed',
       startedAt: timestamp,
       finishedAt: timestamp,
