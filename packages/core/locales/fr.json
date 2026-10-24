@@ -159,6 +159,7 @@
     "loadError": "Impossible de charger ce parcours.",
     "saveError": "Impossible d’enregistrer le parcours : {error}",
     "replayError": "Impossible de lancer le parcours : {error}",
+    "replayInProgress": "Rejeu du parcours en cours.",
     "definition": "Définition du parcours",
     "name": "Nom",
     "startUrl": "URL de départ",

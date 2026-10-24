@@ -356,6 +356,14 @@ export default function JourneyRun() {
   const [decisions, setDecisions] = useState<JourneyEvidenceDecision[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (loading) return;
+    if (error || !data) errorRef.current?.focus();
+    else headingRef.current?.focus();
+  }, [data, error, loading]);
 
   useEffect(() => {
     if (!runId) return;
@@ -387,7 +395,7 @@ export default function JourneyRun() {
   if (error || !data) {
     return (
       <main id="main-content" className="min-h-screen bg-gray-50 p-6">
-        <p role="alert" className="text-red-700">{error || t('journey.error')}</p>
+        <p ref={errorRef} tabIndex={-1} role="alert" className="text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">{error || t('journey.error')}</p>
         <Link to="/" className="mt-4 inline-block text-primary-700 underline">{t('journey.backHome')}</Link>
       </main>
     );
@@ -405,7 +413,7 @@ export default function JourneyRun() {
       <div className="mx-auto max-w-5xl">
         <Link to="/" className="text-sm text-primary-700 underline">{t('journey.backHome')}</Link>
         <header className="mt-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">{t('journey.title')}</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">{t('journey.title')}</h1>
           <dl className="mt-4 grid gap-2 text-sm text-gray-700 sm:grid-cols-2">
             <div>
               <dt className="font-medium text-gray-900">{t('journey.statusLabel')}</dt>

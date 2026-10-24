@@ -177,6 +177,7 @@ export default function JourneyBuilder() {
             {editing && <button type="button" onClick={startReplay} disabled={saving || replaying} className="rounded-lg border border-primary-600 px-5 py-2.5 text-sm font-medium text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
               {replaying ? t('journeyBuilder.replaying') : t('journeyBuilder.replay')}
             </button>}
+            {editing && <span role="status" aria-live="polite" className="sr-only">{replaying ? t('journeyBuilder.replayInProgress') : ''}</span>}
             <button type="submit" disabled={saving || replaying} className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50">
               {saving ? t('journeyBuilder.saving') : t('journeyBuilder.save')}
             </button>
