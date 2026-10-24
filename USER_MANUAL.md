@@ -66,6 +66,19 @@ Pour chaque élément ou critère concerné :
 Les décisions remplacées restent accessibles dans l’historique. Une décision
 humaine reste séparée du signal automatique qui l’a motivée.
 
+### 5.1. Examiner les libellés et regroupements de formulaires (US-44)
+
+Dans l’annexe **Formulaires**, chaque contrôle peut afficher son libellé et sa
+source, le sélecteur DOM du libellé, l’accolement observé, le `fieldset` et sa
+`legend`, ainsi que les `optgroup` d’une liste et les intitulés des boutons.
+Les groupes de champs sont listés séparément avec leurs contrôles associés.
+
+Ces éléments sont des preuves candidates pour les critères RGAA 11.2, 11.4,
+11.5, 11.7, 11.8 et 11.9. Ils ne concluent pas sur la pertinence du texte, la
+nécessité d’un regroupement, les cas particuliers d’accolement ou la pertinence
+du regroupement des options. Vérifier chaque relation dans la page et enregistrer
+la décision humaine depuis le critère concerné.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

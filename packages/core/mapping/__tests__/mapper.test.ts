@@ -469,6 +469,44 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
     });
   });
 
+  it('mappe les preuves de libellés, groupes, optgroup et boutons', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        forms: [{
+          selector: '#profile',
+          action: null,
+          method: 'post',
+          flags: [],
+          controls: [{
+            selector: '#name', tagName: 'input', type: 'text', id: 'name', name: 'name',
+            label: 'Nom', labelSource: 'label', required: false, invalid: false,
+            autocomplete: null, describedByIds: [], helpText: null, errorMessage: null,
+            flags: ['FORM_LABEL_PRESENT', 'FORM_LABEL_ADJACENT'],
+          }, {
+            selector: '#submit', tagName: 'button', type: 'submit', id: 'submit', name: null,
+            label: 'Enregistrer', labelSource: null, required: false, invalid: false,
+            autocomplete: null, describedByIds: [], helpText: null, errorMessage: null,
+            flags: ['FORM_BUTTON_LABEL_PRESENT'],
+            optionGroups: [{ selector: '#group', label: 'Équipe', optionCount: 2, flags: ['FORM_OPTION_GROUP_LABEL_PRESENT'] }],
+          }],
+          groups: [{ selector: 'fieldset#profile', legend: 'Profil', controlSelectors: ['#name'], flags: ['FORM_GROUP_REVIEW', 'FORM_GROUP_LEGEND_PRESENT'] }],
+        }],
+      }),
+      'http://example.com/forms',
+    );
+
+    for (const id of ['11.2', '11.4', '11.5', '11.7', '11.8', '11.9']) {
+      expect(result.criteria.find((criterion) => criterion.rgaaId === id)?.status).toBe('manual');
+    }
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.2')?.elements).toEqual(expect.arrayContaining([
+      expect.objectContaining({ selector: '#name', flags: ['FORM_LABEL_PRESENT'] }),
+    ]));
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.8')?.elements).toEqual(expect.arrayContaining([
+      expect.objectContaining({ selector: '#group', flags: ['FORM_OPTION_GROUP_LABEL_PRESENT'] }),
+    ]));
+  });
+
   it('signale un doctype absent et distingue une page sans signal', () => {
     const withoutDoctype = mapPageResults(
       makeAxeResult(),

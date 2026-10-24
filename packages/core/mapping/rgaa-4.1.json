@@ -1600,9 +1600,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_LABEL_PRESENT", "FORM_LABEL_ABSENT"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier la pertinence de chaque étiquette associée à un champ."]},
+      "limits": "La source et le texte de l’étiquette sont inventoriés ; leur pertinence reste une décision humaine."
     },
     {
       "rgaa": {
@@ -1632,9 +1632,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_LABEL_ADJACENT", "FORM_LABEL_ADJACENCY_REVIEW"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier visuellement et au clavier que l’étiquette et son champ sont accolés."]},
+      "limits": "La relation DOM observée est une preuve candidate ; les cas particuliers restent à vérifier humainement."
     },
     {
       "rgaa": {
@@ -1648,9 +1648,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_GROUP_REVIEW"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier que les champs de même nature sont regroupés lorsque nécessaire."]},
+      "limits": "Les fieldset observés sont des candidats de regroupement ; la nécessité du regroupement reste humaine."
     },
     {
       "rgaa": {
@@ -1682,9 +1682,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_GROUP_LEGEND_PRESENT", "FORM_GROUP_LEGEND_EMPTY", "FORM_GROUP_LEGEND_ABSENT"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier la pertinence de la légende de chaque regroupement."]},
+      "limits": "La présence ou l’absence de legend est inventoriée, sans conclure sur sa pertinence."
     },
     {
       "rgaa": {
@@ -1698,9 +1698,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_OPTION_GROUP_LABEL_PRESENT", "FORM_OPTION_GROUP_LABEL_ABSENT"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier que les options de même nature sont regroupées de manière pertinente."]},
+      "limits": "Les optgroup et leurs libellés sont des preuves DOM ; la pertinence du regroupement reste humaine."
     },
     {
       "rgaa": {
@@ -1714,9 +1714,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_BUTTON_LABEL_PRESENT", "FORM_BUTTON_LABEL_ABSENT"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier la pertinence de l’intitulé de chaque bouton."]},
+      "limits": "Le nom accessible ou le texte du bouton est inventorié ; sa pertinence reste une décision humaine."
     },
     {
       "rgaa": {

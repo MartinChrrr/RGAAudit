@@ -321,7 +321,7 @@ describe('collectForms', () => {
       required: true,
       helpText: 'Utilisez une adresse professionnelle.',
       errorMessage: 'Saisissez une adresse électronique valide.',
-      flags: [],
+      flags: expect.arrayContaining(['FORM_LABEL_PRESENT', 'FORM_LABEL_ADJACENT']),
     });
     expect(forms[0].controls[1]).toMatchObject({
       selector: '#missing-label',
@@ -329,6 +329,21 @@ describe('collectForms', () => {
       helpText: 'Cette information est facultative.',
       flags: ['FORM_LABEL_ABSENT'],
     });
+  });
+
+  it('relie les groupes, optgroup et intitulés de boutons aux preuves DOM', async () => {
+    const forms = await withPage(`${baseUrl}/forms/us-44-labels-groups.html`, collectForms);
+
+    expect(forms[0]?.groups).toEqual(expect.arrayContaining([
+      expect.objectContaining({ legend: 'Identité', flags: expect.arrayContaining(['FORM_GROUP_REVIEW']) }),
+      expect.objectContaining({ legend: null, flags: expect.arrayContaining(['FORM_GROUP_LEGEND_EMPTY']) }),
+    ]));
+    expect(forms[0]?.controls.find((control) => control.selector === '#role')?.optionGroups).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Équipe', optionCount: 1, flags: ['FORM_OPTION_GROUP_LABEL_PRESENT'] }),
+      expect.objectContaining({ label: null, flags: ['FORM_OPTION_GROUP_LABEL_ABSENT'] }),
+    ]));
+    expect(forms[0]?.controls.find((control) => control.type === 'submit')?.flags).toContain('FORM_BUTTON_LABEL_PRESENT');
+    expect(forms[0]?.controls.find((control) => control.type === 'button')?.flags).toContain('FORM_BUTTON_LABEL_PRESENT');
   });
 
   it('expose les formulaires dans la collecte globale', async () => {

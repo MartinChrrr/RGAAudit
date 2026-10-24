@@ -401,12 +401,32 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
     })),
     forms: collectedData.forms?.map((form) => ({
       ...form,
+      selector: redactTextUrls(form.selector),
       action: form.action ? redactUrl(form.action) : form.action,
+      flags: form.flags.map(redactTextUrls),
       controls: form.controls.map((control) => ({
         ...control,
+        selector: redactTextUrls(control.selector),
         label: control.label ? redactTextUrls(control.label) : control.label,
+        labelSelector: control.labelSelector ? redactTextUrls(control.labelSelector) : control.labelSelector,
+        groupSelector: control.groupSelector ? redactTextUrls(control.groupSelector) : control.groupSelector,
+        groupLegend: control.groupLegend ? redactTextUrls(control.groupLegend) : control.groupLegend,
         helpText: control.helpText ? redactTextUrls(control.helpText) : control.helpText,
         errorMessage: control.errorMessage ? redactTextUrls(control.errorMessage) : control.errorMessage,
+        flags: control.flags.map(redactTextUrls),
+        optionGroups: control.optionGroups?.map((group) => ({
+          ...group,
+          selector: redactTextUrls(group.selector),
+          label: group.label ? redactTextUrls(group.label) : group.label,
+          flags: group.flags.map(redactTextUrls),
+        })),
+      })),
+      groups: form.groups?.map((group) => ({
+        ...group,
+        selector: redactTextUrls(group.selector),
+        legend: group.legend ? redactTextUrls(group.legend) : group.legend,
+        controlSelectors: group.controlSelectors.map(redactTextUrls),
+        flags: group.flags.map(redactTextUrls),
       })),
     })),
     presentation: collectedData.presentation ? {

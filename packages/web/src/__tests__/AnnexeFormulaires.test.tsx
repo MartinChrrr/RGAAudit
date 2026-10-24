@@ -8,6 +8,7 @@ const forms: FormItem[] = [{
   method: 'post',
   pageUrl: 'https://example.com/form',
   flags: [],
+  groups: [{ selector: 'fieldset#profile', legend: 'Profil', controlSelectors: ['#email'], flags: ['FORM_GROUP_REVIEW'] }],
   controls: [{
     selector: '#email',
     tagName: 'input',
@@ -23,6 +24,8 @@ const forms: FormItem[] = [{
     helpText: 'Utilisez une adresse professionnelle.',
     errorMessage: 'Saisissez une adresse valide.',
     flags: [],
+    labelSelector: 'label[for="email"]',
+    labelAdjacent: true,
   }],
 }];
 
@@ -37,7 +40,9 @@ describe('AnnexeFormulaires', () => {
     expect(screen.getByText('Requis')).toBeInTheDocument();
     expect(screen.getByText('État invalide observé')).toBeInTheDocument();
     expect(screen.getByText('autocomplete: email')).toBeInTheDocument();
-    expect(screen.getByRole('table')).toHaveAccessibleName('Champs du formulaire #account');
+    expect(screen.getByRole('table', { name: 'Champs du formulaire #account' })).toBeInTheDocument();
+    expect(screen.getByText(/Groupes de champs/)).toBeInTheDocument();
+    expect(screen.getByText('fieldset#profile')).toBeInTheDocument();
   });
 
   it('signale un champ sans libellé', () => {

@@ -325,6 +325,12 @@ export interface FormControlData {
   helpText: string | null;
   errorMessage: string | null;
   flags: string[];
+  /** DOM evidence retained for the manual label/grouping criteria. */
+  labelSelector?: string | null;
+  labelAdjacent?: boolean | null;
+  groupSelector?: string | null;
+  groupLegend?: string | null;
+  optionGroups?: Array<{ selector: string; label: string | null; optionCount: number; flags: string[] }>;
 }
 
 export interface FormDataItem {
@@ -333,6 +339,7 @@ export interface FormDataItem {
   method: string;
   controls: FormControlData[];
   flags: string[];
+  groups?: Array<{ selector: string; legend: string | null; controlSelectors: string[]; flags: string[] }>;
 }
 
 export interface FigureCaptionData {
@@ -1590,7 +1597,7 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
     };
 
     const controlsFor = (container: Element | Document): FormControlData[] => {
-      const controls = Array.from(container.querySelectorAll('input:not([type="hidden"]), textarea, select'))
+      const controls = Array.from(container.querySelectorAll('input:not([type="hidden"]), textarea, select, button'))
         .slice(0, MAX_CONTROLS_PER_FORM);
       return controls.map((control) => {
         const id = control.getAttribute('id');
@@ -1598,9 +1605,10 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
         const describedByIds = (control.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
         const labelledByText = getReferencedText(ariaLabelledbyIds);
         const ariaLabel = control.getAttribute('aria-label')?.trim() || null;
-        const associatedLabel = id
-          ? limitText(document.querySelector(`label[for="${CSS.escape(id)}"]`)?.textContent)
-          : limitText(control.closest('label')?.textContent);
+        const labelElement = id
+          ? document.querySelector(`label[for="${CSS.escape(id)}"]`)
+          : control.closest('label');
+        const associatedLabel = labelElement ? limitText(labelElement.textContent) : null;
         const label = labelledByText || ariaLabel || associatedLabel;
         const labelSource: FormControlData['labelSource'] = labelledByText
           ? 'aria-labelledby'
@@ -1613,8 +1621,31 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
         const helpText = getReferencedText(describedByIds);
         const errorIds = (control.getAttribute('aria-errormessage') ?? '').split(/\s+/).filter(Boolean);
         const errorMessage = getReferencedText(errorIds);
+        const fieldset = control.closest('fieldset');
+        const legendElement = fieldset?.querySelector('legend') ?? null;
+        const labelAdjacent = labelElement
+          ? labelElement.contains(control)
+            || labelElement.nextElementSibling === control
+            || control.nextElementSibling === labelElement
+          : null;
+        const optionGroups = control.tagName.toLowerCase() === 'select'
+          ? Array.from(control.querySelectorAll('optgroup')).map((group) => ({
+            selector: getUniqueSelector(group),
+            label: group.getAttribute('label')?.trim() || null,
+            optionCount: group.querySelectorAll('option').length,
+            flags: group.getAttribute('label')?.trim() ? ['FORM_OPTION_GROUP_LABEL_PRESENT'] : ['FORM_OPTION_GROUP_LABEL_ABSENT'],
+          }))
+          : [];
+        const controlText = control.tagName.toLowerCase() === 'button'
+          ? limitText(control.textContent) || control.getAttribute('aria-label')?.trim() || control.getAttribute('title')?.trim() || null
+          : null;
+        const effectiveLabel = controlText ?? label;
         const flags: string[] = [];
-        if (!label) flags.push('FORM_LABEL_ABSENT');
+        if (!effectiveLabel) flags.push(control.tagName.toLowerCase() === 'button' ? 'FORM_BUTTON_LABEL_ABSENT' : 'FORM_LABEL_ABSENT');
+        if (effectiveLabel && control.tagName.toLowerCase() === 'button') flags.push('FORM_BUTTON_LABEL_PRESENT');
+        if (effectiveLabel && control.tagName.toLowerCase() !== 'button') flags.push('FORM_LABEL_PRESENT');
+        if (labelAdjacent === true) flags.push('FORM_LABEL_ADJACENT');
+        if (labelElement && labelAdjacent === false) flags.push('FORM_LABEL_ADJACENCY_REVIEW');
         if (invalid && !errorMessage) flags.push('FORM_ERROR_MESSAGE_ABSENT');
         if (describedByIds.some((ref) => !document.getElementById(ref))) {
           flags.push('FORM_HELP_REFERENCE_MISSING');
@@ -1626,7 +1657,7 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
           type: control.getAttribute('type') ?? control.tagName.toLowerCase(),
           id,
           name: control.getAttribute('name'),
-          label,
+          label: effectiveLabel,
           labelSource,
           required: control.hasAttribute('required') || control.getAttribute('aria-required') === 'true',
           invalid,
@@ -1635,15 +1666,36 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
           helpText,
           errorMessage,
           flags,
+          labelSelector: labelElement ? getUniqueSelector(labelElement) : null,
+          labelAdjacent,
+          groupSelector: fieldset ? getUniqueSelector(fieldset) : null,
+          groupLegend: legendElement ? limitText(legendElement.textContent) : null,
+          optionGroups,
         };
       });
     };
 
+    const formData = (form: Element | Document) => ({
+      controls: controlsFor(form),
+      groups: Array.from(form.querySelectorAll('fieldset')).slice(0, MAX_CONTROLS_PER_FORM).map((fieldset) => {
+        const legend = fieldset.querySelector('legend');
+        const controlSelectors = controlsFor(fieldset).map((control) => control.selector);
+        return {
+          selector: getUniqueSelector(fieldset),
+          legend: legend ? limitText(legend.textContent) : null,
+          controlSelectors,
+          flags: [
+            legend ? (limitText(legend.textContent) ? 'FORM_GROUP_LEGEND_PRESENT' : 'FORM_GROUP_LEGEND_EMPTY') : 'FORM_GROUP_LEGEND_ABSENT',
+            'FORM_GROUP_REVIEW',
+          ],
+        };
+      }),
+    });
     const forms = Array.from(document.querySelectorAll('form')).slice(0, MAX_FORMS).map((form) => ({
       selector: getUniqueSelector(form),
       action: form.getAttribute('action'),
       method: (form.getAttribute('method') ?? 'get').toLowerCase(),
-      controls: controlsFor(form),
+      ...formData(form),
       flags: [],
     }));
 
@@ -1652,7 +1704,7 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
       return !element?.closest('form');
     });
     if (controlsOutsideForms.length > 0) {
-      forms.push({ selector: '(contrôles hors formulaire)', action: null, method: 'get', controls: controlsOutsideForms, flags: [] });
+      forms.push({ selector: '(contrôles hors formulaire)', action: null, method: 'get', controls: controlsOutsideForms, groups: [], flags: [] });
     }
     return forms;
   });

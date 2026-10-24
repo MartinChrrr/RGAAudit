@@ -298,14 +298,20 @@ describe('renderReportHtml', () => {
   });
 
   it('affiche l’annexe formulaires dans le rapport HTML', () => {
+    const collected = makeCollectedData();
+    collected.forms![0].groups = [{ selector: 'fieldset#profile', legend: 'Profil', controlSelectors: ['#email'], flags: ['FORM_GROUP_REVIEW'] }];
+    collected.forms![0].controls[0].labelSelector = 'label[for="email"]';
+    collected.forms![0].controls[0].labelAdjacent = true;
     const html = renderReportHtml({
       report: makeReport(),
-      allCollected: [{ url: 'https://example.com/', collectedData: makeCollectedData() }],
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
     });
 
     expect(html).toContain('Annexe — Formulaires');
     expect(html).toContain('Adresse électronique');
     expect(html).toContain('Email invalide');
+    expect(html).toContain('Groupes de champs');
+    expect(html).toContain('fieldset#profile');
   });
 
   it('affiche l’inventaire des médias et les contrôles manuels', () => {

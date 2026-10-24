@@ -841,6 +841,7 @@ function buildFormsSection(forms: FormAnnexItem[]): string {
           </thead>
           <tbody class="divide-y divide-gray-100">${rows}</tbody>
         </table>
+        ${(form.groups ?? []).length > 0 ? `<h3 class="text-sm font-semibold text-gray-800 mt-4">Groupes de champs</h3><ul class="mt-2 list-disc list-inside text-xs text-amber-900">${(form.groups ?? []).map((group) => `<li><code>${escapeHtml(group.selector)}</code> — ${escapeHtml(group.legend ?? 'Légende absente')} — ${escapeHtml(group.controlSelectors.join(', ') || 'Aucun champ')} — Revue humaine requise</li>`).join('')}</ul>` : ''}
       </section>`;
   }).join('');
 

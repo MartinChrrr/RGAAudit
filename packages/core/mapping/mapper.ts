@@ -522,6 +522,24 @@ function extractElements(
     }
   }
 
+  // Form controls, labels, groups and option groups are retained as manual evidence.
+  for (const form of collectedData.forms ?? []) {
+    for (const control of form.controls) {
+      const matchingFlags = control.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) elements.push({ selector: control.selector, flags: matchingFlags });
+      for (const group of control.optionGroups ?? []) {
+        const groupFlags = group.flags.filter((flag) => relevantFlags.has(flag));
+        if (groupFlags.length > 0) elements.push({ selector: group.selector, flags: groupFlags });
+      }
+    }
+    for (const group of form.groups ?? []) {
+      const matchingFlags = group.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) elements.push({ selector: group.selector, flags: matchingFlags });
+    }
+    const formFlags = form.flags.filter((flag) => relevantFlags.has(flag));
+    if (formFlags.length > 0) elements.push({ selector: form.selector, flags: formFlags });
+  }
+
   // Presentation-state probes are page-level evidence. They intentionally
   // remain manual because metrics and screenshots cannot decide readability,
   // information loss or interaction equivalence.

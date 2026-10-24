@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Formulaires — libellés et regroupements</title></head>
+<body><main><h1>Profil</h1>
+  <form id="profile" action="/profile" method="post">
+    <fieldset><legend>Identité</legend>
+      <label for="name">Nom complet</label><input id="name" name="name" type="text" aria-describedby="name-help"><p id="name-help">Votre nom usuel.</p>
+      <label for="role">Rôle</label><select id="role" name="role"><option value="">Choisir</option><optgroup label="Équipe"><option>Développement</option></optgroup><optgroup><option>Autre</option></optgroup></select>
+    </fieldset>
+    <fieldset><legend></legend><input id="missing-label" name="missing-label" type="text"></fieldset>
+    <button type="submit">Enregistrer le profil</button><button type="button" aria-label="Réinitialiser"> </button>
+  </form>
+</main></body></html>

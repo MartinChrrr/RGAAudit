@@ -16,6 +16,11 @@ export interface FormControlItem {
   helpText: string | null;
   errorMessage: string | null;
   flags: string[];
+  labelSelector?: string | null;
+  labelAdjacent?: boolean | null;
+  groupSelector?: string | null;
+  groupLegend?: string | null;
+  optionGroups?: Array<{ selector: string; label: string | null; optionCount: number; flags: string[] }>;
 }
 
 export interface FormItem {
@@ -24,6 +29,7 @@ export interface FormItem {
   method: string;
   controls: FormControlItem[];
   flags: string[];
+  groups?: Array<{ selector: string; legend: string | null; controlSelectors: string[]; flags: string[] }>;
   pageUrl?: string;
   pageId?: string;
 }
@@ -117,9 +123,13 @@ export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId
                             <td className="px-3 py-2 text-gray-800">{control.label || t('annexes.forms.labelAbsent')}</td>
                             <td className="px-3 py-2 text-xs text-gray-700">
                               <div>{control.labelSource || t('annexes.forms.labelSourceAbsent')}</div>
+                              <div>{control.labelSelector ? `Étiquette : ${control.labelSelector}` : 'Étiquette DOM non reliée'}</div>
+                              {control.labelAdjacent !== null && control.labelAdjacent !== undefined && <div>{control.labelAdjacent ? 'Étiquette accolée observée' : 'Accolement à vérifier'}</div>}
+                              {control.groupSelector && <div>Groupe : {control.groupSelector} ({control.groupLegend || 'legend absente'})</div>}
                               <div>{control.required ? t('annexes.forms.required') : t('annexes.forms.optional')}</div>
                               <div>{control.invalid ? t('annexes.forms.invalid') : t('annexes.forms.validityNotObserved')}</div>
                               {control.autocomplete && <div>autocomplete: {control.autocomplete}</div>}
+                              {control.optionGroups && control.optionGroups.length > 0 && <div>Optgroup : {control.optionGroups.map((group) => `${group.label || 'sans libellé'} (${group.optionCount})`).join(', ')}</div>}
                             </td>
                             <td className="px-3 py-2 text-xs text-gray-700">{control.helpText || t('annexes.forms.helpAbsent')}</td>
                             <td className="px-3 py-2 text-xs text-gray-700">{control.errorMessage || t('annexes.forms.errorAbsent')}</td>
@@ -139,6 +149,22 @@ export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId
                     </tbody>
                   </table>
                 </div>
+                {form.groups && form.groups.length > 0 && (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <caption className="sr-only">Groupes de champs du formulaire {form.selector}</caption>
+                      <thead className="border-b border-gray-200 bg-gray-50 uppercase text-gray-700"><tr>
+                        <th scope="col" className="px-3 py-2">Groupe</th>
+                        <th scope="col" className="px-3 py-2">Légende</th>
+                        <th scope="col" className="px-3 py-2">Champs associés</th>
+                        <th scope="col" className="px-3 py-2">Revue</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {form.groups.map((group) => <tr key={group.selector} className="align-top"><td className="px-3 py-2 font-mono">{group.selector}</td><td className="px-3 py-2">{group.legend || 'Légende absente'}</td><td className="px-3 py-2">{group.controlSelectors.join(', ') || 'Aucun champ'}</td><td className="px-3 py-2 text-amber-900">Revue humaine requise · {group.flags.join(', ')}</td></tr>)}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
             ))}
           </div>
