@@ -64,6 +64,9 @@ describe('AnnexeImages', () => {
     const rows = screen.getAllByRole('row');
     // 1 header + 3 data rows
     expect(rows.length).toBe(4);
+    expect(screen.getByRole('button', { name: /toutes/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('region', { name: /annexe images/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader')).toHaveLength(4);
   });
 
   it('affiche les alternatives détectées et les contrôles manuels spécialisés', () => {
@@ -71,13 +74,14 @@ describe('AnnexeImages', () => {
       images={[{
         ...mockImages[1],
         alternativeSources: ['alt', 'figcaption'],
-        manualChecks: ['1.4 — Vérifier le CAPTCHA', '1.8 — Vérifier le texte dans l’image'],
+        manualChecks: ['1.3 — Vérifier la pertinence', '1.4 — Vérifier le CAPTCHA', '1.8 — Vérifier le texte dans l’image'],
       }]}
       sessionId="test-specialized"
     />);
 
     expect(screen.getByText(/Alternatives détectées : alt, figcaption/)).toBeInTheDocument();
     expect(screen.getByText(/Contrôles manuels associés/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Pertinence de l’alternative à vérifier/)).toHaveLength(2);
     expect(screen.getByText(/1\.4 — Vérifier le CAPTCHA/)).toBeInTheDocument();
   });
 
@@ -145,12 +149,33 @@ describe('AnnexeImages', () => {
     expect(screen.getByRole('combobox', { name: /nature validée.*img#hero/i })).toHaveValue('informative');
     expect(screen.getByRole('combobox', { name: /nature validée.*img#deco/i })).toHaveValue('decorative');
     expect(screen.getAllByText('Non conforme', { exact: true })).toHaveLength(1);
-    expect(screen.getAllByText('Conforme', { exact: true })).toHaveLength(2);
+    expect(screen.getAllByText('Conforme', { exact: true })).toHaveLength(1);
+    expect(screen.getAllByText(/Pertinence de l’alternative à vérifier/)).toHaveLength(2);
   });
 
   it('ne transforme pas une alerte automatique en verdict humain', () => {
     const image = { ...mockImages[1], automatedStatus: 'violation' as const };
     expect(deriveImageStatus(image, { decision: 'informative', correctedAlt: '' })).toBe('compliant');
+  });
+
+  it('garde le critère 1.3 non applicable pour une image alt vide même après une décision image', () => {
+    render(<AnnexeImages
+      images={[mockImages[2]]}
+      sessionId="test-5b"
+      initialDecisions={[{
+        pageUrl: 'https://example.com/about',
+        selector: 'img#deco',
+        elementIndex: 0,
+        decision: 'decorative',
+        status: 'not_applicable',
+        correctedAlt: '',
+        notes: '',
+        reviewedAt: '2026-10-25T00:00:00.000Z',
+      }]}
+    />);
+
+    expect(screen.getByText(/Pertinence du critère 1\.3 non applicable/)).toBeInTheDocument();
+    expect(screen.queryByText('Décision humaine enregistrée')).not.toBeInTheDocument();
   });
 
   it('enregistre le verdict et la correction proposée du alt', async () => {

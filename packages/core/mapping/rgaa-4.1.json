@@ -197,9 +197,15 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "ALT_RELEVANCE_REVIEW"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Pour chaque image porteuse d’information ayant une alternative textuelle, vérifier manuellement que cette alternative est pertinente par rapport à l’information véhiculée."
+        ]
+      },
+      "limits": "La présence d’une alternative non vide est seulement un signal de sélection ; sa pertinence et la décision de l’auditeur restent humaines."
     },
     {
       "rgaa": {

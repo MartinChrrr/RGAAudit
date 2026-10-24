@@ -11,6 +11,8 @@ export interface ImageData {
   src: string;
   altAttribute: string | null;
   altStatus: 'absent' | 'empty' | 'present';
+  /** A non-empty alternative is a candidate for the human relevance review of RGAA 1.3. */
+  altRelevanceStatus?: 'not_applicable' | 'to_review';
   ariaLabel: string | null;
   ariaLabelledby: string | null;
   rolePresentation: boolean;
@@ -343,7 +345,7 @@ export interface CollectedData {
   navigation?: NavigationData;
 }
 
-const SPECIALIZED_IMAGE_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
+const IMAGE_MANUAL_CRITERIA = ['1.3', '1.4', '1.5', '1.6', '1.7', '1.8'] as const;
 // US-16 scope: temporal media (4.1–4.6) and non-temporal media (4.8–4.9).
 // Criteria 4.7, 4.10–4.13 remain separate manual/backlog work and are not
 // silently presented as covered by this inventory.
@@ -358,7 +360,7 @@ const MEDIA_LIMITS = {
 } as const;
 
 function getSpecializedImageChecks(): string[] {
-  return SPECIALIZED_IMAGE_CRITERIA.flatMap((id) => {
+  return IMAGE_MANUAL_CRITERIA.flatMap((id) => {
     const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
     return checks.map((check) => `${id} — ${check}`);
   });
@@ -534,8 +536,16 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
 
     const flags: string[] = [];
 
+    const altRelevanceStatus: ImageData['altRelevanceStatus'] = altStatus === 'present'
+      ? 'to_review'
+      : 'not_applicable';
+
     if (img.altAttribute === null) {
       flags.push('ALT_ABSENT');
+    }
+
+    if (altRelevanceStatus === 'to_review') {
+      flags.push('ALT_RELEVANCE_REVIEW');
     }
 
     if (img.altAttribute !== null && img.altAttribute !== '' && genericAltRegex.test(img.altAttribute)) {
@@ -559,8 +569,11 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
 
     return {
       ...img,
-      manualChecks: getSpecializedImageChecks(),
+      manualChecks: getSpecializedImageChecks().filter((check) => (
+        altRelevanceStatus === 'to_review' || !check.startsWith('1.3 —')
+      )),
       altStatus,
+      altRelevanceStatus,
       axeViolations: [],
       automatedStatus,
       flags,

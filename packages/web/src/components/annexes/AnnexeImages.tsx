@@ -8,6 +8,7 @@ export interface ImageItem {
   src: string;
   altAttribute: string | null;
   altStatus: 'absent' | 'empty' | 'present';
+  altRelevanceStatus?: 'not_applicable' | 'to_review';
   automatedStatus: 'violation' | 'pass' | 'manual';
   flags: string[];
   surroundingText: string;
@@ -190,6 +191,7 @@ export default function AnnexeImages({
       [key]: {
         ...(prev[key] ?? emptyDecision(image)),
         ...update,
+        reviewedAt: new Date().toISOString(),
       },
     }));
     setDirtyKeys((current) => new Set(current).add(key));
@@ -345,6 +347,11 @@ export default function AnnexeImages({
           >
             {savingAll ? 'Enregistrement…' : savedAll && dirtyKeys.size === 0 ? 'Tout est enregistré' : 'Enregistrer les modifications'}
           </button>
+          {savedAll && dirtyKeys.size === 0 && (
+            <span role="status" aria-live="polite" className="text-xs text-green-800">
+              {t('annexes.images.saveSuccess')}
+            </span>
+          )}
         </div>
       </div>
 
@@ -383,14 +390,14 @@ export default function AnnexeImages({
       {filtered.length === 0 ? (
         <p className="text-sm text-gray-600 py-4">{t('annexes.images.noResults')}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" role="region" tabIndex={0} aria-label={t('annexes.images.tableScrollLabel')}>
           <table className="w-full min-w-[1040px] text-sm text-left">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-3 py-2">{t('annexes.images.colThumbnail')}</th>
-                <th className="px-3 py-2">Image analysée</th>
-                <th className="px-3 py-2">Suggestion automatique</th>
-                <th className="px-3 py-2">{t('annexes.images.colDecision')}</th>
+                <th scope="col" className="px-3 py-2">{t('annexes.images.colThumbnail')}</th>
+                <th scope="col" className="px-3 py-2">Image analysée</th>
+                <th scope="col" className="px-3 py-2">Suggestion automatique</th>
+                <th scope="col" className="px-3 py-2">{t('annexes.images.colDecision')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -406,6 +413,8 @@ export default function AnnexeImages({
                 const storedDecision = decisions[key] ?? legacyDecision;
                 const stored = storedDecision ?? emptyDecision(img);
                 const dec = { ...stored, status: deriveImageStatus(img, stored) };
+                const relevanceApplicable = (img.altRelevanceStatus ?? (img.altStatus === 'present' ? 'to_review' : 'not_applicable')) === 'to_review';
+                const relevancePending = relevanceApplicable && !dec.reviewedAt;
                 const suggestion = suggestedNature(img);
                 return (
                   <tr key={key} className="hover:bg-gray-50">
@@ -450,6 +459,16 @@ export default function AnnexeImages({
                             ? t('annexes.images.altEmpty')
                             : img.altAttribute}
                       </p>
+                      <p className="mt-1 text-xs text-amber-900">
+                        <span className="font-medium">{t('annexes.images.altRelevanceLabel')} : </span>
+                        {!relevanceApplicable
+                          ? t('annexes.images.altRelevanceNotApplicable')
+                          : relevancePending
+                          ? t('annexes.images.altRelevanceToReview')
+                          : dec.reviewedAt
+                            ? t('annexes.images.altRelevanceHumanDecision')
+                            : t('annexes.images.altRelevanceNotApplicable')}
+                      </p>
                       {img.surroundingText && (
                         <p className="mt-1 max-w-72 text-xs text-gray-600" title={img.surroundingText}>
                           Contexte : {img.surroundingText.slice(0, 100)}{img.surroundingText.length > 100 ? '…' : ''}
@@ -462,7 +481,7 @@ export default function AnnexeImages({
                       )}
                       {(img.manualChecks ?? []).length > 0 && (
                         <details className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                          <summary className="cursor-pointer font-medium">Contrôles manuels associés (1.4 à 1.8)</summary>
+                          <summary className="cursor-pointer font-medium">Contrôles manuels associés (1.3 à 1.8)</summary>
                           <ul className="mt-1 list-disc space-y-1 pl-4">
                             {img.manualChecks!.map((check) => <li key={check}>{check}</li>)}
                           </ul>
@@ -483,8 +502,10 @@ export default function AnnexeImages({
 
                     {/* Automatic suggestion */}
                     <td className="w-[24%] px-3 py-3 align-top">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${dec.status === 'non_compliant' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                        {dec.status === 'non_compliant' ? 'Non conforme' : 'Conforme'}
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${relevancePending ? 'bg-amber-100 text-amber-900' : dec.status === 'non_compliant' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                        {relevancePending
+                          ? t('annexes.images.altRelevanceToReview')
+                          : dec.status === 'non_compliant' ? 'Non conforme' : 'Conforme'}
                       </span>
                       <p className="mt-2 text-xs text-gray-700">
                         Suggestion : <strong>{suggestion === 'decorative' ? 'décorative' : 'porteuse d’information'}</strong>
@@ -568,8 +589,9 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
-      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
         active
           ? 'bg-primary-600 text-white'
           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

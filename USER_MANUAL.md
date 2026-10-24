@@ -109,7 +109,21 @@ dépend uniquement d’un repère visuel et ne valide pas automatiquement une
 alternative. Les feuilles CSS externes, les pseudo-éléments, les états
 interactifs et la pertinence éditoriale doivent être vérifiés par l’auditeur.
 
-## 10. Scénarios contrôlés clavier, flash et gestes (US-31)
+## 10. Pertinence des alternatives d’image (US-41)
+
+Dans l’annexe **Images**, une image avec un texte alternatif non vide est
+marquée **Pertinence de l’alternative à vérifier** pour le critère RGAA 1.3.
+Une image sans attribut `alt` ou avec `alt=""` est indiquée comme non applicable
+à 1.3 ; elle reste examinée au titre des critères relatifs à l’absence ou au
+caractère décoratif. L’interface peut afficher qu’une décision d’image a été
+enregistrée, mais sa synchronisation avec la décision du critère 1.3 dans
+`ReviewWorkspace` reste à choisir (voir `BLOCKERS.md`).
+
+Le signal ne juge pas si le texte décrit correctement l’image. L’auditeur doit
+ouvrir la preuve, consulter le contexte et enregistrer sa décision dans la
+revue du critère.
+
+## 11. Scénarios contrôlés clavier, flash et gestes (US-31)
 
 Lorsqu’un parcours déclenche un changement de contexte, le rapport peut afficher
 des candidats pour les critères RGAA 12.9, 13.7 et 13.10 à 13.12 : cycles de
@@ -123,7 +137,7 @@ geste, ne vérifie pas son annulation et ne remplace pas un essai sur appareil
 pour les capteurs. Aucun geste supplémentaire ni action authentifiée n’est
 exécuté automatiquement.
 
-## 11. Interpréter les limites
+## 12. Interpréter les limites
 
 RGAAudit aide à organiser un audit ; il ne remplace pas l’auditeur. Les points
 suivants nécessitent fréquemment une intervention humaine :
@@ -137,7 +151,7 @@ suivants nécessitent fréquemment une intervention humaine :
 Toujours conserver le contexte de la page, la preuve consultée et la décision
 prise pour rendre l’audit reproductible.
 
-## 12. Données locales et confidentialité
+## 13. Données locales et confidentialité
 
 Les sessions, décisions et parcours sont stockés localement. Ne pas saisir dans
 un parcours une URL ou une valeur sensible qui ne devrait pas être conservée

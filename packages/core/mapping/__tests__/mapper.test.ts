@@ -76,6 +76,10 @@ describe('loadMapping', () => {
       expect(mapping.criteria.find((criterion) => criterion.rgaa.id === id)?.heuristicPatterns.manualChecks)
         .toHaveLength(1);
     }
+    expect(mapping.criteria.find((criterion) => criterion.rgaa.id === '1.3')).toMatchObject({
+      dataCollectorFlags: ['ALT_RELEVANCE_REVIEW'],
+      evaluationStrategy: 'MANUAL_ONLY',
+    });
     for (const id of ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.8', '4.9']) {
       expect(mapping.criteria.find((criterion) => criterion.rgaa.id === id)?.heuristicPatterns.manualChecks)
         .toHaveLength(1);
@@ -506,6 +510,40 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
 // ---------------------------------------------------------------------------
 
 describe('mapPageResults — robustesse', () => {
+  it('rattache les alternatives non vides au critère 1.3 sans verdict automatique', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        images: [{
+          selector: 'img#informative',
+          tagName: 'img',
+          src: '/team.jpg',
+          altAttribute: 'Équipe réunie',
+          altStatus: 'present',
+          altRelevanceStatus: 'to_review',
+          ariaLabel: null,
+          ariaLabelledby: null,
+          rolePresentation: false,
+          surroundingText: '',
+          parentFigcaption: null,
+          isInLink: false,
+          linkHref: null,
+          linkText: null,
+          axeViolations: [],
+          automatedStatus: 'pass',
+          flags: ['ALT_RELEVANCE_REVIEW'],
+          screenshotPath: null,
+        }],
+      }),
+      'http://example.com/images',
+    );
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '1.3')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: 'img#informative', flags: ['ALT_RELEVANCE_REVIEW'], elementIndex: 0 }],
+    });
+  });
+
   it('mappe les preuves des scénarios de présentation sur les critères concernés', () => {
     const result = mapPageResults(
       makeAxeResult(),

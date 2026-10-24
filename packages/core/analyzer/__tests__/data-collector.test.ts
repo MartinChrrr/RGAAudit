@@ -104,6 +104,28 @@ describe('collectImages', () => {
       expect(img.altAttribute).not.toBeNull();
       expect(img.altAttribute!.length).toBeGreaterThan(0);
     }
+    expect(absent.every((img) => img.altRelevanceStatus === 'not_applicable')).toBe(true);
+    expect(empty.every((img) => img.altRelevanceStatus === 'not_applicable')).toBe(true);
+    expect(present.every((img) => img.altRelevanceStatus === 'to_review')).toBe(true);
+    expect(present.every((img) => img.flags.includes('ALT_RELEVANCE_REVIEW'))).toBe(true);
+  });
+
+  it('fixture US-41 sépare l’alternative à revoir des images sans alternative', async () => {
+    const images = await withPage(`${baseUrl}/images/us-41-alt-relevance.html`, collectImages);
+
+    expect(images.find((image) => image.selector === 'img#informative')).toMatchObject({
+      altStatus: 'present',
+      altRelevanceStatus: 'to_review',
+      flags: expect.arrayContaining(['ALT_RELEVANCE_REVIEW']),
+    });
+    expect(images.find((image) => image.selector === 'img#decorative')).toMatchObject({
+      altStatus: 'empty',
+      altRelevanceStatus: 'not_applicable',
+    });
+    expect(images.find((image) => image.selector === 'img#missing')).toMatchObject({
+      altStatus: 'absent',
+      altRelevanceStatus: 'not_applicable',
+    });
   });
 
   it('ALT_GENERIC sur "photo", "image", "DSC_1234.jpg"', async () => {
@@ -174,13 +196,14 @@ describe('collectImages', () => {
     }
   });
 
-  it('identifie les sources d’alternative et les contrôles spécialisés 1.4 à 1.8', async () => {
+  it('identifie les sources d’alternative et les contrôles manuels 1.3 à 1.8', async () => {
     const images = await withPage(`${baseUrl}/images/img-in-link.html`, collectImages);
     const image = images.find((item) => item.altAttribute === 'Voir la photo');
 
     expect(image).toBeDefined();
     expect(image!.alternativeSources).toEqual(expect.arrayContaining(['alt']));
     expect(image!.manualChecks).toEqual(expect.arrayContaining([
+      expect.stringContaining('1.3'),
       expect.stringContaining('1.4'),
       expect.stringContaining('1.5'),
       expect.stringContaining('1.6'),
