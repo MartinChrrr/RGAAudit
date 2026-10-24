@@ -96,7 +96,20 @@ preuves, rapports et exports.
 Une annexe versionnée du parcours sera rattachée à la session d’audit lorsque
 la story US-23 sera terminée.
 
-## 9. Interpréter les limites
+## 9. Repères visuels candidats (US-30)
+
+Dans l’annexe **Présentation et responsive**, la table **Repères visuels
+candidats** inventorie les éléments dont l’attribut `style` contient une
+propriété explicite de couleur, forme, taille ou position. Elle affiche le
+sélecteur, le texte ou nom accessible observé, les valeurs CSS calculées, les
+dimensions et les signaux associés aux critères RGAA 3.1, 10.9 et 10.10.
+
+Cette table est une aide à la revue : elle ne conclut jamais qu’une information
+dépend uniquement d’un repère visuel et ne valide pas automatiquement une
+alternative. Les feuilles CSS externes, les pseudo-éléments, les états
+interactifs et la pertinence éditoriale doivent être vérifiés par l’auditeur.
+
+## 10. Interpréter les limites
 
 RGAAudit aide à organiser un audit ; il ne remplace pas l’auditeur. Les points
 suivants nécessitent fréquemment une intervention humaine :
@@ -110,7 +123,7 @@ suivants nécessitent fréquemment une intervention humaine :
 Toujours conserver le contexte de la page, la preuve consultée et la décision
 prise pour rendre l’audit reproductible.
 
-## 10. Données locales et confidentialité
+## 11. Données locales et confidentialité
 
 Les sessions, décisions et parcours sont stockés localement. Ne pas saisir dans
 un parcours une URL ou une valeur sensible qui ne devrait pas être conservée
