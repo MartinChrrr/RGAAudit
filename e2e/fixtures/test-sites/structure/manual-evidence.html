@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Preuves manuelles de structure</title>
+  <style>
+    .rtl { direction: rtl; unicode-bidi: isolate; }
+  </style>
+</head>
+<body>
+  <header id="site-header"><h1>Documentation</h1></header>
+  <nav aria-label="Principal"><a href="/">Accueil</a></nav>
+  <main id="content">
+    <section aria-labelledby="intro-title">
+      <h2 id="intro-title">Introduction</h2>
+      <p>Bienvenue dans notre guide.</p>
+      <p lang="en">This paragraph changes language.</p>
+      <p lang="">Passage à vérifier.</p>
+    </section>
+    <section id="quoted-content">
+      <h2>Citations</h2>
+      <blockquote cite="https://example.test/source">L’accessibilité concerne tout le monde.</blockquote>
+      <p>Une citation probable : « Concevoir pour tous » doit être examinée.</p>
+      <p class="rtl">مرحبا بكم في هذا المحتوى</p>
+    </section>
+    <article aria-labelledby="article-title">
+      <h2 id="article-title">Article</h2>
+      <q cite="https://example.test/quote">Texte cité</q>
+      <cite>Nom de la source</cite>
+    </article>
+  </main>
+  <footer>Pied de page</footer>
+</body>
+</html>

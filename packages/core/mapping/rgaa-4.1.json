@@ -1096,9 +1096,18 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "LANGUAGE_CHANGE_DECLARED",
+        "LANGUAGE_DECLARATION_EMPTY",
+        "LANGUAGE_TEXT_REQUIRES_REVIEW"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Vérifier que chaque changement de langue observé possède un attribut lang sur l’élément concerné.",
+          "Rechercher les changements de langue probables dans les textes signalés pour revue humaine."
+        ]
+      },
+      "limits": "L’inventaire recense les attributs lang et les blocs textuels à examiner ; il ne détermine pas automatiquement les changements de langue ni leur conformité."
     },
     {
       "rgaa": {
@@ -1161,9 +1170,21 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "DIRECTION_DECLARATION_PRESENT",
+        "DIRECTION_CHANGE_DECLARED",
+        "DIRECTION_ATTRIBUTE_INVALID",
+        "DIRECTION_CSS_DECLARED",
+        "UNICODE_BIDI_DECLARED",
+        "DIRECTION_BIDI_TEXT_REVIEW"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Vérifier que chaque changement du sens de lecture est signalé par dir ou par une présentation équivalente adaptée au contexte.",
+          "Examiner les textes bidirectionnels et les déclarations direction/unicode-bidi signalés pour revue humaine."
+        ]
+      },
+      "limits": "L’inventaire recense les attributs dir, les styles direction/unicode-bidi et les textes bidirectionnels candidats ; il ne conclut pas automatiquement à une conformité ou une violation."
     },
     {
       "rgaa": {
@@ -1204,9 +1225,19 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "REGION_PRESENT",
+        "REGION_TREE_REVIEW",
+        "REGION_NESTED",
+        "REGION_NAME_REVIEW"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Examiner l’arbre des régions, sections, en-têtes, contenu principal et pieds de page.",
+          "Vérifier que l’ordre et l’imbrication des régions correspondent à la structure visuelle et au sens du contenu."
+        ]
+      },
+      "limits": "L’arbre sémantique est fourni comme preuve de revue ; son ordre, sa cohérence et les cas particuliers restent à valider humainement."
     },
     {
       "rgaa": {
@@ -1236,9 +1267,18 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": [
+        "CITATION_SEMANTIC_MARKUP",
+        "CITATION_TEXT_QUOTE_CANDIDATE",
+        "CITATION_REQUIRES_HUMAN_REVIEW"
+      ],
+      "heuristicPatterns": {
+        "manualChecks": [
+          "Examiner les éléments q, blockquote et cite ainsi que les citations textuelles probables.",
+          "Vérifier que chaque citation est correctement indiquée et que la source est identifiable lorsque nécessaire."
+        ]
+      },
+      "limits": "L’inventaire recense le balisage sémantique et les guillemets textuels probables ; il ne décide pas automatiquement si une citation est correctement indiquée."
     },
     {
       "rgaa": {

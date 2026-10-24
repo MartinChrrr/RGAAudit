@@ -12,6 +12,7 @@ import {
   collectHeadings,
   collectFigureCaptions,
   collectForms,
+  collectStructure,
   collectAll,
 } from '../data-collector';
 
@@ -310,6 +311,48 @@ describe('collectForms', () => {
   it('expose les formulaires dans la collecte globale', async () => {
     const data = await withPage(`${baseUrl}/forms/error-and-help.html`, collectAll);
     expect(data.forms).toHaveLength(1);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────
+// RGAA 8.7, 8.10, 9.2 and 9.4 manual evidence
+// ───────────────────────────────────────────────────────────────
+
+describe('collectStructure — preuves manuelles des critères 8.7, 8.10, 9.2 et 9.4', () => {
+  it('inventorie les changements de langue, directions, régions et citations sans verdict', async () => {
+    const structure = await withPage(`${baseUrl}/structure/manual-evidence.html`, collectStructure);
+
+    expect(structure.languages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        declaredLanguage: 'en',
+        flags: expect.arrayContaining(['LANGUAGE_CHANGE_DECLARED']),
+      }),
+      expect.objectContaining({
+        declaredLanguage: '',
+        flags: expect.arrayContaining(['LANGUAGE_DECLARATION_EMPTY']),
+      }),
+    ]));
+    expect(structure.languages?.some((item) => item.flags.includes('LANGUAGE_TEXT_REQUIRES_REVIEW'))).toBe(true);
+
+    expect(structure.directions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        flags: expect.arrayContaining(['DIRECTION_CSS_DECLARED', 'DIRECTION_BIDI_TEXT_REVIEW']),
+      }),
+    ]));
+
+    expect(structure.regions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ role: 'banner', tagName: 'header' }),
+      expect.objectContaining({ role: 'main', tagName: 'main' }),
+      expect.objectContaining({ role: 'region', accessibleName: 'Introduction' }),
+    ]));
+    expect(structure.regions?.find((region) => region.accessibleName === 'Introduction')?.parentSelector)
+      .toBe(structure.regions?.find((region) => region.role === 'main')?.selector);
+
+    expect(structure.citations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'blockquote', citeAttribute: 'https://example.test/source' }),
+      expect.objectContaining({ kind: 'q' }),
+      expect.objectContaining({ kind: 'text-quote', flags: expect.arrayContaining(['CITATION_TEXT_QUOTE_CANDIDATE']) }),
+    ]));
   });
 });
 

@@ -491,6 +491,30 @@ function extractElements(
         elements.push({ selector: landmark.selector, flags: matchingFlags });
       }
     }
+    for (const observation of structure.languages ?? []) {
+      const matchingFlags = observation.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: observation.selector, flags: matchingFlags });
+      }
+    }
+    for (const observation of structure.directions ?? []) {
+      const matchingFlags = observation.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: observation.selector, flags: matchingFlags });
+      }
+    }
+    for (const region of structure.regions ?? []) {
+      const matchingFlags = region.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: region.selector, flags: matchingFlags });
+      }
+    }
+    for (const citation of structure.citations ?? []) {
+      const matchingFlags = citation.flags.filter((flag) => relevantFlags.has(flag));
+      if (matchingFlags.length > 0) {
+        elements.push({ selector: citation.selector, flags: matchingFlags });
+      }
+    }
     for (const flag of [...structure.pageFlags, ...structure.styles.flags]) {
       if (relevantFlags.has(flag)) {
         elements.push({ selector: 'document', flags: [flag] });

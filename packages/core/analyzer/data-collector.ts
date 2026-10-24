@@ -142,6 +142,51 @@ export interface StructureLandmarkData {
   flags: string[];
 }
 
+/** Explicit and contextual language observations retained for manual review of RGAA 8.7. */
+export interface LanguageObservationData {
+  selector: string;
+  tagName: string;
+  text: string;
+  declaredLanguage: string | null;
+  effectiveLanguage: string | null;
+  languageSource: 'attribute' | 'inherited' | 'missing';
+  flags: string[];
+}
+
+/** Reading-direction declarations and bidi text candidates for manual review of RGAA 8.10. */
+export interface DirectionObservationData {
+  selector: string;
+  tagName: string;
+  text: string;
+  dirAttribute: string | null;
+  effectiveDirection: 'ltr' | 'rtl' | 'auto' | null;
+  cssDirection: 'ltr' | 'rtl' | null;
+  unicodeBidi: string | null;
+  flags: string[];
+}
+
+/** Semantic region tree used as evidence for RGAA 9.2; it is not a conformance verdict. */
+export interface StructureRegionData {
+  selector: string;
+  tagName: string;
+  role: string | null;
+  accessibleName: string | null;
+  parentSelector: string | null;
+  depth: number;
+  childRegionCount: number;
+  flags: string[];
+}
+
+/** Explicit and probable textual citation observations for manual review of RGAA 9.4. */
+export interface CitationObservationData {
+  selector: string;
+  tagName: string;
+  kind: 'q' | 'blockquote' | 'cite' | 'text-quote';
+  text: string;
+  citeAttribute: string | null;
+  flags: string[];
+}
+
 /** Evidence shared by the DOM/CSS/form/navigation criteria of lot 1. */
 export interface StructureData {
   pageFlags: string[];
@@ -155,6 +200,11 @@ export interface StructureData {
   colors: StructureColorData[];
   fieldGroups: StructureFieldGroupData[];
   landmarks: StructureLandmarkData[];
+  /** Optional to keep persisted collections from older versions readable. */
+  languages?: LanguageObservationData[];
+  directions?: DirectionObservationData[];
+  regions?: StructureRegionData[];
+  citations?: CitationObservationData[];
 }
 
 export interface FormControlData {
@@ -1111,9 +1161,187 @@ export async function collectStructure(page: Page): Promise<StructureData> {
           controlCount,
           flags: group.tagName.toLowerCase() === 'fieldset'
             ? [legend ? 'FIELDSET_LEGEND_PRESENT' : 'FIELDSET_LEGEND_ABSENT']
-            : [legend ? 'GROUP_LEGEND_PRESENT' : 'GROUP_LEGEND_REVIEW'],
+          : [legend ? 'GROUP_LEGEND_PRESENT' : 'GROUP_LEGEND_REVIEW'],
         };
       });
+
+    const directText = (element: Element): string => [...element.childNodes]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent ?? '')
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 300);
+
+    const inheritedAttribute = (element: Element, attribute: string): string | null => {
+      let current: Element | null = element;
+      while (current) {
+        const value = current.getAttribute(attribute);
+        if (value !== null) return value.trim() || null;
+        current = current.parentElement;
+      }
+      return null;
+    };
+
+    const languageElements = Array.from(document.querySelectorAll('*'))
+      .filter((element) => Boolean(element.getAttribute('lang'))
+        || element.hasAttribute('lang')
+        || Boolean(directText(element)))
+      .slice(0, MAX_ITEMS);
+    const languages: LanguageObservationData[] = languageElements.map((element) => {
+      const declaredLanguage = element.getAttribute('lang');
+      const effectiveLanguage = inheritedAttribute(element, 'lang');
+      const text = directText(element);
+      const flags: string[] = [];
+      const parentLanguage = element.parentElement ? inheritedAttribute(element.parentElement, 'lang') : null;
+      if (element === document.documentElement && declaredLanguage === null) {
+        flags.push('LANGUAGE_DEFAULT_ABSENT');
+      }
+      if (declaredLanguage !== null && !declaredLanguage.trim()) {
+        flags.push('LANGUAGE_DECLARATION_EMPTY');
+      } else if (declaredLanguage !== null && declaredLanguage.trim()) {
+        flags.push('LANGUAGE_DECLARATION_PRESENT');
+        if (parentLanguage !== declaredLanguage.trim()) flags.push('LANGUAGE_CHANGE_DECLARED');
+      } else if (text) {
+        flags.push('LANGUAGE_TEXT_REQUIRES_REVIEW');
+      }
+      return {
+        selector: getUniqueSelector(element),
+        tagName: element.tagName.toLowerCase(),
+        text,
+        declaredLanguage,
+        effectiveLanguage,
+        languageSource: declaredLanguage !== null
+          ? 'attribute'
+          : effectiveLanguage
+            ? 'inherited'
+            : 'missing',
+        flags,
+      };
+    });
+
+    const bidiTextPattern = /[\u0590-\u08ff]/;
+    const directionElements = Array.from(document.querySelectorAll('*'))
+      .filter((element) => {
+        const text = directText(element);
+        const styleAttribute = element.getAttribute('style') ?? '';
+        const computed = getComputedStyle(element);
+        return element.hasAttribute('dir')
+          || /(?:^|;)\s*(?:direction|unicode-bidi)\s*:/i.test(styleAttribute)
+          || computed.direction === 'rtl'
+          || computed.unicodeBidi !== 'normal'
+          || bidiTextPattern.test(text);
+      })
+      .slice(0, MAX_ITEMS);
+    const directions: DirectionObservationData[] = directionElements.map((element) => {
+      const rawDir = element.getAttribute('dir')?.trim().toLowerCase() ?? null;
+      const dirAttribute: DirectionObservationData['dirAttribute'] = rawDir;
+      const effectiveRaw = inheritedAttribute(element, 'dir')?.toLowerCase() ?? 'ltr';
+      const effectiveDirection: DirectionObservationData['effectiveDirection'] = ['ltr', 'rtl', 'auto'].includes(effectiveRaw)
+        ? effectiveRaw as DirectionObservationData['effectiveDirection']
+        : null;
+      const computed = getComputedStyle(element);
+      const cssDirection: DirectionObservationData['cssDirection'] = computed.direction === 'rtl' ? 'rtl' : computed.direction === 'ltr' ? 'ltr' : null;
+      const text = directText(element);
+      const flags: string[] = [];
+      const parentDirection = element.parentElement ? inheritedAttribute(element.parentElement, 'dir')?.toLowerCase() ?? 'ltr' : 'ltr';
+      const parentCssDirection = element.parentElement ? getComputedStyle(element.parentElement).direction : 'ltr';
+      if (rawDir !== null) {
+        if (!['ltr', 'rtl', 'auto'].includes(rawDir)) flags.push('DIRECTION_ATTRIBUTE_INVALID');
+        else {
+          flags.push('DIRECTION_DECLARATION_PRESENT');
+          if (rawDir !== parentDirection) flags.push('DIRECTION_CHANGE_DECLARED');
+        }
+      }
+      if (/(?:^|;)\s*direction\s*:/i.test(element.getAttribute('style') ?? '')
+        || (rawDir === null && computed.direction !== parentCssDirection)) flags.push('DIRECTION_CSS_DECLARED');
+      if (/(?:^|;)\s*unicode-bidi\s*:/i.test(element.getAttribute('style') ?? '')) {
+        flags.push('UNICODE_BIDI_DECLARED');
+      }
+      if (bidiTextPattern.test(text) && rawDir === null) flags.push('DIRECTION_BIDI_TEXT_REVIEW');
+      return {
+        selector: getUniqueSelector(element),
+        tagName: element.tagName.toLowerCase(),
+        text,
+        dirAttribute,
+        effectiveDirection,
+        cssDirection,
+        unicodeBidi: computed.unicodeBidi,
+        flags,
+      };
+    });
+
+    const regionElements = Array.from(document.querySelectorAll(
+      'header, nav, main, footer, aside, section, article, form, [role="banner"], [role="complementary"], [role="contentinfo"], [role="main"], [role="navigation"], [role="region"], [role="search"]',
+    )).slice(0, MAX_ITEMS);
+    const regionSelectors = new Map<Element, string>(regionElements.map((element) => [element, getUniqueSelector(element)]));
+    const regionRoleFor = (element: Element): string | null => {
+      const explicitRole = element.getAttribute('role')?.trim().toLowerCase();
+      if (explicitRole && ['banner', 'complementary', 'contentinfo', 'main', 'navigation', 'region', 'search'].includes(explicitRole)) return explicitRole;
+      const tag = element.tagName.toLowerCase();
+      if (tag === 'header') return 'banner';
+      if (tag === 'nav') return 'navigation';
+      if (tag === 'main') return 'main';
+      if (tag === 'footer') return 'contentinfo';
+      if (tag === 'aside') return 'complementary';
+      if (tag === 'section' || tag === 'article') return 'region';
+      if (tag === 'form' && element.getAttribute('role') === 'search') return 'search';
+      return null;
+    };
+    const regions: StructureRegionData[] = regionElements.map((element) => {
+      const selector = regionSelectors.get(element)!;
+      let parent: Element | null = element.parentElement;
+      let parentSelector: string | null = null;
+      while (parent) {
+        if (regionSelectors.has(parent)) {
+          parentSelector = regionSelectors.get(parent)!;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      let depth = 0;
+      let depthCursor = element.parentElement;
+      while (depthCursor) {
+        if (regionSelectors.has(depthCursor)) depth += 1;
+        depthCursor = depthCursor.parentElement;
+      }
+      const role = regionRoleFor(element);
+      const accessibleName = referencedText(element) ?? normalize(element.tagName.toLowerCase() === 'section' ? element.querySelector('h1, h2, h3, h4, h5, h6')?.textContent : null);
+      const childRegionCount = regionElements.filter((candidate) => {
+        let ancestor = candidate.parentElement;
+        while (ancestor && ancestor !== element) ancestor = ancestor.parentElement;
+        return ancestor === element;
+      }).length;
+      const flags = ['REGION_PRESENT', 'REGION_TREE_REVIEW'];
+      if (depth > 0) flags.push('REGION_NESTED');
+      if ((element.tagName.toLowerCase() === 'section' || role === 'region') && !accessibleName) flags.push('REGION_NAME_REVIEW');
+      return { selector, tagName: element.tagName.toLowerCase(), role, accessibleName, parentSelector, depth, childRegionCount, flags };
+    });
+
+    const quotePattern = /(?:«[^»]{2,}»|“[^”]{2,}”|„[^”]{2,}”|"[^"\n]{2,}"|‘[^’]{2,}’)/;
+    const explicitCitationElements = Array.from(document.querySelectorAll('q, blockquote, cite')).slice(0, MAX_ITEMS);
+    const explicitCitations: CitationObservationData[] = explicitCitationElements.map((element) => ({
+      selector: getUniqueSelector(element),
+      tagName: element.tagName.toLowerCase(),
+      kind: element.tagName.toLowerCase() as CitationObservationData['kind'],
+      text: normalize(element.textContent) ?? '',
+      citeAttribute: element.getAttribute('cite'),
+      flags: ['CITATION_SEMANTIC_MARKUP', 'CITATION_REQUIRES_HUMAN_REVIEW'],
+    }));
+    const probableTextCitations: CitationObservationData[] = Array.from(document.querySelectorAll('*'))
+      .filter((element) => !['q', 'blockquote', 'cite'].includes(element.tagName.toLowerCase()))
+      .map((element) => ({ element, text: directText(element) }))
+      .filter(({ text }) => quotePattern.test(text))
+      .slice(0, Math.max(0, MAX_ITEMS - explicitCitations.length))
+      .map(({ element, text }) => ({
+        selector: getUniqueSelector(element),
+        tagName: element.tagName.toLowerCase(),
+        kind: 'text-quote',
+        text,
+        citeAttribute: null,
+        flags: ['CITATION_TEXT_QUOTE_CANDIDATE', 'CITATION_REQUIRES_HUMAN_REVIEW'],
+      }));
+    const citations = [...explicitCitations, ...probableTextCitations];
 
     const roleFor = (element: Element): string | null => {
       const explicitRole = element.getAttribute('role')?.trim().toLowerCase();
@@ -1163,6 +1391,10 @@ export async function collectStructure(page: Page): Promise<StructureData> {
       colors,
       fieldGroups,
       landmarks,
+      languages,
+      directions,
+      regions,
+      citations,
     };
   });
 }
