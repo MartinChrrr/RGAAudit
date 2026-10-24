@@ -42,3 +42,40 @@ Ne pas déduire de non-conformité. Commencer par un inventaire de preuves repro
 ### Reprise au prochain échange
 
 Me demander de choisir les options ci-dessus avant de démarrer l’US-28. En attendant, poursuivre les stories indépendantes qui ne dépendent pas de ces décisions.
+
+## 2026-10-25 — Synchronisation de la décision RGAA 1.3 pour les alternatives d’image (tâche #41)
+
+### Contexte
+
+La collecte et l’annexe Images distinguent maintenant les alternatives absentes,
+vides et non vides. Une alternative non vide est signalée
+`ALT_RELEVANCE_REVIEW` et reste en `MANUAL_ONLY`. En revanche, la décision du
+critère 1.3 dans `ReviewWorkspace` est actuellement enregistrée dans le modèle
+de revue des critères, tandis que l’annexe Images persiste ses propres
+`image-decisions` orientées vers l’examen de l’image. Ces deux flux ne sont pas
+reliés : l’annexe ne sait donc pas si la décision 1.3 a été prise dans la revue,
+et une modification d’image ne peut pas clôturer le statut du critère 1.3.
+
+### Décision attendue
+
+Choisir le flux de décision de la pertinence du critère 1.3 :
+
+1. **Décision uniquement dans `ReviewWorkspace`** — l’annexe reste un
+   inventaire de signaux et doit employer une formulation qui ne prétend pas
+   afficher une décision 1.3 enregistrée ; ou
+2. **Synchronisation annexe ↔ revue** — l’annexe enregistre ou met à jour une
+   décision humaine explicitement rattachée au critère 1.3, et `ReviewWorkspace`
+   recharge ce même état (recommandation PO/architecture : option 2 si l’on
+   veut décider depuis l’annexe).
+
+### État
+
+La signalisation `ALT_RELEVANCE_REVIEW`, le mapping manuel, la fixture et les
+tests sont implémentés et validés, mais la tâche #41 reste `In Progress` et ne
+doit pas être clôturée avant ce choix. Aucun verdict automatique n’est produit.
+
+### Reprise au prochain échange
+
+Me demander de choisir l’option 1 ou 2, puis implémenter le flux correspondant,
+ajouter le test de synchronisation et mettre à jour le manuel. En attendant,
+poursuivre les cartes indépendantes.
