@@ -49,8 +49,15 @@ describe('JourneyRun', () => {
                 titleAfter: 'Après',
                 changed: true,
                 changeTypes: ['navigation', 'live-region'],
-                disruptions: [],
-                criterionIds: ['7.4', '7.5'],
+                disruptions: [{ kind: 'flash', selector: '#flash', detail: 'animation=flash' }],
+                interactions: [{
+                  kind: 'complex-gesture',
+                  selector: '#slider',
+                  detail: 'Mouvement pointermove observé',
+                  criterionIds: ['13.10'],
+                  requiresHumanReview: true,
+                }],
+                criterionIds: ['7.4', '7.5', '13.7', '13.10'],
                 requiresHumanReview: true,
               },
               screenshotUrl: '/api/journey-runs/run-001/screenshots/000-context-step.png',
@@ -74,6 +81,8 @@ describe('JourneyRun', () => {
     expect(screen.getByText('Changement détecté — revue humaine requise.')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
     expect(screen.getByText('Région live')).toBeInTheDocument();
+    expect(screen.getByText('Flash ou variation lumineuse candidate')).toBeInTheDocument();
+    expect(screen.getByText('Geste complexe candidat')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Capture après l’étape context-step/i })).toBeInTheDocument();
     expect(screen.getByText(/description textuelle ci-dessus/i)).toBeInTheDocument();
     expect(screen.getByText(/Avant : Étape before-step.*Après : Étape context-step/)).toBeInTheDocument();

@@ -7,18 +7,24 @@ import path from 'node:path';
 import { replayJourney, type JourneyDefinition } from '../journey';
 
 const FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey.html');
+const US31_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-31-controlled-interactions.html');
 let server: http.Server;
 let baseUrl: string;
 
 beforeAll(async () => {
   server = http.createServer((req, res) => {
-    if (req.url !== '/journey.html') {
+    const fixture = req.url === '/journey.html'
+      ? FIXTURE_PATH
+      : req.url === '/us-31-controlled-interactions.html'
+        ? US31_FIXTURE_PATH
+        : null;
+    if (!fixture) {
       res.writeHead(404);
       res.end('Not found');
       return;
     }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(fs.readFileSync(FIXTURE_PATH, 'utf-8'));
+    res.end(fs.readFileSync(fixture, 'utf-8'));
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
@@ -130,6 +136,33 @@ describe('replayJourney', () => {
     expect(run.steps[0].screenshotPath).toBe(path.join(screenshotDir, '000-context-step.png'));
     const screenshot = await readFile(run.steps[0].screenshotPath!);
     expect(screenshot.length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it('journalise les flashs, gestes pointer et APIs de mouvement comme scénarios manuels', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-us31',
+      name: 'Interactions contrôlées',
+      startUrl: `${baseUrl}/us-31-controlled-interactions.html`,
+      createdAt: new Date().toISOString(),
+      steps: [{ id: 'gesture-step', action: 'click', selector: '#gesture' }],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    const observation = run.steps[0].context;
+    expect(observation?.disruptions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'flash', selector: '#flash' }),
+    ]));
+    expect(observation?.interactions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'single-pointer', criterionIds: ['13.11'] }),
+      expect.objectContaining({ kind: 'complex-gesture', criterionIds: ['13.10'] }),
+      expect.objectContaining({ kind: 'device-motion', criterionIds: ['13.12'] }),
+    ]));
+    expect(observation?.criterionIds).toEqual(expect.arrayContaining(['13.7', '13.10', '13.11', '13.12']));
+    expect(observation?.requiresHumanReview).toBe(true);
   }, 30_000);
 
   it('désactive les captures après une action sensible échouée', async () => {

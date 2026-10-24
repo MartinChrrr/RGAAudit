@@ -109,7 +109,21 @@ dépend uniquement d’un repère visuel et ne valide pas automatiquement une
 alternative. Les feuilles CSS externes, les pseudo-éléments, les états
 interactifs et la pertinence éditoriale doivent être vérifiés par l’auditeur.
 
-## 10. Interpréter les limites
+## 10. Scénarios contrôlés clavier, flash et gestes (US-31)
+
+Lorsqu’un parcours déclenche un changement de contexte, le rapport peut afficher
+des candidats pour les critères RGAA 12.9, 13.7 et 13.10 à 13.12 : cycles de
+focus, animations de type flash, événements pointer/touch et inscriptions aux
+APIs de mouvement. Chaque observation indique le sélecteur, le détail observé
+et les critères associés.
+
+Ces éléments sont uniquement des pistes de vérification. RGAAudit ne mesure pas
+la fréquence ou la luminance d’un flash, ne juge pas la complexité réelle d’un
+geste, ne vérifie pas son annulation et ne remplace pas un essai sur appareil
+pour les capteurs. Aucun geste supplémentaire ni action authentifiée n’est
+exécuté automatiquement.
+
+## 11. Interpréter les limites
 
 RGAAudit aide à organiser un audit ; il ne remplace pas l’auditeur. Les points
 suivants nécessitent fréquemment une intervention humaine :
@@ -123,7 +137,7 @@ suivants nécessitent fréquemment une intervention humaine :
 Toujours conserver le contexte de la page, la preuve consultée et la décision
 prise pour rendre l’audit reproductible.
 
-## 11. Données locales et confidentialité
+## 12. Données locales et confidentialité
 
 Les sessions, décisions et parcours sont stockés localement. Ne pas saisir dans
 un parcours une URL ou une valeur sensible qui ne devrait pas être conservée

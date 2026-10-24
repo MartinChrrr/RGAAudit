@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Scénarios contrôlés clavier, flash et gestes</title>
+  <style>
+    #flash { animation: flash-candidate 2s infinite; }
+    @keyframes flash-candidate { from { opacity: 1; } 50% { opacity: .2; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Scénarios contrôlés</h1>
+    <p id="flash" role="status" hidden>Animation candidate à examiner manuellement.</p>
+    <button id="pointer" type="button">Action sur point unique</button>
+    <button id="gesture" type="button">Zone avec geste candidat</button>
+    <p id="gesture-status" aria-live="polite"></p>
+  </main>
+  <script>
+    window.addEventListener('deviceorientation', () => {});
+    const gesture = document.querySelector('#gesture');
+    gesture.addEventListener('click', () => {
+      document.querySelector('#flash').hidden = false;
+      document.querySelector('#gesture-status').textContent = 'Scénario de geste déclenché';
+      gesture.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
+      gesture.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 80, clientY: 10, pointerId: 1 }));
+      gesture.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 80, clientY: 10, pointerId: 1 }));
+    });
+  </script>
+</body>
+</html>

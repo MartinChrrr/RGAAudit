@@ -25,6 +25,7 @@ site.
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |
 | Repères visuels candidats | Inventaire des indices DOM/CSS de couleur, forme, taille et position pour la revue humaine des critères 3.1, 10.9 et 10.10 | Disponible avec limites documentées |
+| Scénarios contrôlés d’interaction | Observations de focus, flash, pointer/touch et APIs de mouvement rattachées aux parcours pour revue humaine | Disponible avec limites documentées |
 | Progression d’audit | Suivi temps réel d’une session et reprise depuis les fichiers persistés | Disponible |
 | Parcours interactifs | Création, édition, rejeu, captures contextuelles, preuves et décisions par exécution | En cours de finalisation (US-23) |
 | Annexe de parcours dans le rapport | Rattachement à une session et annexe versionnée HTML/PDF | En cours de finalisation (US-23) |

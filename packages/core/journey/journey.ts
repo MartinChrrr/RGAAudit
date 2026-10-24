@@ -70,9 +70,17 @@ export interface JourneyKeyboardObservation {
 }
 
 export interface JourneyDisruptionObservation {
-  kind: 'motion' | 'sound';
+  kind: 'motion' | 'sound' | 'flash';
   selector: string;
   detail: string;
+}
+
+export interface JourneyInteractionObservation {
+  kind: 'complex-gesture' | 'single-pointer' | 'device-motion';
+  selector: string;
+  detail: string;
+  criterionIds: string[];
+  requiresHumanReview: true;
 }
 
 export interface JourneyContextObservation {
@@ -89,6 +97,8 @@ export interface JourneyContextObservation {
   changed: boolean;
   changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disruption'>;
   disruptions: JourneyDisruptionObservation[];
+  /** Optional for runs persisted before controlled-interaction observations. */
+  interactions?: JourneyInteractionObservation[];
   criterionIds: string[];
   requiresHumanReview: true;
 }
@@ -198,6 +208,7 @@ export async function replayJourney(
     }
 
     const page = await context.newPage();
+    await installInteractionProbe(page);
     await page.goto(journey.startUrl, { waitUntil: 'networkidle', timeout: options.timeout ?? 30_000 });
     const steps: JourneyStepObservation[] = [];
     const focusHistory: string[] = [];
@@ -297,6 +308,49 @@ interface JourneyContextSignals {
   dialogs: string[];
   liveRegions: string[];
   disruptions: JourneyDisruptionObservation[];
+  interactions: JourneyInteractionObservation[];
+}
+
+async function installInteractionProbe(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const eventTypes = [
+      'pointerdown', 'pointermove', 'pointerup', 'pointercancel',
+      'touchstart', 'touchmove', 'touchend',
+      'devicemotion', 'deviceorientation',
+    ];
+    const sensorTypes = new Set(['devicemotion', 'deviceorientation']);
+    const state = {
+      events: [] as Array<{ type: string; selector: string; x: number | null; y: number | null; pointerId: number | null }>,
+      registrations: [] as string[],
+    };
+    const selectorOf = (target: EventTarget | null): string => {
+      if (!(target instanceof Element)) return target === window ? 'window' : 'document';
+      if (target.id) return `#${CSS.escape(target.id)}`;
+      return target.tagName.toLowerCase();
+    };
+    const record = (event: Event): void => {
+      if (state.events.length >= 200) return;
+      const pointer = event as PointerEvent;
+      const touch = event as TouchEvent;
+      const point = touch.touches?.[0] ?? touch.changedTouches?.[0];
+      state.events.push({
+        type: event.type,
+        selector: selectorOf(event.target),
+        x: Number.isFinite(pointer.clientX) ? pointer.clientX : (point?.clientX ?? null),
+        y: Number.isFinite(pointer.clientY) ? pointer.clientY : (point?.clientY ?? null),
+        pointerId: Number.isFinite(pointer.pointerId) ? pointer.pointerId : null,
+      });
+    };
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function addEventListener(type, listener, options) {
+      if ((this === window || this === document) && sensorTypes.has(String(type)) && !state.registrations.includes(String(type))) {
+        state.registrations.push(String(type));
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+    Object.defineProperty(window, '__rgauditInteractionProbe', { value: state, configurable: true });
+    for (const type of eventTypes) originalAddEventListener.call(window, type, record, true);
+  });
 }
 
 async function captureContextSignals(page: Page): Promise<JourneyContextSignals> {
@@ -322,14 +376,24 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
       return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
     };
     const disruptions: JourneyDisruptionObservation[] = [];
+    const interactionEvents = (window as typeof window & {
+      __rgauditInteractionProbe?: {
+        events: Array<{ type: string; selector: string; x: number | null; y: number | null; pointerId: number | null }>;
+        registrations: string[];
+      };
+    }).__rgauditInteractionProbe;
+    const probeEvents = interactionEvents?.events.splice(0) ?? [];
+    const registeredSensors = interactionEvents?.registrations ?? [];
     for (const element of Array.from(document.querySelectorAll('*'))) {
       if (!visible(element)) continue;
       const style = window.getComputedStyle(element);
       if (style.animationName !== 'none' || style.transitionDuration !== '0s') {
+        const isFlashCandidate = /(?:flash|blink|flicker|strobe)/i.test(style.animationName)
+          || /(?:color|opacity|filter|background)/i.test(style.transitionProperty);
         disruptions.push({
-          kind: 'motion',
+          kind: isFlashCandidate ? 'flash' : 'motion',
           selector: getUniqueSelector(element),
-          detail: `animation=${style.animationName}; transition=${style.transitionDuration}`.slice(0, 240),
+          detail: `animation=${style.animationName}; duration=${style.animationDuration}; transition=${style.transitionProperty}/${style.transitionDuration}`.slice(0, 240),
         });
       }
       if ((element instanceof HTMLAudioElement || element instanceof HTMLVideoElement)
@@ -342,6 +406,48 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
       }
       if (disruptions.length >= 50) break;
     }
+    const interactions: JourneyInteractionObservation[] = [];
+    if (registeredSensors.length > 0 || probeEvents.some((event) => event.type === 'devicemotion' || event.type === 'deviceorientation')) {
+      interactions.push({
+        kind: 'device-motion',
+        selector: 'window',
+        detail: `API de mouvement observée : ${[...new Set(registeredSensors)].join(', ') || 'événement reçu'}`,
+        criterionIds: ['13.12'],
+        requiresHumanReview: true,
+      });
+    }
+    const pointerDowns = probeEvents.filter((event) => event.type === 'pointerdown' || event.type === 'touchstart');
+    for (const down of pointerDowns.slice(0, 20)) {
+      const release = probeEvents.find((event) => (
+        (event.type === 'pointerup' || event.type === 'pointercancel' || event.type === 'touchend')
+        && (down.pointerId === null || event.pointerId === null || event.pointerId === down.pointerId)
+      ));
+      interactions.push({
+        kind: 'single-pointer',
+        selector: down.selector,
+        detail: `Séquence ${down.type} → ${release?.type ?? 'sans relâche observée'}`,
+        criterionIds: ['13.11'],
+        requiresHumanReview: true,
+      });
+    }
+    const moved = probeEvents.find((event) => {
+      if (event.type === 'touchmove') return true;
+      if (event.type !== 'pointermove') return false;
+      const down = pointerDowns.find((candidate) => (
+        candidate.pointerId === null || event.pointerId === null || candidate.pointerId === event.pointerId
+      ));
+      if (!down || down.x === null || down.y === null || event.x === null || event.y === null) return false;
+      return Math.hypot(event.x - down.x, event.y - down.y) > 8;
+    });
+    if (moved) {
+      interactions.push({
+        kind: 'complex-gesture',
+        selector: moved.selector,
+        detail: `Mouvement ${moved.type} observé ; vérifier l’équivalent par geste simple.`,
+        criterionIds: ['13.10'],
+        requiresHumanReview: true,
+      });
+    }
     return {
       dialogs: Array.from(document.querySelectorAll('[role="dialog"], dialog'))
         .filter(visible)
@@ -352,6 +458,7 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         .map((element) => `${getUniqueSelector(element)}:${(element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)}`)
         .slice(0, 20),
       disruptions,
+      interactions,
     };
   }).then((signals) => ({ url, title, ...signals }));
 }
@@ -377,6 +484,11 @@ function buildContextObservation(
   for (const disruption of disruptions) {
     if (disruption.kind === 'sound') criterionIds.add('4.10');
     if (disruption.kind === 'motion') criterionIds.add('13.8');
+    if (disruption.kind === 'flash') criterionIds.add('13.7');
+  }
+  const interactions = after.interactions;
+  for (const interaction of interactions) {
+    interaction.criterionIds.forEach((criterionId) => criterionIds.add(criterionId));
   }
   return {
     trigger: {
@@ -392,6 +504,7 @@ function buildContextObservation(
     changed: changeTypes.length > 0,
     changeTypes,
     disruptions,
+    interactions,
     criterionIds: [...criterionIds],
     requiresHumanReview: true,
   };

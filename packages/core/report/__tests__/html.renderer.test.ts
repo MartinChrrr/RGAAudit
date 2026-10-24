@@ -249,6 +249,25 @@ describe('renderReportHtml', () => {
               observedAt: '2026-10-20T00:00:10.000Z',
               title: 'Accueil',
               evidence: [],
+              context: {
+                trigger: { stepId: 'step-1', action: 'wait' },
+                urlBefore: 'https://example.com',
+                urlAfter: 'https://example.com',
+                titleBefore: 'Accueil',
+                titleAfter: 'Accueil',
+                changed: false,
+                changeTypes: ['disruption'],
+                disruptions: [{ kind: 'flash', selector: '#flash', detail: 'animation=flash' }],
+                interactions: [{
+                  kind: 'complex-gesture',
+                  selector: '#slider',
+                  detail: 'Mouvement pointermove observé',
+                  criterionIds: ['13.10'],
+                  requiresHumanReview: true,
+                }],
+                criterionIds: ['13.7', '13.10'],
+                requiresHumanReview: true,
+              },
               result: null,
             }],
           },
@@ -259,6 +278,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('data-testid="journey-annex"');
     expect(html).toContain('run-1');
     expect(html).toContain('photographie versionnée');
+    expect(html).toContain('Flash ou variation lumineuse candidate');
+    expect(html).toContain('Geste complexe candidat');
   });
 
   it('affiche l’annexe formulaires dans le rapport HTML', () => {

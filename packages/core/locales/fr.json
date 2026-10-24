@@ -120,6 +120,14 @@
     "noDisruptions": "Aucun signal détecté — revue humaine requise.",
     "motion": "Mouvement",
     "sound": "Son",
+    "flash": "Flash ou variation lumineuse candidate",
+    "interactionsTitle": "Interactions nécessitant une revue",
+    "noInteractions": "Aucun événement pointer/touch ou capteur observé.",
+    "interactionKind": {
+      "complex-gesture": "Geste complexe candidat",
+      "single-pointer": "Action sur point unique",
+      "device-motion": "Capteur de mouvement"
+    },
     "criteria": "Critères associés",
     "humanReview": "Cette observation ne remplace pas une vérification humaine.",
     "screenshotTitle": "Capture visuelle",

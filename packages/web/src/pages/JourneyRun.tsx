@@ -19,7 +19,14 @@ interface JourneyContext {
   titleAfter: string;
   changed: boolean;
   changeTypes: string[];
-  disruptions: Array<{ kind: 'motion' | 'sound'; selector: string; detail: string }>;
+  disruptions: Array<{ kind: 'motion' | 'sound' | 'flash'; selector: string; detail: string }>;
+  interactions?: Array<{
+    kind: 'complex-gesture' | 'single-pointer' | 'device-motion';
+    selector: string;
+    detail: string;
+    criterionIds: string[];
+    requiresHumanReview: true;
+  }>;
   criterionIds: string[];
   requiresHumanReview: true;
 }
@@ -272,8 +279,23 @@ function JourneyStepCard({
                 <ul className="mt-1 space-y-1">
                   {step.context.disruptions.map((disruption, disruptionIndex) => (
                     <li key={`${disruption.kind}-${disruption.selector}-${disruptionIndex}`}>
-                      <span className="font-medium">{disruption.kind === 'motion' ? t('journey.motion') : t('journey.sound')}</span>
+                      <span className="font-medium">{t(`journey.${disruption.kind}`)}</span>
                       {' — '}{disruption.selector}: {disruption.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.interactionsTitle')}</h4>
+              {!step.context.interactions?.length ? (
+                <p>{t('journey.noInteractions')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.interactions.map((interaction, interactionIndex) => (
+                    <li key={`${interaction.kind}-${interaction.selector}-${interactionIndex}`}>
+                      <span className="font-medium">{t(`journey.interactionKind.${interaction.kind}`)}</span>
+                      {' — '}{interaction.selector}: {interaction.detail}
                     </li>
                   ))}
                 </ul>

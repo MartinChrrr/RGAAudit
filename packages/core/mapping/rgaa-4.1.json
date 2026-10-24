@@ -1891,8 +1891,10 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "heuristicPatterns": {
+        "manualChecks": ["Exécuter un parcours Tab et Shift+Tab sur les composants concernés, puis confirmer la possibilité de sortir de chacun sans boucle ni blocage."]
+      },
+      "limits": "Le parcours peut signaler un cycle probable de focus ; seule la vérification humaine au clavier confirme l’existence ou l’absence d’un piège."
     },
     {
       "rgaa": {
@@ -2035,8 +2037,10 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "heuristicPatterns": {
+        "manualChecks": ["Reproduire les animations et changements de luminosité dans un environnement contrôlé, puis faire confirmer la fréquence et le risque de flash par un auditeur compétent."]
+      },
+      "limits": "Les noms d’animation et transitions de couleur ou d’opacité sont des candidats ; aucune fréquence ni luminance n’est mesurée automatiquement."
     },
     {
       "rgaa": {
@@ -2083,8 +2087,10 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "heuristicPatterns": {
+        "manualChecks": ["Pour chaque geste complexe observé, exécuter le geste simple équivalent et comparer la fonctionnalité obtenue."]
+      },
+      "limits": "Les événements tactiles ou pointer observés signalent un scénario à tester ; ils ne prouvent ni la complexité du geste ni l’existence d’une alternative."
     },
     {
       "rgaa": {
@@ -2099,8 +2105,10 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "heuristicPatterns": {
+        "manualChecks": ["Vérifier qu’une action déclenchée au pointage peut être annulée avant sa confirmation ou sa relâche."]
+      },
+      "limits": "Le journal pointerdown/pointerup/pointercancel documente le scénario ; il ne peut pas décider si l’action est annulable."
     },
     {
       "rgaa": {
@@ -2115,8 +2123,10 @@
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
       "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "heuristicPatterns": {
+        "manualChecks": ["Sur un appareil compatible, tester la fonction déclenchée par mouvement et son alternative sans mouvement."]
+      },
+      "limits": "Une inscription ou un événement DeviceMotion/DeviceOrientation est un indice de scénario ; l’essai sur appareil et l’alternative restent humains."
     }
   ]
 }

@@ -73,7 +73,34 @@ describe('buildReportFromSession', () => {
             changed: true,
             changeTypes: ['navigation'],
             disruptions: [{ kind: 'motion', selector: 'https://example.com/disruption?token=secret', detail: 'https://example.com/detail?token=secret' }],
+            interactions: [{
+              kind: 'complex-gesture',
+              selector: 'https://example.com/interaction?token=secret',
+              detail: 'https://example.com/interaction-detail?token=secret',
+              criterionIds: ['13.10'],
+              requiresHumanReview: true,
+            }],
             criterionIds: ['7.1'],
+            requiresHumanReview: true,
+          },
+          result: null,
+        }, {
+          stepId: 'legacy-step',
+          action: 'wait',
+          url: 'https://example.com/legacy?token=secret',
+          observedAt: '2026-10-20T00:00:01.500Z',
+          title: 'Ancien parcours',
+          evidence: [],
+          context: {
+            trigger: { stepId: 'legacy-step', action: 'wait' },
+            urlBefore: 'https://example.com/legacy?token=secret',
+            urlAfter: 'https://example.com/legacy?token=secret',
+            titleBefore: 'Ancien parcours',
+            titleAfter: 'Ancien parcours',
+            changed: false,
+            changeTypes: [],
+            disruptions: [],
+            criterionIds: [],
             requiresHumanReview: true,
           },
           result: null,
@@ -91,6 +118,11 @@ describe('buildReportFromSession', () => {
     expect(publicStep?.keyboard?.componentSelector).toBe('https://example.com/component');
     expect(publicStep?.context?.trigger.selector).toBe('https://example.com/trigger');
     expect(publicStep?.context?.disruptions[0]?.detail).toBe('https://example.com/detail');
+    expect(publicStep?.context?.interactions?.[0]).toMatchObject({
+      selector: 'https://example.com/interaction',
+      detail: 'https://example.com/interaction-detail',
+    });
+    expect(publicData.journeyAnnex.runs[0]?.run?.steps[1]?.context?.interactions).toEqual([]);
     expect(JSON.stringify(publicData.journeyAnnex)).not.toContain('token=secret');
     expect(JSON.stringify(publicData.journeyAnnex)).not.toContain('https://example.com/private?token=secret');
   });
