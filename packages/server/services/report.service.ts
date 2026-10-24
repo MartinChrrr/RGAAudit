@@ -18,7 +18,8 @@ import type {
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
 import type { AxeElement } from '@rgaaudit/core/engines/engine.interface';
 import type { CollectedData } from '@rgaaudit/core/analyzer/data-collector';
-import type { PageComparison } from '@rgaaudit/core/report/comparison';
+import { compareCollectedData, type PageComparison } from '@rgaaudit/core/report/comparison';
+import { JOURNEY_REPORT_ANNEX_SCHEMA_VERSION, type JourneyReportAnnex, type JourneyRunState } from '../../core/journey/journey';
 import { runReportExtractor, type ReportExtractor } from '@rgaaudit/core/report/extractors';
 import type { HeuristicFinding } from '@rgaaudit/core/analyzer/heuristics/heuristic.interface';
 import {
@@ -32,7 +33,7 @@ import {
   type ImageAuditDecision,
   type MachineStatus,
 } from '@rgaaudit/core/domain/review';
-import { pageIdForUrl, redactTextUrls, redactUrl } from '../security/url.redaction';
+import { pageIdForUrl, redactStructuredText, redactTextUrls, redactUrl } from '../security/url.redaction';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
@@ -78,6 +79,7 @@ export interface ReportData {
     pageUrl: string;
   }>;
   review: ReviewData;
+  journeyAnnex: JourneyReportAnnex;
 }
 
 export interface ReviewCriterion {
@@ -168,6 +170,106 @@ export function toPublicComparisons(comparisons: PageComparison[], sessionId: st
   }));
 }
 
+/** Serialize a journey run for a public route or a report annex. */
+export function toPublicJourneyRun(run: JourneyRunState, publicSessionId = run.sessionId ?? run.runId): JourneyRunState {
+  if (!run.run) return run.error ? { ...run, error: redactTextUrls(run.error) } : run;
+
+  return {
+    ...run,
+    ...(run.error ? { error: redactTextUrls(run.error) } : {}),
+    run: {
+      ...run.run,
+      comparisons: toPublicComparisons(compareCollectedData(run.run.steps.map((step, order) => ({
+        observationId: `${run.runId}-${order}`,
+        order,
+        url: step.url,
+        observedAt: step.observedAt,
+        comparisonGroup: run.runId,
+        stepId: step.stepId,
+        collectedData: step.result?.collectedData ?? null,
+      }))), publicSessionId),
+      steps: run.run.steps.map((step) => {
+        const { screenshotPath: _screenshotPath, ...stepWithoutScreenshotPath } = step;
+        const publicObservation = {
+          ...stepWithoutScreenshotPath,
+          url: redactUrl(step.url),
+          title: redactTextUrls(step.title),
+          evidence: step.evidence.map((evidence) => ({
+            ...evidence,
+            selector: redactTextUrls(evidence.selector),
+            html: redactTextUrls(evidence.html),
+            context: evidence.context ? redactTextUrls(evidence.context) : evidence.context,
+          })),
+          ...(step.keyboard ? {
+            keyboard: {
+              ...step.keyboard,
+              componentSelector: redactTextUrls(step.keyboard.componentSelector),
+              before: step.keyboard.before ? {
+                ...step.keyboard.before,
+                selector: redactTextUrls(step.keyboard.before.selector),
+                text: step.keyboard.before.text ? redactTextUrls(step.keyboard.before.text) : step.keyboard.before.text,
+              } : null,
+              after: step.keyboard.after ? {
+                ...step.keyboard.after,
+                selector: redactTextUrls(step.keyboard.after.selector),
+                text: step.keyboard.after.text ? redactTextUrls(step.keyboard.after.text) : step.keyboard.after.text,
+              } : null,
+            },
+          } : {}),
+          ...(step.context ? {
+            context: {
+              ...step.context,
+              trigger: {
+                ...step.context.trigger,
+                selector: step.context.trigger.selector ? redactTextUrls(step.context.trigger.selector) : step.context.trigger.selector,
+              },
+              urlBefore: redactUrl(step.context.urlBefore),
+              urlAfter: redactUrl(step.context.urlAfter),
+              titleBefore: redactTextUrls(step.context.titleBefore),
+              titleAfter: redactTextUrls(step.context.titleAfter),
+              disruptions: step.context.disruptions.map((disruption) => ({
+                ...disruption,
+                selector: redactTextUrls(disruption.selector),
+                detail: redactTextUrls(disruption.detail),
+              })),
+            },
+          } : {}),
+          ...(step.result ? {
+            result: {
+              ...step.result,
+              url: redactUrl(step.result.url),
+              error: step.result.error ? redactTextUrls(step.result.error) : step.result.error,
+              axeResults: redactStructuredText(step.result.axeResults) as typeof step.result.axeResults,
+              heuristicResults: redactStructuredText(step.result.heuristicResults) as typeof step.result.heuristicResults,
+              collectedData: redactCollectedData(step.result.collectedData),
+            },
+          } : {}),
+          ...(step.error ? { error: redactTextUrls(step.error) } : {}),
+        };
+        if (!step.screenshotPath) return publicObservation;
+        const filename = step.screenshotPath.split(/[\\/]/).pop() ?? '';
+        const expectedSuffix = `journeys/${run.runId}/screenshots/${filename}`;
+        if (!/^[a-zA-Z0-9_-]{1,128}\.png$/.test(filename)
+          || !step.screenshotPath.replaceAll('\\', '/').endsWith(expectedSuffix)) {
+          return { ...publicObservation, screenshotSkippedReason: 'capture_error' as const };
+        }
+        return {
+          ...publicObservation,
+          screenshotUrl: `/api/journey-runs/${run.runId}/screenshots/${encodeURIComponent(filename)}`,
+        };
+      }),
+      decisions: run.run.decisions?.map((decision) => ({
+        ...decision,
+        comment: redactTextUrls(decision.comment),
+      })),
+      decisionHistory: run.run.decisionHistory?.map((decision) => ({
+        ...decision,
+        comment: redactTextUrls(decision.comment),
+      })),
+    },
+  };
+}
+
 export function toPublicReportData(data: ReportData, sessionId: string): ReportData {
   const publicPageId = (url: string) => pageIdForUrl(sessionId, url);
   const publicReport = {
@@ -217,6 +319,10 @@ export function toPublicReportData(data: ReportData, sessionId: string): ReportD
       context: redactTextUrls(finding.context),
     })),
     review: toPublicReviewData(data.review, sessionId),
+    journeyAnnex: {
+      ...data.journeyAnnex,
+      runs: data.journeyAnnex.runs.map((run) => toPublicJourneyRun(run, sessionId)),
+    },
   };
 }
 
@@ -339,6 +445,7 @@ export function toPublicReviewData(review: ReviewData, sessionId: string): Revie
 export function buildReportFromSession(
   session: SessionState,
   reviewState?: AuditReviewState,
+  journeyRuns: JourneyRunState[] = [],
 ): ReportData {
   const mappedPages = Object.values(session.results)
     .filter((r) => !r.error)
@@ -396,6 +503,14 @@ export function buildReportFromSession(
     }],
     heuristicFindings,
     review,
+    journeyAnnex: {
+      schemaVersion: JOURNEY_REPORT_ANNEX_SCHEMA_VERSION,
+      generatedAt: new Date().toISOString(),
+      sessionId: session.sessionId,
+      // Copy the run envelopes so the report annex is a point-in-time
+      // snapshot even if a later review updates the persisted run.
+      runs: journeyRuns.map((run) => structuredClone(run)),
+    },
   };
 }
 

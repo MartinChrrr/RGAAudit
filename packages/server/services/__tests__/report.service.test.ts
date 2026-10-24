@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionState } from '@rgaaudit/core/analyzer/analyzer';
+import type { JourneyRunState } from '../../../core/journey/journey';
 import { buildReportFromSession, formatContrastRatio, toPublicComparisons, toPublicReportData } from '../report.service';
 
 describe('formatContrastRatio', () => {
@@ -14,6 +15,86 @@ describe('formatContrastRatio', () => {
 });
 
 describe('buildReportFromSession', () => {
+  it('inclut une photographie versionnée des parcours rattachés et la rédige publiquement', () => {
+    const session: SessionState = {
+      sessionId: 'journey-report-session',
+      startedAt: '2026-10-20T00:00:00.000Z',
+      totalPages: 0,
+      completedPages: [],
+      pendingPages: [],
+      results: {},
+    };
+    const run: JourneyRunState = {
+      schemaVersion: 1,
+      runId: 'run-report-001',
+      journeyId: 'journey-001',
+      journeyDefinitionHash: 'hash',
+      sessionId: session.sessionId,
+      status: 'completed',
+      startedAt: '2026-10-20T00:00:01.000Z',
+      finishedAt: '2026-10-20T00:00:02.000Z',
+      run: {
+        runId: 'run-report-001',
+        journeyId: 'journey-001',
+        startedAt: '2026-10-20T00:00:01.000Z',
+        finishedAt: '2026-10-20T00:00:02.000Z',
+        steps: [{
+          stepId: 'step-1',
+          action: 'navigate',
+          url: 'https://example.com/private?token=secret',
+          observedAt: '2026-10-20T00:00:01.000Z',
+          title: 'Accueil',
+          evidence: [{
+            selector: 'https://example.com/proof?token=secret',
+            html: '<main data-token="secret">Accueil</main>',
+            resultId: 'result-1',
+            proofId: 'proof-1',
+            criterionIds: ['1.1'],
+            elementIndex: 0,
+          }],
+          keyboard: {
+            key: 'Tab',
+            componentSelector: 'https://example.com/component?token=secret',
+            before: { selector: 'https://example.com/before?token=secret', tagName: 'A', role: null, text: 'https://example.com/text?token=secret', withinComponent: false, focusVisible: false },
+            after: null,
+            entered: true,
+            exited: false,
+            focusVisible: true,
+            blocked: false,
+            criterionIds: ['12.8'],
+            requiresHumanReview: true,
+          },
+          context: {
+            trigger: { stepId: 'step-1', action: 'navigate', selector: 'https://example.com/trigger?token=secret' },
+            urlBefore: 'https://example.com/before?token=secret',
+            urlAfter: 'https://example.com/after?token=secret',
+            titleBefore: 'Before https://example.com/title?token=secret',
+            titleAfter: 'After',
+            changed: true,
+            changeTypes: ['navigation'],
+            disruptions: [{ kind: 'motion', selector: 'https://example.com/disruption?token=secret', detail: 'https://example.com/detail?token=secret' }],
+            criterionIds: ['7.1'],
+            requiresHumanReview: true,
+          },
+          result: null,
+        }],
+      },
+    };
+
+    const internal = buildReportFromSession(session, undefined, [run]);
+    const publicData = toPublicReportData(internal, session.sessionId);
+
+    expect(internal.journeyAnnex).toMatchObject({ schemaVersion: 1, sessionId: session.sessionId, runs: [run] });
+    expect(publicData.journeyAnnex.runs[0]?.run?.steps[0]?.url).toBe('https://example.com/private');
+    const publicStep = publicData.journeyAnnex.runs[0]?.run?.steps[0];
+    expect(publicStep?.evidence[0]?.selector).toBe('https://example.com/proof');
+    expect(publicStep?.keyboard?.componentSelector).toBe('https://example.com/component');
+    expect(publicStep?.context?.trigger.selector).toBe('https://example.com/trigger');
+    expect(publicStep?.context?.disruptions[0]?.detail).toBe('https://example.com/detail');
+    expect(JSON.stringify(publicData.journeyAnnex)).not.toContain('token=secret');
+    expect(JSON.stringify(publicData.journeyAnnex)).not.toContain('https://example.com/private?token=secret');
+  });
+
   it('keeps exact URLs internally but exposes only a redacted URL and page id publicly', () => {
     const secretUrl = 'https://example.com/audit?token=secret-value';
     const session: SessionState = {

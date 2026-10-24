@@ -11,8 +11,10 @@ const {
   mockReadJourneyScreenshot,
   mockSaveJourneyEvidenceDecision,
   mockRedactJourney,
+  mockRedactJourneyForEditor,
   mockGetMissingSensitiveStepIds,
   mockStartJourneyReplay,
+  mockLoadSession,
 } = vi.hoisted(() => ({
   mockSaveJourney: vi.fn(),
   mockLoadJourney: vi.fn(),
@@ -24,7 +26,9 @@ const {
     ...journey,
     steps: journey.steps.map((step) => step.sensitive ? { ...step, value: undefined } : step),
   })),
+  mockRedactJourneyForEditor: vi.fn((journey: JourneyDefinition) => ({ ...journey, requiresSecretInput: false })),
   mockStartJourneyReplay: vi.fn(),
+  mockLoadSession: vi.fn(),
 }));
 
 vi.mock('../../services/journey.store', () => ({
@@ -35,10 +39,15 @@ vi.mock('../../services/journey.store', () => ({
   saveJourneyEvidenceDecision: mockSaveJourneyEvidenceDecision,
   getMissingSensitiveStepIds: mockGetMissingSensitiveStepIds,
   redactJourney: mockRedactJourney,
+  redactJourneyForEditor: mockRedactJourneyForEditor,
 }));
 
 vi.mock('../../services/journey.service', () => ({
   startJourneyReplay: mockStartJourneyReplay,
+}));
+
+vi.mock('../../services/session.store', () => ({
+  loadSession: mockLoadSession,
 }));
 
 import { journeyRouter } from '../journey.routes';
@@ -57,6 +66,7 @@ beforeEach(() => {
   mockSaveJourneyEvidenceDecision.mockResolvedValue(null);
   mockGetMissingSensitiveStepIds.mockReturnValue([]);
   mockStartJourneyReplay.mockReturnValue('run-001');
+  mockLoadSession.mockResolvedValue(null);
 });
 
 describe('POST /api/journeys', () => {
@@ -188,6 +198,25 @@ describe('PUT /api/journeys/:journeyId', () => {
   });
 });
 
+describe('GET /api/journeys/:journeyId', () => {
+  it('utilise la sérialisation privée pour l’éditeur explicite', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-001',
+      name: 'Connexion',
+      startUrl: 'https://example.com/start?token=private',
+      steps: [{ id: 'step-1', action: 'navigate', url: 'https://example.com/next?state=private' }],
+      createdAt: new Date().toISOString(),
+    };
+    mockLoadJourney.mockResolvedValue(journey);
+
+    const response = await request(app).get('/api/journeys/journey-001?view=editor');
+
+    expect(response.status).toBe(200);
+    expect(mockRedactJourneyForEditor).toHaveBeenCalledWith(journey);
+    expect(mockRedactJourney).not.toHaveBeenCalled();
+  });
+});
+
 describe('journey replay and run retrieval', () => {
   it('démarre un rejeu et expose son identifiant', async () => {
     const journey: JourneyDefinition = {
@@ -221,6 +250,44 @@ describe('journey replay and run retrieval', () => {
 
     expect(response.status).toBe(429);
     expect(response.body.error).toContain('Trop de rejeux');
+  });
+
+  it('rattache le rejeu à une session existante', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-001',
+      name: 'Connexion',
+      startUrl: 'https://example.com',
+      steps: [{ id: 'step-1', action: 'wait', waitMs: 10 }],
+      createdAt: new Date().toISOString(),
+    };
+    mockLoadJourney.mockResolvedValue(journey);
+    mockLoadSession.mockResolvedValue({ sessionId: 'session-001' });
+
+    const response = await request(app)
+      .post('/api/journeys/journey-001/replay')
+      .send({ sessionId: 'session-001' });
+
+    expect(response.status).toBe(202);
+    expect(response.body).toMatchObject({ runId: 'run-001', journeyId: 'journey-001', sessionId: 'session-001' });
+    expect(mockStartJourneyReplay).toHaveBeenCalledWith(journey, { sessionId: 'session-001' });
+  });
+
+  it('refuse de rattacher le rejeu à une session absente', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-001',
+      name: 'Connexion',
+      startUrl: 'https://example.com',
+      steps: [{ id: 'step-1', action: 'wait', waitMs: 10 }],
+      createdAt: new Date().toISOString(),
+    };
+    mockLoadJourney.mockResolvedValue(journey);
+
+    const response = await request(app)
+      .post('/api/journeys/journey-001/replay')
+      .send({ sessionId: 'missing-session' });
+
+    expect(response.status).toBe(404);
+    expect(mockStartJourneyReplay).not.toHaveBeenCalled();
   });
 
   it('refuse un rejeu quand un secret doit être réinjecté', async () => {

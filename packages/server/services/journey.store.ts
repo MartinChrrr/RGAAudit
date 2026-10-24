@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
@@ -90,6 +90,26 @@ export function redactJourney(journey: JourneyDefinition): Omit<JourneyDefinitio
       if (!step.sensitive) return step.url ? { ...step, url: redactUrl(step.url) } : step;
       const { value: _value, secretRef: _secretRef, ...safeStep } = step;
       return safeStep.url ? { ...safeStep, url: redactUrl(safeStep.url) } : safeStep;
+    }),
+  };
+}
+
+/**
+ * Serialize a journey for the local editor. Sensitive values stay hidden, but
+ * URL query strings remain available so an editor can faithfully replay the
+ * configured private journey. Public responses must use redactJourney().
+ */
+export function redactJourneyForEditor(journey: JourneyDefinition): Omit<JourneyDefinition, 'steps'> & {
+  steps: Array<Omit<JourneyDefinition['steps'][number], 'value'> & { value?: string }>;
+  requiresSecretInput: boolean;
+} {
+  return {
+    ...journey,
+    requiresSecretInput: journey.steps.some((step) => step.sensitive && step.value === undefined),
+    steps: journey.steps.map((step) => {
+      if (!step.sensitive) return step;
+      const { value: _value, secretRef: _secretRef, ...safeStep } = step;
+      return safeStep;
     }),
   };
 }
@@ -188,6 +208,30 @@ export async function loadJourneyRun(runId: string): Promise<JourneyRunState | n
     return migrateJourneyRunState(JSON.parse(await readFile(getJourneyRunPath(runId), 'utf-8')), runId);
   } catch {
     return null;
+  }
+}
+
+/** Load the run snapshots explicitly attached to one audit session. */
+export async function loadJourneyRunsForSession(sessionId: string): Promise<JourneyRunState[]> {
+  try {
+    const entries = await readdir(JOURNEYS_DIR, { withFileTypes: true });
+    const runs = await Promise.all(entries
+      .filter((entry) => entry.isFile() && /^run-[a-zA-Z0-9-]{1,128}\.json$/.test(entry.name))
+      .map(async (entry) => {
+        const runId = entry.name.slice('run-'.length, -'.json'.length);
+        try {
+          const value = JSON.parse(await readFile(join(JOURNEYS_DIR, entry.name), 'utf-8')) as unknown;
+          const run = migrateJourneyRunState(value, runId);
+          return run?.sessionId === sessionId ? run : null;
+        } catch {
+          return null;
+        }
+      }));
+    return runs
+      .filter((run): run is JourneyRunState => run !== null)
+      .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
+  } catch {
+    return [];
   }
 }
 

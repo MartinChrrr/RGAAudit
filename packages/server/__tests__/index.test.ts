@@ -38,6 +38,7 @@ vi.mock('@rgaaudit/core/crawler/sitemap.parser', () => ({
 
 vi.mock('@rgaaudit/core/analyzer/analyzer', () => ({
   auditPages: mockAuditPages,
+  SESSION_SCHEMA_VERSION: 1,
 }));
 
 vi.mock('@rgaaudit/core/mapping/mapper', () => ({

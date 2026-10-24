@@ -83,6 +83,22 @@ interface ReportData {
   contrastViolations?: ContrastViolationItem[];
   heuristicFindings?: HeuristicFindingItem[];
   review?: ReviewData;
+  journeyAnnex?: {
+    schemaVersion: number;
+    generatedAt: string;
+    sessionId: string;
+    runs: Array<{
+      runId: string;
+      journeyId: string;
+      status: 'running' | 'completed' | 'completed_with_errors' | 'failed';
+      startedAt: string;
+      finishedAt?: string;
+      run?: {
+        steps: Array<{ evidence: unknown[] }>;
+        decisions?: unknown[];
+      };
+    }>;
+  };
   allCollected?: Array<{
     url: string;
     pageId?: string;
@@ -372,6 +388,56 @@ export default function Results() {
             review={report.review}
             onOpenAnnex={handleOpenAnnex}
           />
+        )}
+
+        {report.journeyAnnex && sessionId && (
+          <section className="mb-8 rounded-xl border border-violet-200 bg-violet-50 p-4" data-testid="journey-annex">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-violet-950">Annexe — Parcours d’audit</h2>
+                <p className="mt-1 text-sm text-violet-900">
+                  Photographie versionnée des parcours rattachés à cette session (version {report.journeyAnnex.schemaVersion}).
+                </p>
+              </div>
+              <Link
+                to={`/journeys/new?sessionId=${encodeURIComponent(sessionId)}`}
+                className="inline-flex rounded-lg border border-violet-300 bg-white px-3 py-2 text-sm font-medium text-violet-900 hover:bg-violet-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+              >
+                Créer un parcours pour cette session
+              </Link>
+            </div>
+            {report.journeyAnnex.runs.length === 0 ? (
+              <p className="mt-3 text-sm text-violet-900">Aucun parcours d’audit n’est rattaché à cette session.</p>
+            ) : (
+              <div className="mt-4 overflow-x-auto rounded-lg border border-violet-200 bg-white">
+                <table className="w-full text-left text-sm">
+                  <caption className="sr-only">Parcours d’audit rattachés</caption>
+                  <thead className="bg-violet-100 text-xs uppercase text-violet-950">
+                    <tr>
+                      <th scope="col" className="px-3 py-2">Exécution</th>
+                      <th scope="col" className="px-3 py-2">Parcours</th>
+                      <th scope="col" className="px-3 py-2">Statut</th>
+                      <th scope="col" className="px-3 py-2">Preuves</th>
+                      <th scope="col" className="px-3 py-2">Décisions</th>
+                      <th scope="col" className="px-3 py-2">Détail</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-violet-100">
+                    {report.journeyAnnex.runs.map((run) => (
+                      <tr key={run.runId}>
+                        <td className="px-3 py-2 font-mono text-xs text-gray-700">{run.runId}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-gray-700">{run.journeyId}</td>
+                        <td className="px-3 py-2 text-xs text-gray-700">{journeyStatusLabel(run.status)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-700">{run.run?.steps.reduce((count, step) => count + step.evidence.length, 0) ?? 0}</td>
+                        <td className="px-3 py-2 text-xs text-gray-700">{run.run?.decisions?.length ?? 0}</td>
+                        <td className="px-3 py-2"><Link aria-label={`Ouvrir l’exécution ${run.runId}`} className="text-primary-700 underline" to={`/journey-runs/${encodeURIComponent(run.runId)}`}>Ouvrir</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         )}
 
         {/* Pages audited */}
@@ -673,4 +739,13 @@ function SummaryCard({ label, value, hint, className = '' }: { label: string; va
       {hint && <p className="text-xs text-gray-500">{hint}</p>}
     </div>
   );
+}
+
+function journeyStatusLabel(status: 'running' | 'completed' | 'completed_with_errors' | 'failed'): string {
+  return {
+    running: 'En cours',
+    completed: 'Terminée',
+    completed_with_errors: 'Terminée avec erreurs',
+    failed: 'Échec',
+  }[status];
 }

@@ -9,6 +9,8 @@ import type { HumanStatus } from '../domain/review';
 export const JOURNEY_ACTIONS = ['navigate', 'click', 'fill', 'press', 'wait'] as const;
 export type JourneyAction = typeof JOURNEY_ACTIONS[number];
 export const JOURNEY_RUN_SCHEMA_VERSION = 1 as const;
+/** Version of the immutable journey annex embedded in an audit report. */
+export const JOURNEY_REPORT_ANNEX_SCHEMA_VERSION = 1 as const;
 
 export interface JourneyStep {
   id: string;
@@ -143,6 +145,18 @@ export interface JourneyRunState {
   finishedAt?: string;
   run?: JourneyRun;
   error?: string;
+}
+
+/**
+ * Snapshot of journey runs attached to a report. The server serializes a
+ * redacted copy of each run so that report consumers never receive the
+ * private replay URLs or sensitive execution details.
+ */
+export interface JourneyReportAnnex {
+  schemaVersion: typeof JOURNEY_REPORT_ANNEX_SCHEMA_VERSION;
+  generatedAt: string;
+  sessionId: string;
+  runs: JourneyRunState[];
 }
 
 export interface JourneyRunOptions {

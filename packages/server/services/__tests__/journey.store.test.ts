@@ -7,6 +7,7 @@ const fsMock = vi.hoisted(() => ({
   rename: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn(),
   readFile: vi.fn(),
+  readdir: vi.fn(),
 }));
 
 vi.mock('node:fs/promises', () => fsMock);
@@ -15,8 +16,10 @@ import {
   getMissingSensitiveStepIds,
   MAX_JOURNEY_SCREENSHOT_BYTES,
   migrateJourneyRunState,
+  loadJourneyRunsForSession,
   readJourneyScreenshot,
   redactJourney,
+  redactJourneyForEditor,
   saveJourney,
   saveJourneyEvidenceDecision,
 } from '../journey.store';
@@ -52,6 +55,22 @@ describe('journey store', () => {
     expect(JSON.stringify(publicJourney)).not.toContain('secret-token');
     expect(JSON.stringify(publicJourney)).not.toContain('secret-ref');
     expect(publicJourney.requiresSecretInput).toBe(false);
+  });
+
+  it('conserve les URL complètes uniquement pour la vue explicite de l’éditeur', () => {
+    const configured = {
+      ...journey,
+      startUrl: 'https://example.com/start?token=private',
+      steps: [{ ...journey.steps[0], url: 'https://example.com/next?state=private' }],
+    };
+
+    const editorJourney = redactJourneyForEditor(configured);
+    const publicJourney = redactJourney(configured);
+
+    expect(editorJourney.startUrl).toContain('?token=private');
+    expect(editorJourney.steps[0]?.url).toContain('?state=private');
+    expect(publicJourney.startUrl).toBe('https://example.com/start');
+    expect(publicJourney.steps[0]?.url).toBe('https://example.com/next');
   });
 
   it('signale une réinjection requise quand une valeur sensible manque', () => {
@@ -124,5 +143,24 @@ describe('journey store', () => {
       runId: 'run-legacy',
     });
     expect(migrateJourneyRunState({ runId: 'run-legacy', status: 'completed' }, 'run-legacy')).toBeNull();
+  });
+
+  it('charge uniquement les exécutions rattachées à une session', async () => {
+    fsMock.readdir.mockResolvedValue([
+      { name: 'run-one.json', isFile: () => true },
+      { name: 'run-two.json', isFile: () => true },
+      { name: 'journey-001.json', isFile: () => true },
+    ]);
+    fsMock.readFile
+      .mockResolvedValueOnce(JSON.stringify({
+        runId: 'one', journeyId: 'journey-001', sessionId: 'session-1', status: 'completed', startedAt: '2026-10-20T00:00:02.000Z', run: { steps: [] },
+      }))
+      .mockResolvedValueOnce(JSON.stringify({
+        runId: 'two', journeyId: 'journey-001', sessionId: 'session-2', status: 'completed', startedAt: '2026-10-20T00:00:01.000Z', run: { steps: [] },
+      }));
+
+    await expect(loadJourneyRunsForSession('session-1')).resolves.toEqual([
+      expect.objectContaining({ runId: 'one', sessionId: 'session-1' }),
+    ]);
   });
 });

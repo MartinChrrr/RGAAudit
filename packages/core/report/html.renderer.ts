@@ -3,6 +3,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Report, AggregatedCriterion } from '../mapping/mapper';
+import type { JourneyReportAnnex } from '../journey/journey';
 import type {
   CollectedData,
   FormDataItem,
@@ -77,6 +78,7 @@ export interface RenderOptions {
   report: Report;
   allCollected?: Array<{ url: string; pageId?: string; collectedData: CollectedData | null }>;
   contrastViolations?: ContrastViolationItem[];
+  journeyAnnex?: JourneyReportAnnex;
 }
 
 type CollectedPage = { url: string; pageId?: string; collectedData: CollectedData | null };
@@ -119,7 +121,7 @@ const COMPARISON_EXTRACTOR: ReportExtractor<ComparisonItem[], ComparisonItem> = 
   extract: (comparisons) => comparisons,
 };
 
-export function renderReportHtml({ report, allCollected, contrastViolations }: RenderOptions): string {
+export function renderReportHtml({ report, allCollected, contrastViolations, journeyAnnex }: RenderOptions): string {
   const { metadata, limitBanner, summary, uncoveredThemes } = report;
   const coverage = report.coverage ?? summary.coverage;
 
@@ -255,6 +257,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
   const specializedSection = buildSpecializedContentSection(runReportExtractor(SPECIALIZED_ANNEX_EXTRACTOR, collectedPages).items);
   const comparisonSection = buildComparisonSection(runReportExtractor(COMPARISON_EXTRACTOR, report.comparisons ?? []).items);
+  const journeySection = buildJourneySection(journeyAnnex);
 
   const annexeDataJson = allCollected
     ? serializeForHtmlScript(allCollected)
@@ -384,6 +387,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
 
     ${specializedSection}
 
+    ${journeySection}
+
     ${comparisonSection}
 
     ${formsSection}
@@ -398,6 +403,89 @@ export function renderReportHtml({ report, allCollected, contrastViolations }: R
   <script id="rgaaudit-data" type="application/json">${annexeDataJson}</script>
 </body>
 </html>`;
+}
+
+function buildJourneySection(annex?: JourneyReportAnnex): string {
+  if (!annex) return '';
+  if (annex.runs.length === 0) {
+    return `
+      <section class="mb-8" data-testid="journey-annex">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeJourneys'))}</h2>
+        <p class="text-sm text-gray-600">${escapeHtml(t('report.journeyAnnexEmpty'))}</p>
+      </section>`;
+  }
+
+  const rows = annex.runs.map((run) => {
+    const evidenceCount = run.run?.steps.reduce((total, step) => total + step.evidence.length, 0) ?? 0;
+    const decisionCount = run.run?.decisions?.length ?? 0;
+    const stepCount = run.run?.steps.length ?? 0;
+    return `
+      <tr>
+        <td class="px-3 py-2 text-xs font-mono text-gray-700">${escapeHtml(run.runId)}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(run.journeyId)}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(t(`journeyStatus.${run.status}`))}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${stepCount}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${evidenceCount}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${decisionCount}</td>
+        <td class="px-3 py-2 text-xs text-gray-500">${escapeHtml(run.finishedAt ?? run.startedAt)}</td>
+      </tr>`;
+  }).join('');
+
+  const evidenceDetails = annex.runs.map((run) => {
+    if (!run.run) return '';
+    const steps = run.run.steps.map((step) => {
+      const evidenceRows = step.evidence.map((evidence, evidenceIndex) => {
+        const decisions = (run.run?.decisions ?? []).filter((decision) => (
+          decision.stepId === step.stepId && decision.evidenceIndex === evidenceIndex
+        ));
+        const decisionText = decisions.length > 0
+          ? decisions.map((decision) => `${t(`journeyDecisionStatus.${decision.status}`)}${decision.comment ? ` — ${decision.comment}` : ''}`).join(' · ')
+          : t('report.journeyNoDecision');
+        return `
+          <tr>
+            <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(String(evidenceIndex + 1))}</td>
+            <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(evidence.criterionIds.join(', ') || '—')}</td>
+            <td class="px-3 py-2 text-xs text-gray-700 break-all"><code>${escapeHtml(evidence.selector)}</code></td>
+            <td class="px-3 py-2 text-xs text-gray-700"><code class="whitespace-pre-wrap">${escapeHtml(evidence.html)}</code>${evidence.context ? `<div class="mt-1 text-gray-500 whitespace-pre-wrap">${escapeHtml(evidence.context)}</div>` : ''}</td>
+            <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(decisionText)}</td>
+          </tr>`;
+      }).join('');
+      return `
+        <div class="mb-4">
+          <h4 class="text-sm font-semibold text-gray-800">${escapeHtml(t('report.journeyStep', { step: step.stepId }))} — ${escapeHtml(step.url)}</h4>
+          ${evidenceRows.length > 0 ? `<table class="w-full text-sm text-left mt-2"><thead class="text-xs text-gray-500 uppercase bg-gray-50"><tr><th scope="col" class="px-3 py-2">#</th><th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyCriteria'))}</th><th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeySelector'))}</th><th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyProof'))}</th><th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyDecision'))}</th></tr></thead><tbody class="divide-y divide-gray-100">${evidenceRows}</tbody></table>` : `<p class="text-xs text-gray-500 mt-2">${escapeHtml(t('report.journeyNoEvidence'))}</p>`}
+        </div>`;
+    }).join('');
+    return `<details class="mb-4 rounded-lg border border-gray-200 bg-white p-4"><summary class="cursor-pointer text-sm font-semibold text-gray-800">${escapeHtml(run.runId)} — ${escapeHtml(run.journeyId)}</summary><div class="mt-3">${steps}</div></details>`;
+  }).join('');
+
+  return `
+    <section class="mb-8" data-testid="journey-annex">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeJourneys'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('report.journeyAnnexDescription'))}</p>
+      <p class="text-xs text-gray-500 mb-3">${escapeHtml(t('report.journeyAnnexVersion', { version: annex.schemaVersion, date: annex.generatedAt }))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeJourneys'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyRunId'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyId'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyStatus'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeySteps'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyEvidence'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyDecisions'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.journeyDate'))}</th>
+            </tr>
+          </thead>
+        <tbody class="divide-y divide-gray-100">${rows}</tbody>
+      </table>
+      </div>
+      <div class="mt-4" data-testid="journey-evidence-details">
+        <h3 class="text-sm font-semibold text-gray-800 mb-2">${escapeHtml(t('report.journeyEvidenceDetails'))}</h3>
+        ${evidenceDetails}
+      </div>
+    </section>`;
 }
 
 function buildMediaSection(media: MediaAnnexItem[]): string {

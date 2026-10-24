@@ -221,6 +221,46 @@ describe('renderReportHtml', () => {
     expect(html).toContain('img#hero');
   });
 
+  it('affiche l’annexe versionnée des parcours rattachés', () => {
+    const html = renderReportHtml({
+      report: makeReport(),
+      journeyAnnex: {
+        schemaVersion: 1,
+        generatedAt: '2026-10-20T00:00:00.000Z',
+        sessionId: 'session-1',
+        runs: [{
+          schemaVersion: 1,
+          runId: 'run-1',
+          journeyId: 'journey-1',
+          journeyDefinitionHash: 'hash',
+          sessionId: 'session-1',
+          status: 'completed',
+          startedAt: '2026-10-20T00:00:00.000Z',
+          finishedAt: '2026-10-20T00:01:00.000Z',
+          run: {
+            runId: 'run-1',
+            journeyId: 'journey-1',
+            startedAt: '2026-10-20T00:00:00.000Z',
+            finishedAt: '2026-10-20T00:01:00.000Z',
+            steps: [{
+              stepId: 'step-1',
+              action: 'wait',
+              url: 'https://example.com',
+              observedAt: '2026-10-20T00:00:10.000Z',
+              title: 'Accueil',
+              evidence: [],
+              result: null,
+            }],
+          },
+        }],
+      },
+    });
+
+    expect(html).toContain('data-testid="journey-annex"');
+    expect(html).toContain('run-1');
+    expect(html).toContain('photographie versionnée');
+  });
+
   it('affiche l’annexe formulaires dans le rapport HTML', () => {
     const html = renderReportHtml({
       report: makeReport(),

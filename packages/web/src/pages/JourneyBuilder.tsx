@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { t } from '../locales';
 
 type JourneyAction = 'navigate' | 'click' | 'fill' | 'press' | 'wait';
@@ -22,6 +22,8 @@ function newStep(index: number): JourneyStep {
 
 export default function JourneyBuilder() {
   const { journeyId } = useParams<{ journeyId: string }>();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId') ?? undefined;
   const navigate = useNavigate();
   const editing = Boolean(journeyId);
   const [name, setName] = useState('');
@@ -40,7 +42,7 @@ export default function JourneyBuilder() {
   useEffect(() => {
     if (!journeyId) return;
     let cancelled = false;
-    void fetch(`/api/journeys/${encodeURIComponent(journeyId)}`)
+    void fetch(`/api/journeys/${encodeURIComponent(journeyId)}?view=editor`)
       .then(async (response) => {
         if (!response.ok) throw new Error(String(response.status));
         return response.json() as Promise<{ journey: { name: string; startUrl: string; steps: JourneyStep[] } }>;
@@ -77,7 +79,7 @@ export default function JourneyBuilder() {
       });
       const payload = await response.json().catch(() => ({})) as { journey?: { id: string }; error?: string };
       if (!response.ok || !payload.journey) throw new Error(payload.error ?? String(response.status));
-      navigate(`/journeys/${payload.journey.id}/edit`);
+      navigate(`/journeys/${payload.journey.id}/edit${sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ''}`);
     } catch (cause) {
       setError(t('journeyBuilder.saveError', { error: cause instanceof Error ? cause.message : String(cause) }));
     } finally {
@@ -90,7 +92,12 @@ export default function JourneyBuilder() {
     setError('');
     setReplaying(true);
     try {
-      const response = await fetch(`/api/journeys/${encodeURIComponent(journeyId)}/replay`, { method: 'POST' });
+      const response = await fetch(
+        `/api/journeys/${encodeURIComponent(journeyId)}/replay`,
+        sessionId
+          ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) }
+          : { method: 'POST' },
+      );
       const payload = await response.json().catch(() => ({})) as { runId?: string; error?: string };
       if (!response.ok || !payload.runId) throw new Error(payload.error ?? String(response.status));
       navigate(`/journey-runs/${encodeURIComponent(payload.runId)}`);

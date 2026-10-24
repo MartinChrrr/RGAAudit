@@ -57,10 +57,42 @@ describe('JourneyBuilder', () => {
     );
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Lancer le parcours' })).toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledWith('/api/journeys/journey-001?view=editor');
     await user.click(screen.getByRole('button', { name: 'Lancer le parcours' }));
 
     expect(fetchMock).toHaveBeenLastCalledWith('/api/journeys/journey-001/replay', { method: 'POST' });
     expect(await screen.findByTestId('journey-run')).toBeInTheDocument();
+    fetchMock.mockRestore();
+  });
+
+  it('transmet la session au rejeu quand l’éditeur est ouvert depuis un rapport', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ journey: { name: 'Connexion', startUrl: 'https://example.com', steps: [{ id: 'step-1', action: 'wait', waitMs: 10 }] } }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ runId: 'run-001' }),
+      } as Response);
+
+    render(
+      <MemoryRouter initialEntries={['/journeys/journey-001/edit?sessionId=session-001']}>
+        <Routes>
+          <Route path="/journeys/:journeyId/edit" element={<JourneyBuilder />} />
+          <Route path="/journey-runs/:runId" element={<div data-testid="journey-run" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Lancer le parcours' })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Lancer le parcours' }));
+
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/journeys/journey-001/replay', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ sessionId: 'session-001' }),
+    }));
     fetchMock.mockRestore();
   });
 });
