@@ -131,6 +131,19 @@ describe('buildReportFromSession', () => {
             frames: [],
             links: [],
             headings: { documentTitle: 'Test', headings: [], flags: [] },
+            navigation: {
+              systems: [{
+                kind: 'search',
+                selector: 'form[action="https://example.com/recherche?token=secret-value"]',
+                label: 'Rechercher https://example.com/label?token=secret-value',
+                href: 'https://example.com/recherche?token=secret-value',
+                domIndex: 0,
+                position: { top: 0, left: 0, width: 100, height: 40 },
+                flags: ['NAVIGATION_SEARCH_PRESENT'],
+              }],
+              flags: ['NAVIGATION_SEARCH_PRESENT'],
+              manualChecks: ['Vérifier https://example.com/check?token=secret-value'],
+            },
           },
           heuristicResults: [],
           error: null,
@@ -145,6 +158,10 @@ describe('buildReportFromSession', () => {
     expect(publicData.allCollected[0]?.url).toBe('https://example.com/audit');
     expect(publicData.allCollected[0]?.pageId).toMatch(/^page-[0-9a-f]{32}$/);
     expect(publicData.allCollected[0]?.collectedData?.images[0]?.screenshotPath).toBeNull();
+    expect(publicData.allCollected[0]?.collectedData?.navigation?.systems[0]).toMatchObject({
+      href: 'https://example.com/recherche',
+      label: 'Rechercher https://example.com/label',
+    });
     expect(JSON.stringify(publicData)).not.toContain('secret-value');
     expect(JSON.stringify(publicData)).not.toContain('/var/lib/rgaaudit/screenshots/secret.png');
   });

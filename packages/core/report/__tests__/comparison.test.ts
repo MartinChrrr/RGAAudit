@@ -90,4 +90,34 @@ describe('compareCollectedData', () => {
       updated: [{ key: 'image:img#hero', fields: expect.arrayContaining(['alt']) }],
     });
   });
+
+  it('compare les positions et libellés des systèmes de navigation', () => {
+    const before = collected([]);
+    const after = collected([]);
+    before.navigation = {
+      systems: [{
+        kind: 'navigation', selector: '#primary', label: 'Principal', href: null, domIndex: 0,
+        position: { top: 10, left: 0, width: 500, height: 40 }, flags: ['NAVIGATION_POSITION_CAPTURED'],
+      }],
+      flags: ['NAVIGATION_POSITION_CAPTURED'],
+      manualChecks: [],
+    };
+    after.navigation = {
+      systems: [{
+        kind: 'navigation', selector: '#primary', label: 'Principal modifié', href: null, domIndex: 0,
+        position: { top: 80, left: 0, width: 500, height: 40 }, flags: ['NAVIGATION_POSITION_CAPTURED'],
+      }],
+      flags: ['NAVIGATION_POSITION_CAPTURED'],
+      manualChecks: [],
+    };
+
+    const comparisons = compareCollectedData([
+      { order: 0, url: 'https://example.com/a', comparisonGroup: 'navigation-set', collectedData: before },
+      { order: 1, url: 'https://example.com/b', comparisonGroup: 'navigation-set', collectedData: after },
+    ]);
+
+    expect(comparisons[0]?.updated).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'navigation:navigation:#primary', fields: expect.arrayContaining(['label', 'position']) }),
+    ]));
+  });
 });

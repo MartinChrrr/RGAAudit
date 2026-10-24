@@ -9,6 +9,7 @@ import type {
   FormDataItem,
   MediaData,
   HiddenContentObservation,
+  NavigationSystemData,
   PresentationSnapshot,
   SpecializedContentData,
 } from '../analyzer/data-collector';
@@ -87,6 +88,7 @@ type CollectedPage = { url: string; pageId?: string; collectedData: CollectedDat
 type FormAnnexItem = { url: string; pageId?: string; form: FormDataItem };
 type MediaAnnexItem = { url: string; pageId?: string; item: MediaData };
 type PresentationAnnexItem = { url: string; pageId?: string; snapshot: PresentationSnapshot; hiddenContent: HiddenContentObservation[] };
+type NavigationAnnexItem = { url: string; pageId?: string; system: NavigationSystemData };
 type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
 type ComparisonItem = NonNullable<Report['comparisons']>[number];
 
@@ -128,6 +130,15 @@ const PRESENTATION_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], Presentatio
       snapshot,
       hiddenContent: snapshot.scenario === 'baseline' ? (collectedData?.presentation?.hiddenContent ?? []) : [],
     }))
+  )),
+};
+
+const NAVIGATION_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], NavigationAnnexItem> = {
+  id: 'annex-navigation',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.navigation?.systems ?? []).map((system) => ({ url, pageId, system }))
   )),
 };
 
@@ -273,6 +284,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
   const presentationSection = buildPresentationSection(runReportExtractor(PRESENTATION_ANNEX_EXTRACTOR, collectedPages).items);
+  const navigationSection = buildNavigationSection(runReportExtractor(NAVIGATION_ANNEX_EXTRACTOR, collectedPages).items);
   const specializedSection = buildSpecializedContentSection(runReportExtractor(SPECIALIZED_ANNEX_EXTRACTOR, collectedPages).items);
   const comparisonSection = buildComparisonSection(runReportExtractor(COMPARISON_EXTRACTOR, report.comparisons ?? []).items);
   const journeySection = buildJourneySection(journeyAnnex);
@@ -404,6 +416,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
     ${mediaSection}
 
     ${presentationSection}
+
+    ${navigationSection}
 
     ${specializedSection}
 
@@ -544,6 +558,43 @@ function buildPresentationSection(items: PresentationAnnexItem[]): string {
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationViewport'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationDocument'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationInventory'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationSignals'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function buildNavigationSection(items: NavigationAnnexItem[]): string {
+  if (items.length === 0) return '';
+
+  const scenarioLabel = (kind: NavigationSystemData['kind']): string => (
+    t(`report.navigationSystem.${kind}`)
+  );
+  const rows = items.map(({ url, pageId, system }) => `
+    <tr>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(scenarioLabel(system.kind))}<br><code>${escapeHtml(system.kind)}</code></td>
+      <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(pageLabel(url, pageId))}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(system.label ?? t('report.navigationNoLabel'))}<br><code>${escapeHtml(system.selector)}</code>${system.href ? `<br><code>${escapeHtml(system.href)}</code>` : ''}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${system.position ? `${system.position.top}, ${system.position.left} — ${system.position.width} × ${system.position.height}` : '—'}</td>
+      <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(system.flags.join(', ') || t('report.presentationNoSignal'))}</td>
+    </tr>`).join('');
+
+  return `
+    <section class="mb-8" data-testid="navigation-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeNavigation'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('report.navigationAnnexDescription'))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(t('report.navigationTableScrollLabel'))}">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeNavigation'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.navigationSystemLabel'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationPage'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.navigationEvidence'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('report.navigationPosition'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationSignals'))}</th>
             </tr>
           </thead>

@@ -222,6 +222,25 @@ export interface HiddenContentObservation {
   flags: string[];
 }
 
+export type NavigationSystemKind = 'navigation' | 'search' | 'sitemap';
+
+export interface NavigationSystemData {
+  kind: NavigationSystemKind;
+  selector: string;
+  label: string | null;
+  href: string | null;
+  domIndex: number;
+  position: { top: number; left: number; width: number; height: number } | null;
+  flags: string[];
+}
+
+/** Page-level inventory used for the cross-page navigation review (12.1–12.5). */
+export interface NavigationData {
+  systems: NavigationSystemData[];
+  flags: string[];
+  manualChecks: string[];
+}
+
 /** Presentation probes used by RGAA 10.2–10.4 and 10.11. */
 export interface PresentationData {
   snapshots: PresentationSnapshot[];
@@ -300,6 +319,8 @@ export interface CollectedData {
   figcaptions?: FigureCaptionData[];
   /** Optional presentation-state probes, absent in older persisted sessions. */
   presentation?: PresentationData;
+  /** Optional navigation inventory, absent in older persisted sessions. */
+  navigation?: NavigationData;
 }
 
 const SPECIALIZED_IMAGE_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
@@ -1860,6 +1881,110 @@ export async function collectPresentation(page: Page): Promise<PresentationData>
 }
 
 // ---------------------------------------------------------------------------
+// collectNavigation
+// ---------------------------------------------------------------------------
+
+/**
+ * Inventory navigation mechanisms on one page. This intentionally records
+ * observable candidates only; the existence of two systems and consistency
+ * across a page set remain human decisions.
+ */
+export async function collectNavigation(page: Page): Promise<NavigationData> {
+  const sitemapLabels = getCriterion('12.3')?.heuristicPatterns.navigationLinkLabels ?? [];
+  const manualChecks = ['12.1', '12.2', '12.3', '12.4', '12.5'].flatMap((id) => (
+    getCriterion(id)?.heuristicPatterns.manualChecks?.map((check) => `${id} — ${check}`) ?? []
+  ));
+  return page.evaluate(({ sitemapLabels: configuredSitemapLabels, configuredManualChecks }) => {
+    const MAX_ITEMS = 100;
+    const normalize = (value: string | null | undefined, max = 300): string | null => {
+      const text = (value ?? '').replace(/\s+/g, ' ').trim();
+      return text ? text.slice(0, max) : null;
+    };
+    const getUniqueSelector = (element: Element): string => {
+      const id = element.getAttribute('id');
+      if (id) {
+        const escaped = CSS.escape(id);
+        if (document.querySelectorAll(`#${escaped}`).length === 1) return `#${escaped}`;
+      }
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName === element.tagName);
+      const suffix = siblings.length > 1 ? `:nth-of-type(${siblings.indexOf(element) + 1})` : '';
+      return `${getUniqueSelector(parent)} > ${tag}${suffix}`;
+    };
+    const referencedText = (element: Element): string | null => {
+      const ids = (element.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+      return normalize(ids.map((id) => document.getElementById(id)?.textContent ?? '').join(' '))
+        ?? normalize(element.getAttribute('aria-label'))
+        ?? normalize(element.getAttribute('title'))
+        ?? normalize(element.textContent);
+    };
+    const positionOf = (element: Element): NavigationSystemData['position'] => {
+      const rect = element.getBoundingClientRect();
+      if (![rect.top, rect.left, rect.width, rect.height].every(Number.isFinite)) return null;
+      return { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) };
+    };
+    type NavigationCandidate = { element: Element; kind: NavigationSystemKind; href: string | null };
+    const candidates: NavigationCandidate[] = [];
+    const addCandidate = (element: Element, kind: NavigationSystemKind, href: string | null) => {
+      const selector = getUniqueSelector(element);
+      if (candidates.some((candidate) => candidate.kind === kind && getUniqueSelector(candidate.element) === selector)) return;
+      candidates.push({ element, kind, href });
+    };
+    const compareDomOrder = (left: Element, right: Element): number => {
+      const relation = left.compareDocumentPosition(right);
+      if (relation & 4 /* DOCUMENT_POSITION_FOLLOWING */) return -1;
+      if (relation & 2 /* DOCUMENT_POSITION_PRECEDING */) return 1;
+      return 0;
+    };
+    for (const element of Array.from(document.querySelectorAll('nav, [role="navigation"]'))) {
+      addCandidate(element, 'navigation', null);
+    }
+    for (const form of Array.from(document.querySelectorAll('form[role="search"]'))) {
+      addCandidate(form, 'search', form.getAttribute('action'));
+    }
+    for (const input of Array.from(document.querySelectorAll('input[type="search"]'))) {
+      const form = input.closest('form');
+      addCandidate(form ?? input, 'search', form?.getAttribute('action') ?? null);
+    }
+    const normalizedLabels = configuredSitemapLabels.map((label) => label.toLowerCase().trim()).filter(Boolean);
+    for (const link of Array.from(document.querySelectorAll('a[href]'))) {
+      const label = referencedText(link)?.toLowerCase() ?? '';
+      if (normalizedLabels.some((candidate) => label === candidate)) {
+        addCandidate(link, 'sitemap', link.getAttribute('href'));
+      }
+    }
+
+    const systems = candidates
+      .sort((left, right) => compareDomOrder(left.element, right.element))
+      .slice(0, MAX_ITEMS)
+      .map(({ element, kind, href }, domIndex): NavigationSystemData => {
+        const label = referencedText(element);
+        const flags = ['NAVIGATION_SYSTEM_PRESENT', 'NAVIGATION_POSITION_CAPTURED'];
+        if (kind === 'search') flags.push('NAVIGATION_SEARCH_PRESENT');
+        if (kind === 'sitemap') flags.push('NAVIGATION_SITEMAP_CANDIDATE');
+        if (label) flags.push('NAVIGATION_LABEL_PRESENT');
+        return {
+          kind,
+          selector: getUniqueSelector(element),
+          label,
+          href,
+          domIndex,
+          position: positionOf(element),
+          flags,
+        };
+      });
+
+    return {
+      systems,
+      flags: [...new Set(systems.flatMap((system) => system.flags))],
+      manualChecks: configuredManualChecks,
+    };
+  }, { sitemapLabels, configuredManualChecks: manualChecks });
+}
+
+// ---------------------------------------------------------------------------
 // collectAll
 // ---------------------------------------------------------------------------
 
@@ -1877,5 +2002,6 @@ export async function collectAll(page: Page): Promise<CollectedData> {
 
   const specializedContent = await collectSpecializedContent(page, media, images);
   const presentation = await collectPresentation(page);
-  return { images, media, specializedContent, frames, links, headings, structure, forms, figcaptions, presentation };
+  const navigation = await collectNavigation(page);
+  return { images, media, specializedContent, frames, links, headings, structure, forms, figcaptions, presentation, navigation };
 }

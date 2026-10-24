@@ -1742,9 +1742,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["NAVIGATION_SYSTEM_PRESENT", "NAVIGATION_SEARCH_PRESENT", "NAVIGATION_SITEMAP_CANDIDATE"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer au moins deux systèmes de navigation différents sur l’ensemble des pages sélectionnées."]
+      },
+      "limits": "Les mécanismes candidats sont inventoriés page par page ; l’existence de deux systèmes pertinents se décide à l’échelle de l’ensemble par l’auditeur."
     },
     {
       "rgaa": {
@@ -1758,9 +1760,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["NAVIGATION_POSITION_CAPTURED"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer le type, la position et l’ordre des menus et barres de navigation entre les pages."]
+      },
+      "limits": "Les positions et sélecteurs observés sont des indices ; la même place dans un ensemble de pages reste une décision humaine."
     },
     {
       "rgaa": {
@@ -1774,9 +1778,12 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["NAVIGATION_SITEMAP_CANDIDATE"],
+      "heuristicPatterns": {
+        "navigationLinkLabels": ["plan du site", "sitemap", "site map"],
+        "manualChecks": ["Vérifier qu’une page plan du site existe et couvre le périmètre attendu."]
+      },
+      "limits": "Les liens dont le libellé correspond aux libellés configurés sont des candidats ; la pertinence et la couverture du plan restent manuelles."
     },
     {
       "rgaa": {
@@ -1790,9 +1797,12 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["NAVIGATION_SITEMAP_CANDIDATE"],
+      "heuristicPatterns": {
+        "navigationLinkLabels": ["plan du site", "sitemap", "site map"],
+        "manualChecks": ["Vérifier que la page plan du site est accessible depuis une fonctionnalité identique dans l’ensemble des pages."]
+      },
+      "limits": "La présence d’un lien candidat ne démontre ni l’identité de la fonctionnalité ni son accessibilité au clavier."
     },
     {
       "rgaa": {
@@ -1806,9 +1816,11 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["NAVIGATION_SEARCH_PRESENT", "NAVIGATION_POSITION_CAPTURED"],
+      "heuristicPatterns": {
+        "manualChecks": ["Comparer la présence, la position et l’accès au moteur de recherche entre les pages."]
+      },
+      "limits": "Les formulaires de recherche et leurs positions sont inventoriés ; la possibilité d’accès identique et la pertinence restent manuelles."
     },
     {
       "rgaa": {

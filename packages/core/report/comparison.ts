@@ -115,6 +115,15 @@ function fingerprintsOf(collectedData: CollectedData | null): Map<string, Finger
       flags: item.flags,
     });
   }
+  for (const system of collectedData.navigation?.systems ?? []) {
+    fingerprints.set(`navigation:${system.kind}:${system.selector}`, {
+      selector: system.selector,
+      label: system.label,
+      href: system.href,
+      position: system.position,
+      flags: system.flags,
+    });
+  }
   return fingerprints;
 }
 

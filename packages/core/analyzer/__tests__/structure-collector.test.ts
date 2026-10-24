@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser, type Page } from 'playwright';
-import { collectPresentation, collectStructure } from '../data-collector';
+import { collectNavigation, collectPresentation, collectStructure } from '../data-collector';
 
 describe('collectStructure', () => {
   let browser: Browser;
@@ -96,5 +96,28 @@ describe('collectStructure', () => {
     expect(presentation.flags).toContain('HIDDEN_FOCUSABLE_CONTENT');
     expect(page.viewportSize()).toMatchObject({ width: 900, height: 700 });
     await expect(page.locator('.wide').evaluate((element) => getComputedStyle(element).width)).resolves.toBe('1400px');
+  });
+
+  it('inventorie les systèmes de navigation candidats pour la comparaison inter-pages', async () => {
+    await page.setContent(`<!doctype html><html><body>
+      <form id="search" role="search" action="/recherche"><input type="search" aria-label="Rechercher"></form>
+      <header><nav id="primary" aria-label="Principal"><a href="/">Accueil</a></nav></header>
+      <footer><a href="/plan-du-site">Plan du site</a></footer>
+    </body></html>`);
+
+    const navigation = await collectNavigation(page);
+
+    expect(navigation.systems).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'navigation', selector: '#primary', flags: expect.arrayContaining(['NAVIGATION_POSITION_CAPTURED']) }),
+      expect.objectContaining({ kind: 'search', selector: '#search', flags: expect.arrayContaining(['NAVIGATION_SEARCH_PRESENT']) }),
+      expect.objectContaining({ kind: 'sitemap', href: '/plan-du-site', flags: expect.arrayContaining(['NAVIGATION_SITEMAP_CANDIDATE']) }),
+    ]));
+    expect(navigation.systems.map((system) => [system.selector, system.domIndex])).toEqual([
+      ['#search', 0], ['#primary', 1], ['html > body > footer > a', 2],
+    ]);
+    expect(navigation.manualChecks).toEqual(expect.arrayContaining([
+      expect.stringContaining('12.1'),
+      expect.stringContaining('12.5'),
+    ]));
   });
 });

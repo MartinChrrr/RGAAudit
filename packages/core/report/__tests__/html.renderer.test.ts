@@ -358,6 +358,35 @@ describe('renderReportHtml', () => {
     expect(html).toContain('défilement horizontal disponible');
   });
 
+  it('affiche l’inventaire des systèmes de navigation', () => {
+    const collected = makeCollectedData();
+    collected.navigation = {
+      systems: [{
+        kind: 'search',
+        selector: '#search',
+        label: 'Rechercher',
+        href: '/recherche',
+        domIndex: 0,
+        position: { top: 10, left: 20, width: 300, height: 40 },
+        flags: ['NAVIGATION_SEARCH_PRESENT', 'NAVIGATION_POSITION_CAPTURED'],
+      }],
+      flags: ['NAVIGATION_SEARCH_PRESENT', 'NAVIGATION_POSITION_CAPTURED'],
+      manualChecks: ['12.5 — Comparer la présence du moteur de recherche.'],
+    };
+
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
+    });
+
+    expect(html).toContain('data-testid="navigation-section"');
+    expect(html).toContain('role="region"');
+    expect(html).toContain('Annexe — Systèmes de navigation');
+    expect(html).toContain('Moteur de recherche');
+    expect(html).toContain('#search');
+    expect(html).toContain('Tableau des systèmes de navigation');
+  });
+
   it('affiche le bilan des contenus spécialisés avec le statut de revue', () => {
     const collected = makeCollectedData();
     collected.specializedContent = [{

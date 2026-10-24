@@ -548,6 +548,36 @@ describe('mapPageResults — robustesse', () => {
     expect(result.criteria.find((criterion) => criterion.rgaaId === '10.4')?.elements).toEqual([]);
   });
 
+  it('mappe les systèmes de navigation candidats sur les critères 12.1 à 12.5', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        navigation: {
+          systems: [{
+            kind: 'search',
+            selector: '#search',
+            label: 'Rechercher',
+            href: '/recherche',
+            domIndex: 0,
+            position: { top: 10, left: 20, width: 300, height: 40 },
+            flags: ['NAVIGATION_SYSTEM_PRESENT', 'NAVIGATION_SEARCH_PRESENT', 'NAVIGATION_POSITION_CAPTURED'],
+          }],
+          flags: ['NAVIGATION_SYSTEM_PRESENT', 'NAVIGATION_SEARCH_PRESENT', 'NAVIGATION_POSITION_CAPTURED'],
+          manualChecks: [],
+        },
+      }),
+      'http://example.com/navigation',
+    );
+
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '12.5')).toMatchObject({
+      status: 'manual',
+      elements: [{ selector: '#search', flags: ['NAVIGATION_SEARCH_PRESENT', 'NAVIGATION_POSITION_CAPTURED'] }],
+    });
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '12.1')?.elements).toEqual([
+      { selector: '#search', flags: ['NAVIGATION_SYSTEM_PRESENT', 'NAVIGATION_SEARCH_PRESENT'] },
+    ]);
+  });
+
   it('ne throw jamais si un critère du mapping n\'a pas de résultat axe correspondant', () => {
     // Pass empty axe results — no rules at all
     const axeResults = makeAxeResult();

@@ -7,4 +7,6 @@ coverage
 test-results
 playwright-report
 *.tmp
-docs
+docs/*
+!docs/features/
+!docs/features/**

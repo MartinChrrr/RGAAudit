@@ -543,6 +543,18 @@ function extractElements(
     }
   }
 
+  for (const system of collectedData.navigation?.systems ?? []) {
+    const matchingFlags = system.flags.filter((flag) => relevantFlags.has(flag));
+    if (matchingFlags.length > 0) {
+      elements.push({ selector: system.selector, flags: matchingFlags });
+    }
+  }
+  for (const flag of collectedData.navigation?.flags ?? []) {
+    if (relevantFlags.has(flag) && !elements.some((element) => element.flags.includes(flag))) {
+      elements.push({ selector: 'document', flags: [flag] });
+    }
+  }
+
   return elements;
 }
 

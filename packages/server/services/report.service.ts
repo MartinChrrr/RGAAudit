@@ -391,6 +391,16 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
         errorMessage: control.errorMessage ? redactTextUrls(control.errorMessage) : control.errorMessage,
       })),
     })),
+    navigation: collectedData.navigation ? {
+      ...collectedData.navigation,
+      systems: collectedData.navigation.systems.map((system) => ({
+        ...system,
+        selector: redactTextUrls(system.selector),
+        label: system.label ? redactTextUrls(system.label) : system.label,
+        href: system.href ? redactUrl(system.href) : system.href,
+      })),
+      manualChecks: collectedData.navigation.manualChecks.map(redactTextUrls),
+    } : collectedData.navigation,
   };
 }
 
@@ -405,6 +415,10 @@ export function toPublicReviewData(review: ReviewData, sessionId: string): Revie
       criteria: page.criteria.map((criterion) => ({
         ...criterion,
         comment: redactTextUrls(criterion.comment),
+        elements: criterion.elements.map((element) => ({
+          ...element,
+          selector: redactTextUrls(element.selector),
+        })),
         evidence: criterion.evidence.map((evidence) => ({
           ...evidence,
           proofId: `proof-${publicPageId(evidence.pageUrl)}-${evidence.criterionId}-${evidence.kind}-${evidence.elementIndex ?? 0}`,
