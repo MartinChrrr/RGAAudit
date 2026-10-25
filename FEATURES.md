@@ -22,6 +22,7 @@ site.
 | Revue humaine | Décisions `non testé`, `conforme`, `non conforme` et `non applicable`, avec commentaire et historique | Disponible |
 | Annexes | Images, médias, tableaux, cadres, liens, titres, formulaires, heuristiques et contenus spécialisés | Disponible |
 | Relations de formulaires | Inventorie les libellés, leur accolement, les regroupements `fieldset`/`legend`, les `optgroup` et les intitulés de boutons pour les critères RGAA 11.2, 11.4, 11.5, 11.7, 11.8 et 11.9 | Disponible avec limites documentées |
+| Validation et soumission contrôlées | Signale les contraintes, états invalides, aides/messages associés et contrôles de soumission des formulaires pour les critères RGAA 11.3, 11.10, 11.11 et 11.12, sans exécuter de soumission | Disponible avec limites documentées |
 | Comparaison | Compare des observations appartenant au même groupe de comparaison | Disponible |
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |

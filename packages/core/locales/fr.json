@@ -398,6 +398,7 @@
         "validityNotObserved": "État valide non conclu",
         "helpAbsent": "Aucune aide reliée",
         "errorAbsent": "Aucun message observé",
+        "tableScrollLabel": "Annexe Formulaires — faites défiler horizontalement pour consulter toutes les colonnes",
         "observed": "Observé",
         "toReview": "À vérifier",
         "issueCount": "{count} champ(s) à vérifier",
@@ -436,7 +437,15 @@
     "FRAME_TITLE_EMPTY": "Attribut title du cadre vide",
     "FORM_LABEL_ABSENT": "Libellé de champ absent",
     "FORM_ERROR_MESSAGE_ABSENT": "Message d’erreur absent pour un champ invalide",
-    "FORM_HELP_REFERENCE_MISSING": "Référence d’aide introuvable"
+    "FORM_HELP_REFERENCE_MISSING": "Référence d’aide introuvable",
+    "FORM_LABEL_INCONSISTENT": "Libellés incohérents pour une même fonction",
+    "FORM_VALIDATION_REVIEW": "Pertinence du contrôle de saisie à vérifier",
+    "FORM_VALIDATION_CONSTRAINT_OBSERVED": "Contrainte de validation observée",
+    "FORM_VALIDATION_STATE_INVALID": "État invalide observé",
+    "FORM_VALIDATION_SUGGESTION_PRESENT": "Aide ou suggestion de correction observée",
+    "FORM_VALIDATION_SUGGESTION_ABSENT": "Suggestion de correction non observée",
+    "FORM_SUBMISSION_REVIEW": "Soumission à examiner dans un parcours contrôlé",
+    "FORM_SUBMISSION_NOT_EXECUTED": "Soumission non exécutée par la collecte"
   },
   "pdf": {
     "downloadButton": "Télécharger le rapport PDF",

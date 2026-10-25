@@ -24,6 +24,7 @@ describe('buildReportFromSession', () => {
           selector: '#name', tagName: 'input', type: 'text', id: 'name', name: 'name', label: 'Nom https://example.com/label?token=secret', labelSource: 'label', required: false, invalid: false,
           autocomplete: null, describedByIds: [], helpText: null, errorMessage: null, flags: ['FORM_LABEL_PRESENT'], labelSelector: 'label[for="name"]', labelAdjacent: true, groupSelector: 'fieldset#profile', groupLegend: 'Profil',
           optionGroups: [{ selector: '#group', label: 'Équipe https://example.com/group?token=secret', optionCount: 2, flags: [] }],
+          validationConstraints: ['required'], validationMessage: 'Message https://example.com/message?token=secret', sensitive: false,
         }],
         groups: [{ selector: 'fieldset#profile', legend: 'Profil', controlSelectors: ['#name'], flags: ['FORM_GROUP_REVIEW'] }],
       }],
@@ -32,6 +33,7 @@ describe('buildReportFromSession', () => {
     expect(JSON.stringify(publicData)).not.toContain('secret');
     expect(publicData?.forms?.[0]?.action).toBe('https://example.com/submit');
     expect(publicData?.forms?.[0]?.controls[0]?.label).toBe('Nom https://example.com/label');
+    expect(publicData?.forms?.[0]?.controls[0]?.validationMessage).toBe('Message https://example.com/message');
   });
 
   it('inclut une photographie versionnée des parcours rattachés et la rédige publiquement', () => {

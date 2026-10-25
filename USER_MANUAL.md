@@ -79,6 +79,21 @@ nécessité d’un regroupement, les cas particuliers d’accolement ou la perti
 du regroupement des options. Vérifier chaque relation dans la page et enregistrer
 la décision humaine depuis le critère concerné.
 
+### 5.2. Vérifier la validation et les soumissions (US-45)
+
+L’annexe **Formulaires** signale les contraintes natives (`required`, `pattern`,
+longueurs, bornes et types), les états invalides et les aides ou messages
+associés à un champ. Elle signale également les formulaires qui possèdent un
+contrôle de soumission et indique explicitement que la collecte ne l’a pas
+exécuté.
+
+Ces signaux alimentent les preuves candidates des critères RGAA 11.3, 11.10,
+11.11 et 11.12. Ils ne permettent pas de conclure sur la pertinence du type de
+contrôle, la qualité d’une suggestion, la cohérence éditoriale ou le caractère
+sensible d’une opération. Pour un parcours de validation, utiliser seulement
+une fixture locale contrôlée et non authentifiée, puis enregistrer une décision
+humaine. RGAAudit ne soumet jamais automatiquement un formulaire réel.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

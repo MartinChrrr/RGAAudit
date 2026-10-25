@@ -507,6 +507,66 @@ describe('mapPageResults — contrôles DOM déterministes', () => {
     ]));
   });
 
+  it('mappe la validation et la soumission comme preuves à revue humaine', () => {
+    const result = mapPageResults(
+      makeAxeResult(),
+      makeCollectedData({
+        forms: [{
+          selector: '#request', action: '/fixture-submit', method: 'post',
+          flags: ['FORM_SUBMISSION_REVIEW', 'FORM_SUBMISSION_NOT_EXECUTED'],
+          controls: [{
+            selector: '#email', tagName: 'input', type: 'email', id: 'email', name: 'email',
+            label: 'Adresse électronique', labelSource: 'label', required: true, invalid: true,
+            autocomplete: null, describedByIds: ['email-help'], helpText: 'Format attendu',
+            errorMessage: 'Adresse invalide', flags: [
+              'FORM_VALIDATION_CONSTRAINT_OBSERVED',
+              'FORM_VALIDATION_STATE_INVALID',
+              'FORM_VALIDATION_SUGGESTION_PRESENT',
+              'FORM_VALIDATION_REVIEW',
+            ],
+          }],
+          groups: [],
+        }],
+      }),
+      'http://example.com/forms',
+    );
+
+    for (const id of ['11.10', '11.11', '11.12']) {
+      expect(result.criteria.find((criterion) => criterion.rgaaId === id)).toMatchObject({ status: 'manual' });
+    }
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.10')?.elements)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ selector: '#email' })]));
+    expect(result.criteria.find((criterion) => criterion.rgaaId === '11.12')?.elements)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ selector: '#request' })]));
+  });
+
+  it('signale une incohérence de libellés pour une même fonction entre pages', () => {
+    const pageAData = makeCollectedData({ forms: [{
+      selector: '#a', action: null, method: 'get', flags: [], groups: [], controls: [{
+        selector: '#email-a', tagName: 'input', type: 'email', id: 'email-a', name: 'email', label: 'Adresse électronique',
+        labelSource: 'label', required: false, invalid: false, autocomplete: null, describedByIds: [], helpText: null, errorMessage: null, flags: [],
+      }],
+    }] });
+    const pageBData = makeCollectedData({ forms: [{
+      selector: '#b', action: null, method: 'get', flags: [], groups: [], controls: [{
+        selector: '#email-b', tagName: 'input', type: 'email', id: 'email-b', name: 'email', label: 'Courriel',
+        labelSource: 'label', required: false, invalid: false, autocomplete: null, describedByIds: [], helpText: null, errorMessage: null, flags: [],
+      }],
+    }] });
+    const pageA = mapPageResults(makeAxeResult(), pageAData, 'http://example.com/a');
+    const pageB = mapPageResults(makeAxeResult(), pageBData, 'http://example.com/b');
+
+    aggregateResults([pageA, pageB], [
+      { url: 'http://example.com/a', collectedData: pageAData },
+      { url: 'http://example.com/b', collectedData: pageBData },
+    ]);
+
+    expect(pageA.criteria.find((criterion) => criterion.rgaaId === '11.3')?.elements)
+      .toEqual([{ selector: '#email-a', flags: ['FORM_LABEL_INCONSISTENT'] }]);
+    expect(pageB.criteria.find((criterion) => criterion.rgaaId === '11.3')?.elements)
+      .toEqual([{ selector: '#email-b', flags: ['FORM_LABEL_INCONSISTENT'] }]);
+  });
+
   it('signale un doctype absent et distingue une page sans signal', () => {
     const withoutDoctype = mapPageResults(
       makeAxeResult(),

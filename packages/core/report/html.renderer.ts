@@ -823,12 +823,13 @@ function buildFormsSection(forms: FormAnnexItem[]): string {
         <td class="px-3 py-2 font-mono text-xs text-gray-700">${escapeHtml(control.selector)}</td>
         <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.label ?? t('annexes.forms.labelAbsent'))}</td>
         <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.helpText ?? t('annexes.forms.helpAbsent'))}</td>
-        <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.errorMessage ?? t('annexes.forms.errorAbsent'))}</td>
+        <td class="px-3 py-2 text-sm text-gray-700">${escapeHtml(control.errorMessage ?? t('annexes.forms.errorAbsent'))}${control.validationConstraints?.length ? `<br><span class="text-xs">Contraintes : ${escapeHtml(control.validationConstraints.join(', '))}</span>` : ''}${control.validationMessage ? `<br><span class="text-xs">Message d’erreur référencé observé : ${escapeHtml(control.validationMessage)}</span>` : ''}${control.sensitive ? '<br><span class="text-xs text-amber-900">Champ sensible candidat — revue humaine requise</span>' : ''}</td>
       </tr>`).join('');
     return `
       <section class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeForms'))}</h2>
         <p class="text-xs text-gray-600 mb-2">${escapeHtml(pageLabel(url, pageId))} · ${escapeHtml(form.selector)}</p>
+        ${form.flags.length > 0 ? `<p class="text-xs text-amber-900 mb-2">Soumission : ${escapeHtml(form.flags.join(', '))} — aucune soumission exécutée par la collecte.</p>` : ''}
         <table class="w-full text-sm text-left">
           <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeForms'))} ${escapeHtml(form.selector)}</caption>
           <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
@@ -841,6 +842,7 @@ function buildFormsSection(forms: FormAnnexItem[]): string {
           </thead>
           <tbody class="divide-y divide-gray-100">${rows}</tbody>
         </table>
+        ${(form.submitControls ?? []).length > 0 ? `<p class="mt-2 text-xs text-amber-900">Contrôles de soumission : ${escapeHtml((form.submitControls ?? []).join(', '))} — aucune soumission exécutée.</p>` : ''}
         ${(form.groups ?? []).length > 0 ? `<h3 class="text-sm font-semibold text-gray-800 mt-4">Groupes de champs</h3><ul class="mt-2 list-disc list-inside text-xs text-amber-900">${(form.groups ?? []).map((group) => `<li><code>${escapeHtml(group.selector)}</code> — ${escapeHtml(group.legend ?? 'Légende absente')} — ${escapeHtml(group.controlSelectors.join(', ') || 'Aucun champ')} — Revue humaine requise</li>`).join('')}</ul>` : ''}
       </section>`;
   }).join('');

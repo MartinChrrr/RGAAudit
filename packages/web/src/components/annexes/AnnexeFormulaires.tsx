@@ -21,6 +21,9 @@ export interface FormControlItem {
   groupSelector?: string | null;
   groupLegend?: string | null;
   optionGroups?: Array<{ selector: string; label: string | null; optionCount: number; flags: string[] }>;
+  validationConstraints?: string[];
+  validationMessage?: string | null;
+  sensitive?: boolean;
 }
 
 export interface FormItem {
@@ -30,6 +33,8 @@ export interface FormItem {
   controls: FormControlItem[];
   flags: string[];
   groups?: Array<{ selector: string; legend: string | null; controlSelectors: string[]; flags: string[] }>;
+  submitControls?: string[];
+  sensitiveControlSelectors?: string[];
   pageUrl?: string;
   pageId?: string;
 }
@@ -101,7 +106,17 @@ export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId
                     {form.method.toUpperCase()}{form.action ? ` → ${form.action}` : ''}
                   </p>
                 </div>
-                <div className="overflow-x-auto">
+                {form.flags.length > 0 && (
+                  <p className="mb-3 text-xs text-amber-900">
+                    Soumission : {form.flags.join(', ')} — aucune soumission exécutée par la collecte.
+                  </p>
+                )}
+                <div
+                  className="overflow-x-auto"
+                  role="region"
+                  tabIndex={0}
+                  aria-label={t('annexes.forms.tableScrollLabel')}
+                >
                   <table className="w-full text-left text-sm">
                     <caption className="sr-only">{t('annexes.forms.tableCaption', { form: form.selector })}</caption>
                     <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700">
@@ -130,6 +145,9 @@ export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId
                               <div>{control.invalid ? t('annexes.forms.invalid') : t('annexes.forms.validityNotObserved')}</div>
                               {control.autocomplete && <div>autocomplete: {control.autocomplete}</div>}
                               {control.optionGroups && control.optionGroups.length > 0 && <div>Optgroup : {control.optionGroups.map((group) => `${group.label || 'sans libellé'} (${group.optionCount})`).join(', ')}</div>}
+                              {control.validationConstraints && control.validationConstraints.length > 0 && <div>Contraintes : {control.validationConstraints.join(', ')}</div>}
+                              {control.validationMessage && <div>Message d’erreur référencé : {control.validationMessage}</div>}
+                              {control.sensitive && <div className="text-amber-900">Champ sensible candidat — revue humaine requise</div>}
                             </td>
                             <td className="px-3 py-2 text-xs text-gray-700">{control.helpText || t('annexes.forms.helpAbsent')}</td>
                             <td className="px-3 py-2 text-xs text-gray-700">{control.errorMessage || t('annexes.forms.errorAbsent')}</td>
@@ -150,7 +168,12 @@ export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId
                   </table>
                 </div>
                 {form.groups && form.groups.length > 0 && (
-                  <div className="mt-4 overflow-x-auto">
+                  <div
+                    className="mt-4 overflow-x-auto"
+                    role="region"
+                    tabIndex={0}
+                    aria-label={`Groupes de champs du formulaire ${form.selector}`}
+                  >
                     <table className="w-full text-left text-xs">
                       <caption className="sr-only">Groupes de champs du formulaire {form.selector}</caption>
                       <thead className="border-b border-gray-200 bg-gray-50 uppercase text-gray-700"><tr>
@@ -165,6 +188,7 @@ export default function AnnexeFormulaires({ forms, initialPageUrl, initialPageId
                     </table>
                   </div>
                 )}
+                {form.submitControls && form.submitControls.length > 0 && <p className="mt-3 text-xs text-amber-900">Contrôles de soumission observés : {form.submitControls.join(', ')}. Aucune soumission exécutée.</p>}
               </section>
             ))}
           </div>

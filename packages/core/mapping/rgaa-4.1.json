@@ -1616,9 +1616,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_LABEL_INCONSISTENT"],
+      "heuristicPatterns": {"manualChecks": ["Comparer les étiquettes des champs ayant la même fonction sur la page et dans l’échantillon de pages."]},
+      "limits": "Une différence de libellé pour un même nom ou une même finalité est une preuve candidate ; la fonction et la cohérence restent à confirmer humainement."
     },
     {
       "rgaa": {
@@ -1730,9 +1730,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_VALIDATION_REVIEW", "FORM_VALIDATION_CONSTRAINT_OBSERVED", "FORM_VALIDATION_STATE_INVALID"],
+      "heuristicPatterns": {"manualChecks": ["Vérifier que le type, les contraintes et l’état du contrôle de saisie sont pertinents pour la donnée attendue."]},
+      "limits": "Les contraintes et états explicitement observés sont des preuves candidates ; la pertinence du contrôle reste humaine."
     },
     {
       "rgaa": {
@@ -1746,9 +1746,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_VALIDATION_SUGGESTION_PRESENT", "FORM_VALIDATION_SUGGESTION_ABSENT"],
+      "heuristicPatterns": {"manualChecks": ["Rejouer un cas invalide et vérifier que les suggestions facilitent effectivement la correction, avec une association au champ."]},
+      "limits": "Les aides et messages associés sont inventoriés sans conclure à leur suffisance ni à leur pertinence."
     },
     {
       "rgaa": {
@@ -1762,9 +1762,9 @@
       "wcag": [],
       "axeRules": [],
       "evaluationStrategy": "MANUAL_ONLY",
-      "dataCollectorFlags": [],
-      "heuristicPatterns": {},
-      "limits": "Ce critère est enregistré pour la couverture complète du RGAA 4.1.2, mais son évaluation reste manuelle dans ce lot."
+      "dataCollectorFlags": ["FORM_SUBMISSION_REVIEW", "FORM_SUBMISSION_NOT_EXECUTED"],
+      "heuristicPatterns": {"manualChecks": ["Pour une soumission sensible, utiliser un parcours local contrôlé pour vérifier la modification, la mise à jour ou la récupération des données avant toute validation humaine."]},
+      "limits": "La présence d’un contrôle de soumission est inventoriée ; aucune soumission réelle ou authentifiée n’est exécutée par la collecte."
     },
     {
       "rgaa": {

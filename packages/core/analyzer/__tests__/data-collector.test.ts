@@ -346,6 +346,35 @@ describe('collectForms', () => {
     expect(forms[0]?.controls.find((control) => control.type === 'button')?.flags).toContain('FORM_BUTTON_LABEL_PRESENT');
   });
 
+  it('observe la validation, les suggestions et la soumission sans exécuter le formulaire', async () => {
+    const forms = await withPage(`${baseUrl}/forms/us-45-validation-safety.html`, collectForms);
+
+    expect(forms[0]).toMatchObject({
+      selector: '#request',
+      flags: ['FORM_SUBMISSION_REVIEW', 'FORM_SUBMISSION_NOT_EXECUTED'],
+    });
+    expect(forms[0]?.controls.find((control) => control.id === 'email-a')).toMatchObject({
+      invalid: true,
+      validationConstraints: expect.arrayContaining(['required', 'pattern', 'type=email']),
+      validationMessage: 'Saisissez une adresse électronique valide.',
+      flags: expect.arrayContaining([
+        'FORM_VALIDATION_CONSTRAINT_OBSERVED',
+        'FORM_VALIDATION_STATE_INVALID',
+        'FORM_VALIDATION_SUGGESTION_PRESENT',
+        'FORM_VALIDATION_REVIEW',
+      ]),
+    });
+    expect(forms[0]?.controls.find((control) => control.selector === '#reference')).toMatchObject({
+      validationConstraints: expect.arrayContaining(['minlength']),
+      flags: expect.arrayContaining(['FORM_VALIDATION_CONSTRAINT_OBSERVED', 'FORM_VALIDATION_REVIEW']),
+    });
+    expect(forms[0]?.controls.find((control) => control.selector === '#implicit-submit')?.type).toBe('submit');
+    expect(forms[0]?.controls.find((control) => control.selector === '#reset-action')?.type).toBe('reset');
+    expect(forms[0]?.controls.find((control) => control.selector === '#uppercase-submit')?.type).toBe('submit');
+    expect(forms[0]?.submitControls).toEqual(expect.arrayContaining(['#implicit-submit', '#explicit-submit', '#uppercase-submit']));
+    expect(forms[0]?.submitControls).not.toContain('#reset-action');
+  });
+
   it('expose les formulaires dans la collecte globale', async () => {
     const data = await withPage(`${baseUrl}/forms/error-and-help.html`, collectAll);
     expect(data.forms).toHaveLength(1);

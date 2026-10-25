@@ -602,6 +602,7 @@ export function aggregateResults(
   // Cross-page evidence must be applied before the aggregate statuses are computed.
   if (allCollectedData) {
     detectDuplicateLabels(mappedPages, allCollectedData);
+    detectInconsistentFormLabels(mappedPages, allCollectedData);
   }
 
   // Initialize from mapping
@@ -759,6 +760,47 @@ function detectDuplicateLabels(
         // If criterion was pass, upgrade to violation
         if (criterion61.status === 'pass') {
           criterion61.status = 'violation';
+        }
+      }
+    }
+  }
+}
+
+function detectInconsistentFormLabels(
+  mappedPages: MappedPage[],
+  allCollectedData: Array<{ url: string; collectedData: CollectedData | null }>,
+): void {
+  type LabelOccurrence = { url: string; selector: string; label: string };
+  const labelsByFunction = new Map<string, Map<string, LabelOccurrence[]>>();
+
+  for (const { url, collectedData } of allCollectedData) {
+    for (const form of collectedData?.forms ?? []) {
+      for (const control of form.controls) {
+        // A name or autocomplete token is the only stable, observable hint
+        // available here. Other controls remain a human-only comparison.
+        const functionKey = control.name?.trim() || control.autocomplete?.trim();
+        const label = control.label?.trim();
+        if (!functionKey || !label) continue;
+        const byLabel = labelsByFunction.get(functionKey) ?? new Map<string, LabelOccurrence[]>();
+        const occurrences = byLabel.get(label) ?? [];
+        occurrences.push({ url, selector: control.selector, label });
+        byLabel.set(label, occurrences);
+        labelsByFunction.set(functionKey, byLabel);
+      }
+    }
+  }
+
+  for (const byLabel of labelsByFunction.values()) {
+    if (byLabel.size < 2) continue;
+    for (const occurrences of byLabel.values()) {
+      for (const occurrence of occurrences) {
+        const criterion = mappedPages.find((page) => page.url === occurrence.url)?.criteria.find((item) => item.rgaaId === '11.3');
+        if (!criterion) continue;
+        const existing = criterion.elements.find((element) => element.selector === occurrence.selector);
+        if (existing) {
+          if (!existing.flags.includes('FORM_LABEL_INCONSISTENT')) existing.flags.push('FORM_LABEL_INCONSISTENT');
+        } else {
+          criterion.elements.push({ selector: occurrence.selector, flags: ['FORM_LABEL_INCONSISTENT'] });
         }
       }
     }

@@ -413,6 +413,7 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
         groupLegend: control.groupLegend ? redactTextUrls(control.groupLegend) : control.groupLegend,
         helpText: control.helpText ? redactTextUrls(control.helpText) : control.helpText,
         errorMessage: control.errorMessage ? redactTextUrls(control.errorMessage) : control.errorMessage,
+        validationMessage: control.validationMessage ? redactTextUrls(control.validationMessage) : control.validationMessage,
         flags: control.flags.map(redactTextUrls),
         optionGroups: control.optionGroups?.map((group) => ({
           ...group,
@@ -428,6 +429,8 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
         controlSelectors: group.controlSelectors.map(redactTextUrls),
         flags: group.flags.map(redactTextUrls),
       })),
+      submitControls: form.submitControls?.map(redactTextUrls),
+      sensitiveControlSelectors: form.sensitiveControlSelectors?.map(redactTextUrls),
     })),
     presentation: collectedData.presentation ? {
       ...collectedData.presentation,

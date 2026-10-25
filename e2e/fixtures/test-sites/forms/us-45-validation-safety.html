@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Formulaires — validation contrôlée</title></head>
+<body>
+  <main>
+    <h1>Vérifier une demande</h1>
+    <form id="request" action="/fixture-submit" method="post">
+      <label for="email-a">Adresse électronique</label>
+      <input id="email-a" name="email" type="email" required pattern=".+@example\.test"
+        aria-describedby="email-help" aria-invalid="true" aria-errormessage="email-error">
+      <p id="email-help">Utilisez une adresse au format prenom.nom@example.test.</p>
+      <p id="email-error" role="alert">Saisissez une adresse électronique valide.</p>
+
+      <label for="email-b">Courriel</label>
+      <input id="email-b" name="email" type="email" required>
+
+      <label for="reference">Référence de la demande</label>
+      <input id="reference" name="reference" type="text" minlength="3" aria-describedby="reference-help">
+      <p id="reference-help">Utilisez au moins trois caractères.</p>
+
+      <!-- These controls are inventory-only: the collector never submits the form. -->
+      <button id="implicit-submit">Vérifier la demande</button>
+      <button id="explicit-submit" type="submit">Vérifier explicitement</button>
+      <button id="reset-action" type="reset">Réinitialiser</button>
+      <button id="uppercase-submit" type="SUBMIT">Vérifier en majuscules</button>
+    </form>
+  </main>
+</body>
+</html>

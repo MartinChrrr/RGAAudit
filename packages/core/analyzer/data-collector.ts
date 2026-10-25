@@ -331,6 +331,9 @@ export interface FormControlData {
   groupSelector?: string | null;
   groupLegend?: string | null;
   optionGroups?: Array<{ selector: string; label: string | null; optionCount: number; flags: string[] }>;
+  validationConstraints?: string[];
+  validationMessage?: string | null;
+  sensitive?: boolean;
 }
 
 export interface FormDataItem {
@@ -340,6 +343,8 @@ export interface FormDataItem {
   controls: FormControlData[];
   flags: string[];
   groups?: Array<{ selector: string; legend: string | null; controlSelectors: string[]; flags: string[] }>;
+  submitControls?: string[];
+  sensitiveControlSelectors?: string[];
 }
 
 export interface FigureCaptionData {
@@ -1641,11 +1646,29 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
           : null;
         const effectiveLabel = controlText ?? label;
         const flags: string[] = [];
+        const controlTagName = control.tagName.toLowerCase();
+        // HTML buttons submit by default when their type is omitted. Normalize
+        // the effective type so submission evidence does not include reset or
+        // ordinary buttons by accident.
+        const controlType = controlTagName === 'button'
+          ? (control.getAttribute('type')?.toLowerCase() || 'submit')
+          : control.getAttribute('type')?.toLowerCase() ?? controlTagName;
+        const validationAttributes = ['required', 'pattern', 'min', 'max', 'minlength', 'maxlength', 'step']
+          .filter((attribute) => control.hasAttribute(attribute));
+        const nativeValidationType = ['email', 'url', 'number', 'date', 'datetime-local', 'month', 'week', 'time']
+          .includes(controlType);
         if (!effectiveLabel) flags.push(control.tagName.toLowerCase() === 'button' ? 'FORM_BUTTON_LABEL_ABSENT' : 'FORM_LABEL_ABSENT');
         if (effectiveLabel && control.tagName.toLowerCase() === 'button') flags.push('FORM_BUTTON_LABEL_PRESENT');
         if (effectiveLabel && control.tagName.toLowerCase() !== 'button') flags.push('FORM_LABEL_PRESENT');
         if (labelAdjacent === true) flags.push('FORM_LABEL_ADJACENT');
         if (labelElement && labelAdjacent === false) flags.push('FORM_LABEL_ADJACENCY_REVIEW');
+        if (validationAttributes.length > 0 || nativeValidationType) flags.push('FORM_VALIDATION_CONSTRAINT_OBSERVED');
+        if (invalid) flags.push('FORM_VALIDATION_STATE_INVALID');
+        if (invalid && (helpText || errorMessage)) flags.push('FORM_VALIDATION_SUGGESTION_PRESENT');
+        if (invalid && !helpText && !errorMessage) flags.push('FORM_VALIDATION_SUGGESTION_ABSENT');
+        if (control.tagName.toLowerCase() !== 'button' && (validationAttributes.length > 0 || nativeValidationType || invalid)) {
+          flags.push('FORM_VALIDATION_REVIEW');
+        }
         if (invalid && !errorMessage) flags.push('FORM_ERROR_MESSAGE_ABSENT');
         if (describedByIds.some((ref) => !document.getElementById(ref))) {
           flags.push('FORM_HELP_REFERENCE_MISSING');
@@ -1654,7 +1677,7 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
         return {
           selector: getUniqueSelector(control),
           tagName: control.tagName.toLowerCase(),
-          type: control.getAttribute('type') ?? control.tagName.toLowerCase(),
+          type: controlType,
           id,
           name: control.getAttribute('name'),
           label: effectiveLabel,
@@ -1671,6 +1694,9 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
           groupSelector: fieldset ? getUniqueSelector(fieldset) : null,
           groupLegend: legendElement ? limitText(legendElement.textContent) : null,
           optionGroups,
+          validationConstraints: [...validationAttributes, ...(nativeValidationType ? [`type=${controlType}`] : [])],
+          validationMessage: errorMessage,
+          sensitive: controlType === 'password' || ['current-password', 'new-password', 'cc-number', 'cc-csc', 'cc-exp', 'cc-exp-month', 'cc-exp-year'].includes(control.getAttribute('autocomplete') ?? ''),
         };
       });
     };
@@ -1691,20 +1717,35 @@ export async function collectForms(page: Page): Promise<FormDataItem[]> {
         };
       }),
     });
-    const forms = Array.from(document.querySelectorAll('form')).slice(0, MAX_FORMS).map((form) => ({
-      selector: getUniqueSelector(form),
-      action: form.getAttribute('action'),
-      method: (form.getAttribute('method') ?? 'get').toLowerCase(),
-      ...formData(form),
-      flags: [],
-    }));
+    const forms = Array.from(document.querySelectorAll('form')).slice(0, MAX_FORMS).map((form) => {
+      const data = formData(form);
+      const hasSubmissionControl = data.controls.some((control) => (
+          control.tagName === 'button'
+          ? control.type === 'submit'
+          : ['submit', 'image'].includes(control.type)
+      ));
+      return {
+        selector: getUniqueSelector(form),
+        action: form.getAttribute('action'),
+        method: (form.getAttribute('method') ?? 'get').toLowerCase(),
+        ...data,
+        // The collector never submits a form. A real or sensitive submission
+        // must be exercised by an explicitly configured local journey and
+        // reviewed by a human.
+        flags: hasSubmissionControl ? ['FORM_SUBMISSION_REVIEW', 'FORM_SUBMISSION_NOT_EXECUTED'] : [],
+        submitControls: data.controls
+          .filter((control) => control.tagName === 'button' ? control.type === 'submit' : ['submit', 'image'].includes(control.type))
+          .map((control) => control.selector),
+        sensitiveControlSelectors: data.controls.filter((control) => control.sensitive).map((control) => control.selector),
+      };
+    });
 
     const controlsOutsideForms = controlsFor(document).filter((control) => {
       const element = document.querySelector(control.selector);
       return !element?.closest('form');
     });
     if (controlsOutsideForms.length > 0) {
-      forms.push({ selector: '(contrôles hors formulaire)', action: null, method: 'get', controls: controlsOutsideForms, groups: [], flags: [] });
+      forms.push({ selector: '(contrôles hors formulaire)', action: null, method: 'get', controls: controlsOutsideForms, groups: [], flags: [], submitControls: [], sensitiveControlSelectors: [] });
     }
     return forms;
   });
