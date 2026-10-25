@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Changements et divulgations</title>
+</head>
+<body>
+  <main>
+    <h1>Options de recherche</h1>
+    <button id="disclosure" type="button" aria-expanded="false" aria-controls="filters">Afficher les filtres</button>
+    <section id="filters" hidden>
+      <h2>Filtres avancés</h2>
+      <label for="query">Recherche</label>
+      <input id="query" name="query" type="search">
+    </section>
+    <button id="feedback" type="button">Actualiser le statut</button>
+    <p id="status" aria-live="polite">Aucun filtre actif.</p>
+  </main>
+  <script>
+    document.querySelector('#disclosure').addEventListener('click', (event) => {
+      const trigger = event.currentTarget;
+      const panel = document.querySelector('#filters');
+      const expanded = trigger.getAttribute('aria-expanded') !== 'true';
+      trigger.setAttribute('aria-expanded', String(expanded));
+      panel.hidden = !expanded;
+    });
+    document.querySelector('#feedback').addEventListener('click', () => {
+      document.querySelector('#status').textContent = 'Statut actualisé.';
+    });
+  </script>
+</body>
+</html>

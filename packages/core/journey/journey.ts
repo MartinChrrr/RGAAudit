@@ -85,6 +85,13 @@ export interface JourneyInteractionObservation {
   requiresHumanReview: true;
 }
 
+/** Candidate disclosure or state change observed after a journey action. */
+export interface JourneyDisclosureObservation {
+  kind: 'aria-expanded' | 'details';
+  selector: string;
+  detail: string;
+}
+
 export interface JourneyContextObservation {
   trigger: {
     stepId: string;
@@ -97,8 +104,10 @@ export interface JourneyContextObservation {
   titleBefore: string;
   titleAfter: string;
   changed: boolean;
-  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disruption'>;
+  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption'>;
   disruptions: JourneyDisruptionObservation[];
+  /** Optional for runs persisted before disclosure observations were added. */
+  disclosures?: JourneyDisclosureObservation[];
   /** Optional for runs persisted before controlled-interaction observations. */
   interactions?: JourneyInteractionObservation[];
   criterionIds: string[];
@@ -309,6 +318,12 @@ interface JourneyContextSignals {
   title: string;
   dialogs: string[];
   liveRegions: string[];
+  disclosures: Array<{
+    kind: JourneyDisclosureObservation['kind'];
+    selector: string;
+    state: string;
+    detail: string;
+  }>;
   disruptions: JourneyDisruptionObservation[];
   interactions: JourneyInteractionObservation[];
 }
@@ -450,6 +465,30 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         requiresHumanReview: true,
       });
     }
+    const disclosureSignals = Array.from(document.querySelectorAll('[aria-expanded], details')).map((element) => {
+      const kind: JourneyDisclosureObservation['kind'] = element.tagName.toLowerCase() === 'details'
+        ? 'details'
+        : 'aria-expanded';
+      const expanded = element.getAttribute('aria-expanded');
+      const open = element.tagName.toLowerCase() === 'details'
+        ? element.hasAttribute('open')
+        : expanded === 'true';
+      const controlled = (element.getAttribute('aria-controls') ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => document.getElementById(id))
+        .filter((target): target is HTMLElement => target instanceof HTMLElement);
+      const controlledState = controlled
+        .map((target) => `${getUniqueSelector(target)}=${visible(target) ? 'visible' : 'hidden'}`)
+        .join(', ');
+      const selector = getUniqueSelector(element);
+      return {
+        kind,
+        selector,
+        state: `expanded=${expanded ?? (open ? 'true' : 'false')};visible=${visible(element)};controlled=${controlledState}`,
+        detail: `${kind === 'details' ? `open=${open}` : `aria-expanded=${expanded ?? 'absent'}`}${controlledState ? `; contrôles : ${controlledState}` : ''}`,
+      };
+    });
     return {
       dialogs: Array.from(document.querySelectorAll('[role="dialog"], dialog'))
         .filter(visible)
@@ -459,6 +498,7 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         .filter(visible)
         .map((element) => `${getUniqueSelector(element)}:${(element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)}`)
         .slice(0, 20),
+      disclosures: disclosureSignals.slice(0, 50),
       disruptions,
       interactions,
     };
@@ -475,6 +515,11 @@ function buildContextObservation(
   if (before.title !== after.title) changeTypes.push('title');
   if (before.dialogs.join('|') !== after.dialogs.join('|')) changeTypes.push('dialog');
   if (before.liveRegions.join('|') !== after.liveRegions.join('|')) changeTypes.push('live-region');
+  const beforeDisclosures = new Map(before.disclosures.map((item) => [item.selector, item.state]));
+  const disclosures = after.disclosures
+    .filter((item) => beforeDisclosures.get(item.selector) !== item.state)
+    .map((item) => ({ kind: item.kind, selector: item.selector, detail: item.detail }));
+  if (disclosures.length > 0) changeTypes.push('disclosure');
   const beforeDisruptions = new Map(before.disruptions.map((item) => [`${item.kind}|${item.selector}`, item.detail]));
   const disruptions = after.disruptions.filter((item) => (
     beforeDisruptions.get(`${item.kind}|${item.selector}`) !== item.detail
@@ -483,6 +528,7 @@ function buildContextObservation(
   const criterionIds = new Set<string>();
   if (changeTypes.some((type) => ['navigation', 'title', 'dialog'].includes(type))) criterionIds.add('7.4');
   if (changeTypes.includes('live-region')) criterionIds.add('7.5');
+  if (changeTypes.includes('disclosure')) criterionIds.add('10.13');
   for (const disruption of disruptions) {
     if (disruption.kind === 'sound') criterionIds.add('4.10');
     if (disruption.kind === 'motion') criterionIds.add('13.8');
@@ -506,6 +552,7 @@ function buildContextObservation(
     changed: changeTypes.length > 0,
     changeTypes,
     disruptions,
+    disclosures,
     interactions,
     criterionIds: [...criterionIds],
     requiresHumanReview: true,

@@ -232,6 +232,11 @@ export function toPublicJourneyRun(run: JourneyRunState, publicSessionId = run.s
                 selector: redactTextUrls(disruption.selector),
                 detail: redactTextUrls(disruption.detail),
               })),
+              disclosures: (step.context.disclosures ?? []).map((disclosure) => ({
+                ...disclosure,
+                selector: redactTextUrls(disclosure.selector),
+                detail: redactTextUrls(disclosure.detail),
+              })),
               interactions: (step.context.interactions ?? []).map((interaction) => ({
                 ...interaction,
                 selector: redactTextUrls(interaction.selector),

@@ -517,6 +517,7 @@ function buildJourneySection(annex?: JourneyReportAnnex): string {
           <h5 class="text-xs font-semibold text-amber-900">${escapeHtml(t('journey.contextTitle'))}</h5>
           <p class="text-xs text-amber-900">${escapeHtml(step.context.changed ? t('journey.contextChanged') : t('journey.contextUnchanged'))}</p>
           <p class="text-xs text-amber-900">${escapeHtml(t('journey.criteria'))} : ${escapeHtml(step.context.criterionIds.join(', ') || '—')}</p>
+          ${step.context.disclosures?.length ? `<p class="text-xs text-amber-900 mt-1"><strong>${escapeHtml(t('journey.disclosuresTitle'))}</strong> : ${step.context.disclosures.map((item) => `${escapeHtml(t(`journey.disclosureKind.${item.kind}`))} — <code>${escapeHtml(item.selector)}</code> (${escapeHtml(item.detail)})`).join(' · ')}</p>` : ''}
           ${step.context.disruptions.length > 0 ? `<p class="text-xs text-amber-900 mt-1"><strong>${escapeHtml(t('journey.disruptionsTitle'))}</strong> : ${step.context.disruptions.map((item) => `${escapeHtml(t(`journey.${item.kind}`))} — <code>${escapeHtml(item.selector)}</code> (${escapeHtml(item.detail)})`).join(' · ')}</p>` : ''}
           <p class="text-xs text-amber-900 mt-1"><strong>${escapeHtml(t('journey.interactionsTitle'))}</strong> : ${step.context.interactions?.length ? step.context.interactions.map((item) => `${escapeHtml(t(`journey.interactionKind.${item.kind}`))} — <code>${escapeHtml(item.selector)}</code> (${escapeHtml(item.detail)})`).join(' · ') : escapeHtml(t('journey.noInteractions'))}</p>
         </div>` : '';

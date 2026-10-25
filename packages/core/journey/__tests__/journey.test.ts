@@ -8,6 +8,7 @@ import { replayJourney, type JourneyDefinition } from '../journey';
 
 const FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey.html');
 const US31_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-31-controlled-interactions.html');
+const US46_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-46-context-disclosures.html');
 let server: http.Server;
 let baseUrl: string;
 
@@ -17,6 +18,8 @@ beforeAll(async () => {
       ? FIXTURE_PATH
       : req.url === '/us-31-controlled-interactions.html'
         ? US31_FIXTURE_PATH
+        : req.url === '/journey/us-46-context-disclosures.html'
+          ? US46_FIXTURE_PATH
         : null;
     if (!fixture) {
       res.writeHead(404);
@@ -137,6 +140,40 @@ describe('replayJourney', () => {
     expect(run.steps[0].screenshotPath).toBe(path.join(screenshotDir, '000-context-step.png'));
     const screenshot = await readFile(run.steps[0].screenshotPath!);
     expect(screenshot.length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it('observe les divulgations contrôlées et les retours de statut', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-us46',
+      name: 'Changements et divulgations',
+      startUrl: `${baseUrl}/journey/us-46-context-disclosures.html`,
+      createdAt: new Date().toISOString(),
+      steps: [
+        { id: 'open-filters', action: 'click', selector: '#disclosure' },
+        { id: 'refresh-status', action: 'click', selector: '#feedback' },
+      ],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    expect(run.steps[0]?.context).toMatchObject({
+      changed: true,
+      changeTypes: expect.arrayContaining(['disclosure']),
+      criterionIds: expect.arrayContaining(['10.13']),
+      disclosures: [expect.objectContaining({
+        kind: 'aria-expanded',
+        selector: '#disclosure',
+      })],
+    });
+    expect(run.steps[0]?.context?.disclosures?.[0]?.detail).toContain('#filters=visible');
+    expect(run.steps[1]?.context).toMatchObject({
+      changed: true,
+      changeTypes: expect.arrayContaining(['live-region']),
+      criterionIds: expect.arrayContaining(['7.5']),
+    });
   }, 30_000);
 
   it('journalise les flashs, gestes pointer et APIs de mouvement comme scénarios manuels', async () => {

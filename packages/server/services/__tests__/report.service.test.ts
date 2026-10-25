@@ -94,6 +94,7 @@ describe('buildReportFromSession', () => {
             changed: true,
             changeTypes: ['navigation'],
             disruptions: [{ kind: 'motion', selector: 'https://example.com/disruption?token=secret', detail: 'https://example.com/detail?token=secret' }],
+            disclosures: [{ kind: 'aria-expanded', selector: 'https://example.com/disclosure?token=secret', detail: 'https://example.com/disclosure-detail?token=secret' }],
             interactions: [{
               kind: 'complex-gesture',
               selector: 'https://example.com/interaction?token=secret',
@@ -139,6 +140,10 @@ describe('buildReportFromSession', () => {
     expect(publicStep?.keyboard?.componentSelector).toBe('https://example.com/component');
     expect(publicStep?.context?.trigger.selector).toBe('https://example.com/trigger');
     expect(publicStep?.context?.disruptions[0]?.detail).toBe('https://example.com/detail');
+    expect(publicStep?.context?.disclosures?.[0]).toMatchObject({
+      selector: 'https://example.com/disclosure',
+      detail: 'https://example.com/disclosure-detail',
+    });
     expect(publicStep?.context?.interactions?.[0]).toMatchObject({
       selector: 'https://example.com/interaction',
       detail: 'https://example.com/interaction-detail',

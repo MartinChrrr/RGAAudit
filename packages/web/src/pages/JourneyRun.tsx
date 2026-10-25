@@ -20,6 +20,7 @@ interface JourneyContext {
   changed: boolean;
   changeTypes: string[];
   disruptions: Array<{ kind: 'motion' | 'sound' | 'flash'; selector: string; detail: string }>;
+  disclosures?: Array<{ kind: 'aria-expanded' | 'details'; selector: string; detail: string }>;
   interactions?: Array<{
     kind: 'complex-gesture' | 'single-pointer' | 'device-motion';
     selector: string;
@@ -93,6 +94,7 @@ const changeTypeKeys: Record<string, string> = {
   title: 'journey.changeTypes.title',
   dialog: 'journey.changeTypes.dialog',
   'live-region': 'journey.changeTypes.liveRegion',
+  disclosure: 'journey.changeTypes.disclosure',
   disruption: 'journey.changeTypes.disruption',
 };
 
@@ -300,6 +302,21 @@ function JourneyStepCard({
                     <li key={`${disruption.kind}-${disruption.selector}-${disruptionIndex}`}>
                       <span className="font-medium">{t(`journey.${disruption.kind}`)}</span>
                       {' — '}{disruption.selector}: {disruption.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.disclosuresTitle')}</h4>
+              {!step.context.disclosures?.length ? (
+                <p>{t('journey.noDisclosures')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.disclosures.map((disclosure, disclosureIndex) => (
+                    <li key={`${disclosure.kind}-${disclosure.selector}-${disclosureIndex}`}>
+                      <span className="font-medium">{t(`journey.disclosureKind.${disclosure.kind}`)}</span>
+                      {' — '}{disclosure.selector}: {disclosure.detail}
                     </li>
                   ))}
                 </ul>

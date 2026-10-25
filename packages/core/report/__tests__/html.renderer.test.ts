@@ -271,6 +271,7 @@ describe('renderReportHtml', () => {
                 changed: false,
                 changeTypes: ['disruption'],
                 disruptions: [{ kind: 'flash', selector: '#flash', detail: 'animation=flash' }],
+                disclosures: [{ kind: 'details', selector: '#details', detail: 'open=true' }],
                 interactions: [{
                   kind: 'complex-gesture',
                   selector: '#slider',
@@ -292,6 +293,7 @@ describe('renderReportHtml', () => {
     expect(html).toContain('run-1');
     expect(html).toContain('photographie versionnée');
     expect(html).toContain('Flash ou variation lumineuse candidate');
+    expect(html).toContain('Élément details');
     expect(html).toContain('Geste complexe candidat');
     expect(html).toContain('320 × 256');
     expect(html).toContain('indicateur non observé');

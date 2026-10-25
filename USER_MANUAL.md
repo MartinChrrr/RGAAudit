@@ -94,6 +94,20 @@ sensible d’une opération. Pour un parcours de validation, utiliser seulement
 une fixture locale contrôlée et non authentifiée, puis enregistrer une décision
 humaine. RGAAudit ne soumet jamais automatiquement un formulaire réel.
 
+### 5.3. Vérifier les changements de contexte et les divulgations (US-46)
+
+Dans une exécution de parcours, chaque étape compare l’état avant et après
+l’interaction. L’annexe signale les navigations, changements de titre, boîtes de
+dialogue et régions live, ainsi que les changements d’état `aria-expanded` et
+`details` avec leur contrôle visible associé. Ces observations sont reliées aux
+critères RGAA 7.4, 7.5 et 10.13 lorsqu’un signal est observé.
+
+Ces éléments restent des preuves candidates : l’outil ne conclut pas que le
+changement de contexte était annoncé, que le message de statut est correctement
+restitué ou que la divulgation est contrôlable. L’auditeur doit rejouer le cas,
+vérifier le clavier et les technologies d’assistance, puis enregistrer une
+décision humaine depuis la revue du parcours.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

@@ -116,10 +116,17 @@
       "title": "Titre de page",
       "dialog": "Boîte de dialogue",
       "liveRegion": "Région live",
+      "disclosure": "Divulgation ou changement d’état",
       "disruption": "Mouvement ou son"
     },
     "disruptionsTitle": "Mouvements ou sons perturbateurs",
     "noDisruptions": "Aucun signal détecté — revue humaine requise.",
+    "disclosuresTitle": "Divulgations et changements d’état",
+    "noDisclosures": "Aucune divulgation ou changement d’état observé — revue humaine requise.",
+    "disclosureKind": {
+      "aria-expanded": "État aria-expanded",
+      "details": "Élément details"
+    },
     "motion": "Mouvement",
     "sound": "Son",
     "flash": "Flash ou variation lumineuse candidate",

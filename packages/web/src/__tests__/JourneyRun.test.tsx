@@ -50,6 +50,7 @@ describe('JourneyRun', () => {
                 changed: true,
                 changeTypes: ['navigation', 'live-region'],
                 disruptions: [{ kind: 'flash', selector: '#flash', detail: 'animation=flash' }],
+                disclosures: [{ kind: 'aria-expanded', selector: '#open', detail: 'aria-expanded=true; contrôles : #panel=visible' }],
                 interactions: [{
                   kind: 'complex-gesture',
                   selector: '#slider',
@@ -81,6 +82,8 @@ describe('JourneyRun', () => {
     expect(screen.getByText('Changement détecté — revue humaine requise.')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
     expect(screen.getByText('Région live')).toBeInTheDocument();
+    expect(screen.getByText('Divulgations et changements d’état')).toBeInTheDocument();
+    expect(screen.getByText(/#open: aria-expanded=true/)).toBeInTheDocument();
     expect(screen.getByText('Flash ou variation lumineuse candidate')).toBeInTheDocument();
     expect(screen.getByText('Geste complexe candidat')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Capture après l’étape context-step/i })).toBeInTheDocument();
