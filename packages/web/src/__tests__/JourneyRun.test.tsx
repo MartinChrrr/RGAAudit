@@ -58,6 +58,8 @@ describe('JourneyRun', () => {
                   criterionIds: ['13.10'],
                   requiresHumanReview: true,
                 }],
+                scriptAlternatives: [{ selector: 'script#app', alternativeSelector: 'noscript', alternative: 'Version sans JavaScript', detail: 'alternative candidate observée' }],
+                scriptControls: [{ selector: '#open', pointerEvents: ['pointerdown'], keyboardEvents: ['keydown'], detail: 'événements observés' }],
                 criterionIds: ['7.4', '7.5', '13.7', '13.10'],
                 requiresHumanReview: true,
               },
@@ -86,6 +88,8 @@ describe('JourneyRun', () => {
     expect(screen.getByText(/#open: aria-expanded=true/)).toBeInTheDocument();
     expect(screen.getByText('Flash ou variation lumineuse candidate')).toBeInTheDocument();
     expect(screen.getByText('Geste complexe candidat')).toBeInTheDocument();
+    expect(screen.getByText('Alternatives de scripts')).toBeInTheDocument();
+    expect(screen.getByText('Contrôles des scripts')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Capture après l’étape context-step/i })).toBeInTheDocument();
     expect(screen.getByText(/description textuelle ci-dessus/i)).toBeInTheDocument();
     expect(screen.getByText(/Avant : Étape before-step.*Après : Étape context-step/)).toBeInTheDocument();

@@ -98,6 +98,8 @@ describe('buildReportFromSession', () => {
             timeLimits: [{ kind: 'meta-refresh', selector: 'meta', detail: 'content=120;url=/renewed?token=secret' }],
             newWindows: [{ kind: 'target-blank', selector: 'a#external', detail: 'href=/resource?token=secret; avertissement=non observé' }],
             crypticContent: [{ selector: '#emoji', content: '🙂', alternative: 'Information', detail: 'alternative observée=Information' }],
+            scriptAlternatives: [{ selector: 'https://example.com/script?token=secret', alternativeSelector: 'https://example.com/noscript?token=secret', alternative: 'Version https://example.com/alternative?token=secret', detail: 'https://example.com/script-detail?token=secret' }],
+            scriptControls: [{ selector: 'https://example.com/control?token=secret', pointerEvents: ['pointerdown'], keyboardEvents: ['keydown'], detail: 'https://example.com/control-detail?token=secret' }],
             interactions: [{
               kind: 'complex-gesture',
               selector: 'https://example.com/interaction?token=secret',
@@ -149,6 +151,16 @@ describe('buildReportFromSession', () => {
     });
     expect(publicStep?.context?.timeLimits?.[0]?.detail).toBe('content=120;url=/renewed');
     expect(publicStep?.context?.newWindows?.[0]?.detail).toBe('href=/resource; avertissement=non observé');
+    expect(publicStep?.context?.scriptAlternatives?.[0]).toMatchObject({
+      selector: 'https://example.com/script',
+      alternativeSelector: 'https://example.com/noscript',
+      alternative: 'Version https://example.com/alternative',
+      detail: 'https://example.com/script-detail',
+    });
+    expect(publicStep?.context?.scriptControls?.[0]).toMatchObject({
+      selector: 'https://example.com/control',
+      detail: 'https://example.com/control-detail',
+    });
     expect(publicStep?.context?.interactions?.[0]).toMatchObject({
       selector: 'https://example.com/interaction',
       detail: 'https://example.com/interaction-detail',

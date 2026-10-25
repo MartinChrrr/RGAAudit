@@ -121,6 +121,22 @@ export interface JourneyCrypticContentObservation {
   detail: string;
 }
 
+/** Candidate alternative exposed for a script; relevance remains human-reviewed. */
+export interface JourneyScriptAlternativeObservation {
+  selector: string;
+  alternativeSelector: string | null;
+  alternative: string | null;
+  detail: string;
+}
+
+/** Pointer and keyboard events observed on a script-driven control candidate. */
+export interface JourneyScriptControlObservation {
+  selector: string;
+  pointerEvents: string[];
+  keyboardEvents: string[];
+  detail: string;
+}
+
 export interface JourneyContextObservation {
   trigger: {
     stepId: string;
@@ -133,7 +149,7 @@ export interface JourneyContextObservation {
   titleBefore: string;
   titleAfter: string;
   changed: boolean;
-  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption' | 'additional-content' | 'time-limit' | 'new-window' | 'cryptic-content'>;
+  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption' | 'additional-content' | 'time-limit' | 'new-window' | 'cryptic-content' | 'script-alternative' | 'script-control'>;
   disruptions: JourneyDisruptionObservation[];
   /** Optional for runs persisted before disclosure observations were added. */
   disclosures?: JourneyDisclosureObservation[];
@@ -145,6 +161,10 @@ export interface JourneyContextObservation {
   newWindows?: JourneyNewWindowObservation[];
   /** Optional evidence for RGAA 13.6 (and 13.5 when no alternative is exposed). */
   crypticContent?: JourneyCrypticContentObservation[];
+  /** Optional evidence for RGAA 7.2. */
+  scriptAlternatives?: JourneyScriptAlternativeObservation[];
+  /** Optional evidence for RGAA 7.3. */
+  scriptControls?: JourneyScriptControlObservation[];
   /** Optional for runs persisted before controlled-interaction observations. */
   interactions?: JourneyInteractionObservation[];
   criterionIds: string[];
@@ -293,7 +313,7 @@ export async function replayJourney(
         const keyboard = step.action === 'press' && step.selector && step.key
           ? buildKeyboardObservation(step, beforeFocus, afterFocus, focusHistory, page.viewportSize())
           : undefined;
-        const context = buildContextObservation(step, beforeSignals, afterSignals);
+        const context = buildContextObservation(step, beforeSignals, afterSignals, stepIndex === 0);
         const screenshotBlockedBySensitiveStep = sensitiveStepObserved;
         let screenshotPath: string | undefined;
         let screenshotSkippedReason: JourneyStepObservation['screenshotSkippedReason'];
@@ -367,6 +387,8 @@ interface JourneyContextSignals {
   timeLimits: JourneyTimeLimitObservation[];
   newWindows: JourneyNewWindowObservation[];
   crypticContent: JourneyCrypticContentObservation[];
+  scriptAlternatives: JourneyScriptAlternativeObservation[];
+  scriptControls: JourneyScriptControlObservation[];
 }
 
 async function installInteractionProbe(page: Page): Promise<void> {
@@ -374,12 +396,14 @@ async function installInteractionProbe(page: Page): Promise<void> {
     const eventTypes = [
       'pointerdown', 'pointermove', 'pointerup', 'pointercancel',
       'touchstart', 'touchmove', 'touchend',
+      'keydown', 'keyup',
       'devicemotion', 'deviceorientation',
     ];
     const sensorTypes = new Set(['devicemotion', 'deviceorientation']);
     const state = {
-      events: [] as Array<{ type: string; selector: string; x: number | null; y: number | null; pointerId: number | null }>,
+      events: [] as Array<{ type: string; selector: string; scriptTarget: string | null; x: number | null; y: number | null; pointerId: number | null }>,
       registrations: [] as string[],
+      scriptListeners: [] as string[],
       timers: [] as Array<{ kind: 'setTimeout' | 'setInterval'; delay: number }>,
       windowOpens: [] as Array<{ url: string; target: string }>,
     };
@@ -387,6 +411,17 @@ async function installInteractionProbe(page: Page): Promise<void> {
       if (!(target instanceof Element)) return target === window ? 'window' : 'document';
       if (target.id) return `#${CSS.escape(target.id)}`;
       return target.tagName.toLowerCase();
+    };
+    const scriptListenerTypes = new Set(['click', 'keydown', 'keyup', 'pointerdown', 'pointerup', 'pointermove', 'pointercancel', 'touchstart', 'touchend', 'touchmove']);
+    const inlineScriptAttributes = ['onclick', 'onkeydown', 'onkeyup', 'onpointerdown', 'onpointerup', 'ontouchstart', 'ontouchend'];
+    const scriptTargetOf = (target: EventTarget | null): string | null => {
+      let current = target instanceof Element ? target : null;
+      while (current) {
+        const selector = selectorOf(current);
+        if (state.scriptListeners.includes(selector) || inlineScriptAttributes.some((attribute) => current!.hasAttribute(attribute))) return selector;
+        current = current.parentElement;
+      }
+      return null;
     };
     const record = (event: Event): void => {
       if (state.events.length >= 200) return;
@@ -396,6 +431,7 @@ async function installInteractionProbe(page: Page): Promise<void> {
       state.events.push({
         type: event.type,
         selector: selectorOf(event.target),
+        scriptTarget: scriptTargetOf(event.target),
         x: Number.isFinite(pointer.clientX) ? pointer.clientX : (point?.clientX ?? null),
         y: Number.isFinite(pointer.clientY) ? pointer.clientY : (point?.clientY ?? null),
         pointerId: Number.isFinite(pointer.pointerId) ? pointer.pointerId : null,
@@ -403,6 +439,11 @@ async function installInteractionProbe(page: Page): Promise<void> {
     };
     const originalAddEventListener = EventTarget.prototype.addEventListener;
     EventTarget.prototype.addEventListener = function addEventListener(type, listener, options) {
+      const eventName = String(type);
+      if (this instanceof Element && scriptListenerTypes.has(eventName)) {
+        const selector = selectorOf(this);
+        if (!state.scriptListeners.includes(selector)) state.scriptListeners.push(selector);
+      }
       if ((this === window || this === document) && sensorTypes.has(String(type)) && !state.registrations.includes(String(type))) {
         state.registrations.push(String(type));
       }
@@ -452,8 +493,8 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
     };
     const disruptions: JourneyDisruptionObservation[] = [];
     const interactionEvents = (window as typeof window & {
-      __rgauditInteractionProbe?: {
-        events: Array<{ type: string; selector: string; x: number | null; y: number | null; pointerId: number | null }>;
+        __rgauditInteractionProbe?: {
+          events: Array<{ type: string; selector: string; scriptTarget: string | null; x: number | null; y: number | null; pointerId: number | null }>;
         registrations: string[];
         timers: Array<{ kind: 'setTimeout' | 'setInterval'; delay: number }>;
         windowOpens: Array<{ url: string; target: string }>;
@@ -527,6 +568,43 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         requiresHumanReview: true,
       });
     }
+    const scriptControlEvents = new Map<string, { pointer: Set<string>; keyboard: Set<string> }>();
+    for (const event of probeEvents) {
+      const isPointer = ['pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchend'].includes(event.type);
+      const isKeyboard = ['keydown', 'keyup'].includes(event.type);
+      if ((!isPointer && !isKeyboard) || !event.scriptTarget) continue;
+      const entry = scriptControlEvents.get(event.scriptTarget) ?? { pointer: new Set<string>(), keyboard: new Set<string>() };
+      if (isPointer) entry.pointer.add(event.type);
+      if (isKeyboard) entry.keyboard.add(event.type);
+      scriptControlEvents.set(event.scriptTarget, entry);
+    }
+    const scriptControls: JourneyScriptControlObservation[] = [...scriptControlEvents.entries()].slice(0, 50).map(([selector, events]) => ({
+      selector,
+      pointerEvents: [...events.pointer],
+      keyboardEvents: [...events.keyboard],
+      detail: `événements observés : ${[...events.pointer, ...events.keyboard].join(', ')} ; vérifier le contrôle du script au clavier et au pointage`,
+    }));
+    const scriptElements = Array.from(document.querySelectorAll('script')).filter((element) => {
+      const type = (element.getAttribute('type') ?? '').toLowerCase();
+      return !['application/ld+json', 'application/json', 'importmap'].includes(type);
+    });
+    const scriptAlternatives: JourneyScriptAlternativeObservation[] = scriptElements.slice(0, 50).map((element) => {
+      const sibling = element.nextElementSibling?.tagName.toLowerCase() === 'noscript'
+        ? element.nextElementSibling
+        : element.previousElementSibling?.tagName.toLowerCase() === 'noscript'
+          ? element.previousElementSibling
+          : null;
+      const alternative = sibling?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 500) || null;
+      const alternativeSelector = sibling ? getUniqueSelector(sibling) : null;
+      return {
+        selector: getUniqueSelector(element),
+        alternativeSelector,
+        alternative,
+        detail: alternative
+          ? `alternative candidate observée dans ${alternativeSelector}`
+          : 'aucune alternative noscript adjacente observée',
+      };
+    });
     const disclosureSignals = Array.from(document.querySelectorAll('[aria-expanded], details')).map((element) => {
       const kind: JourneyDisclosureObservation['kind'] = element.tagName.toLowerCase() === 'details'
         ? 'details'
@@ -636,6 +714,8 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
       timeLimits: timeLimits.slice(0, 50),
       newWindows: newWindows.slice(0, 50),
       crypticContent,
+      scriptAlternatives,
+      scriptControls,
       disruptions,
       interactions,
     };
@@ -646,6 +726,7 @@ function buildContextObservation(
   step: JourneyStep,
   before: JourneyContextSignals,
   after: JourneyContextSignals,
+  includeInitialScriptAlternatives = false,
 ): JourneyContextObservation {
   const changeTypes: JourneyContextObservation['changeTypes'] = [];
   if (before.url !== after.url) changeTypes.push('navigation');
@@ -678,6 +759,14 @@ function buildContextObservation(
     beforeCrypticContent.get(item.selector) !== `${item.content}|${item.alternative ?? ''}`
   ));
   if (crypticContent.length > 0) changeTypes.push('cryptic-content');
+  const beforeScriptAlternatives = new Map(before.scriptAlternatives.map((item) => [item.selector, `${item.alternativeSelector ?? ''}|${item.alternative ?? ''}`]));
+  const scriptAlternatives = after.scriptAlternatives.filter((item) => (
+    includeInitialScriptAlternatives
+      || beforeScriptAlternatives.get(item.selector) !== `${item.alternativeSelector ?? ''}|${item.alternative ?? ''}`
+  ));
+  if (scriptAlternatives.length > 0) changeTypes.push('script-alternative');
+  const scriptControls = after.scriptControls;
+  if (scriptControls.length > 0) changeTypes.push('script-control');
   const beforeDisruptions = new Map(before.disruptions.map((item) => [`${item.kind}|${item.selector}`, item.detail]));
   const disruptions = after.disruptions.filter((item) => (
     beforeDisruptions.get(`${item.kind}|${item.selector}`) !== item.detail
@@ -694,6 +783,8 @@ function buildContextObservation(
     criterionIds.add('13.5');
     if (crypticContent.some((item) => item.alternative)) criterionIds.add('13.6');
   }
+  if (changeTypes.includes('script-alternative')) criterionIds.add('7.2');
+  if (changeTypes.includes('script-control')) criterionIds.add('7.3');
   for (const disruption of disruptions) {
     if (disruption.kind === 'sound') criterionIds.add('4.10');
     if (disruption.kind === 'motion') criterionIds.add('13.8');
@@ -722,6 +813,8 @@ function buildContextObservation(
     timeLimits,
     newWindows,
     crypticContent,
+    scriptAlternatives,
+    scriptControls,
     interactions,
     criterionIds: [...criterionIds],
     requiresHumanReview: true,

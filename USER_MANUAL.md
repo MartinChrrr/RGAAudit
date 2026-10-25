@@ -129,6 +129,19 @@ prendre une décision humaine. Les minuteurs détectés correspondent aux
 enregistrements observables du navigateur et ne prouvent ni la durée réelle ni
 la possibilité de prolonger ou d’arrêter le délai.
 
+### 5.5. Vérifier les alternatives et contrôles des scripts (US-48)
+
+Lorsqu’un parcours est rejoué, l’annexe peut présenter les éléments `script`
+observés, une éventuelle alternative `noscript` adjacente et les événements
+clavier ou de pointage constatés sur un contrôle scripté. Ces preuves candidates
+sont associées aux critères RGAA 7.2 et 7.3.
+
+L’outil ne juge pas la pertinence de l’alternative et ne déduit pas qu’un
+contrôle est entièrement opérable. Vérifier le contenu proposé sans JavaScript,
+la correspondance fonctionnelle avec le script, les touches attendues, le
+pointage, le focus et les technologies d’assistance avant d’enregistrer une
+décision humaine.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

@@ -266,6 +266,20 @@ export function toPublicJourneyRun(run: JourneyRunState, publicSessionId = run.s
                 alternative: item.alternative ? redactTextUrls(item.alternative) : item.alternative,
                 detail: redactTextUrls(item.detail),
               })),
+              scriptAlternatives: (step.context.scriptAlternatives ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                alternativeSelector: item.alternativeSelector ? redactTextUrls(item.alternativeSelector) : item.alternativeSelector,
+                alternative: item.alternative ? redactTextUrls(item.alternative) : item.alternative,
+                detail: redactTextUrls(item.detail),
+              })),
+              scriptControls: (step.context.scriptControls ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                pointerEvents: [...item.pointerEvents],
+                keyboardEvents: [...item.keyboardEvents],
+                detail: redactTextUrls(item.detail),
+              })),
               interactions: (step.context.interactions ?? []).map((interaction) => ({
                 ...interaction,
                 selector: redactTextUrls(interaction.selector),

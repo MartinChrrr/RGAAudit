@@ -276,6 +276,8 @@ describe('renderReportHtml', () => {
                 timeLimits: [{ kind: 'timer', selector: 'window', detail: 'setTimeout enregistré avec un délai de 1000 ms' }],
                 newWindows: [{ kind: 'window-open', selector: 'window.open', detail: 'target=_blank' }],
                 crypticContent: [{ selector: '#emoji', content: '🙂', alternative: 'Information', detail: 'alternative observée=Information' }],
+                scriptAlternatives: [{ selector: 'script#app', alternativeSelector: 'noscript', alternative: 'Version sans JavaScript', detail: 'alternative candidate observée dans noscript' }],
+                scriptControls: [{ selector: '#script-action', pointerEvents: ['pointerdown', 'pointerup'], keyboardEvents: ['keydown', 'keyup'], detail: 'événements observés' }],
                 interactions: [{
                   kind: 'complex-gesture',
                   selector: '#slider',
@@ -302,6 +304,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Limites de temps et rafraîchissements');
     expect(html).toContain('Ouvertures de fenêtres');
     expect(html).toContain('Contenus cryptiques');
+    expect(html).toContain('Alternatives de scripts');
+    expect(html).toContain('Contrôles des scripts');
     expect(html).toContain('Geste complexe candidat');
     expect(html).toContain('320 × 256');
     expect(html).toContain('indicateur non observé');

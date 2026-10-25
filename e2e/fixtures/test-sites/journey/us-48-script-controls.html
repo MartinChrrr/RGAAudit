@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <title>Fixture US-48 — scripts</title>
+  </head>
+  <body>
+    <main>
+      <h1>Scripts contrôlables</h1>
+      <div id="script-action" role="button" tabindex="0">Déclencher l’action</div>
+      <button id="native-action" type="button">Action native sans script</button>
+      <p id="script-status" aria-live="polite">En attente</p>
+      <noscript>Activez JavaScript pour afficher l’action équivalente.</noscript>
+      <script>
+        const activate = () => {
+          document.querySelector('#script-status').textContent = 'Action déclenchée';
+        };
+        document.querySelector('#script-action').addEventListener('click', activate);
+        document.querySelector('#script-action').addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') activate();
+        });
+      </script>
+    </main>
+  </body>
+</html>

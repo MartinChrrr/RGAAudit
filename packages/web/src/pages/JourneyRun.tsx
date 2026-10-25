@@ -25,6 +25,8 @@ interface JourneyContext {
   timeLimits?: Array<{ kind: 'timer' | 'meta-refresh' | 'countdown'; selector: string; detail: string }>;
   newWindows?: Array<{ kind: 'window-open' | 'target-blank'; selector: string; detail: string }>;
   crypticContent?: Array<{ selector: string; content: string; alternative: string | null; detail: string }>;
+  scriptAlternatives?: Array<{ selector: string; alternativeSelector: string | null; alternative: string | null; detail: string }>;
+  scriptControls?: Array<{ selector: string; pointerEvents: string[]; keyboardEvents: string[]; detail: string }>;
   interactions?: Array<{
     kind: 'complex-gesture' | 'single-pointer' | 'device-motion';
     selector: string;
@@ -104,6 +106,8 @@ const changeTypeKeys: Record<string, string> = {
   'time-limit': 'journey.changeTypes.timeLimit',
   'new-window': 'journey.changeTypes.newWindow',
   'cryptic-content': 'journey.changeTypes.crypticContent',
+  'script-alternative': 'journey.changeTypes.scriptAlternative',
+  'script-control': 'journey.changeTypes.scriptControl',
 };
 
 function formatDate(value?: string): string {
@@ -374,6 +378,30 @@ function JourneyStepCard({
                 <ul className="mt-1 space-y-1">
                   {step.context.crypticContent.map((item, itemIndex) => (
                     <li key={`${item.selector}-${itemIndex}`}>{item.selector}: <code>{item.content}</code> — {item.detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.scriptAlternativesTitle')}</h4>
+              {!step.context.scriptAlternatives?.length ? (
+                <p>{t('journey.noScriptAlternatives')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.scriptAlternatives.map((item, itemIndex) => (
+                    <li key={`${item.selector}-${itemIndex}`}>{item.selector}: {item.alternative ? item.alternative : t('journey.noScriptAlternative')} — {item.detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.scriptControlsTitle')}</h4>
+              {!step.context.scriptControls?.length ? (
+                <p>{t('journey.noScriptControls')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.scriptControls.map((item, itemIndex) => (
+                    <li key={`${item.selector}-${itemIndex}`}>{item.selector}: {item.detail}</li>
                   ))}
                 </ul>
               )}

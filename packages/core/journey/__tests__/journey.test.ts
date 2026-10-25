@@ -10,6 +10,7 @@ const FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-site
 const US31_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-31-controlled-interactions.html');
 const US46_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-46-context-disclosures.html');
 const US47_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-47-consultation-evidence.html');
+const US48_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-48-script-controls.html');
 let server: http.Server;
 let baseUrl: string;
 
@@ -23,6 +24,8 @@ beforeAll(async () => {
           ? US46_FIXTURE_PATH
           : req.url === '/journey/us-47-consultation-evidence.html'
             ? US47_FIXTURE_PATH
+            : req.url === '/journey/us-48-script-controls.html'
+              ? US48_FIXTURE_PATH
         : null;
     if (!fixture) {
       res.writeHead(404);
@@ -272,5 +275,45 @@ describe('replayJourney', () => {
     expect(run.steps[1].context?.changed).toBe(true);
     expect(run.steps[1].screenshotPath).toBeUndefined();
     expect(run.steps[1].screenshotSkippedReason).toBe('sensitive_step');
+  }, 30_000);
+
+  it('partage les preuves d’alternative et de contrôle des scripts avec le parcours', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-us48',
+      name: 'Scripts contrôlables',
+      startUrl: `${baseUrl}/journey/us-48-script-controls.html`,
+      createdAt: new Date().toISOString(),
+      steps: [
+        { id: 'pointer-activation', action: 'click', selector: '#script-action' },
+        { id: 'keyboard-activation', action: 'press', selector: '#script-action', key: 'Enter' },
+        { id: 'native-activation', action: 'click', selector: '#native-action' },
+      ],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    expect(run.steps[0]?.context).toMatchObject({
+      changeTypes: expect.arrayContaining(['script-alternative', 'script-control']),
+      criterionIds: expect.arrayContaining(['7.2', '7.3']),
+      scriptAlternatives: [expect.objectContaining({ alternative: expect.stringContaining('Activez JavaScript') })],
+      scriptControls: [expect.objectContaining({
+        selector: '#script-action',
+        pointerEvents: expect.arrayContaining(['pointerdown', 'pointerup']),
+      })],
+    });
+    expect(run.steps[1]?.context).toMatchObject({
+      changeTypes: expect.arrayContaining(['script-control']),
+      criterionIds: expect.arrayContaining(['7.3']),
+      scriptControls: [expect.objectContaining({
+        selector: '#script-action',
+        keyboardEvents: expect.arrayContaining(['keydown', 'keyup']),
+      })],
+    });
+    expect(run.steps[1]?.context?.scriptAlternatives).toEqual([]);
+    expect(run.steps[2]?.context?.scriptControls).toEqual([]);
+    expect(run.steps[2]?.context?.criterionIds).not.toContain('7.3');
   }, 30_000);
 });

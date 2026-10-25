@@ -25,6 +25,7 @@ site.
 | Validation et soumission contrôlées | Signale les contraintes, états invalides, aides/messages associés et contrôles de soumission des formulaires pour les critères RGAA 11.3, 11.10, 11.11 et 11.12, sans exécuter de soumission | Disponible avec limites documentées |
 | Changements de contexte et divulgations | Les parcours rejoués consignent les navigations, changements de titre, dialogues, régions live et divulgations `aria-expanded`/`details` pour les critères RGAA 7.4, 7.5 et 10.13 | Disponible avec limites documentées |
 | Consultation, délais et contenus additionnels | Les parcours consignent des candidats de contenu additionnel, minuteurs/rafraîchissements, ouvertures de fenêtre et contenus cryptiques pour les critères RGAA 12.11, 13.1, 13.2 et 13.6 | Disponible avec limites documentées |
+| Alternatives et contrôles des scripts | Les parcours partagent les alternatives `noscript` candidates et les événements clavier/pointage observés sur les contrôles scriptés pour les critères RGAA 7.2 et 7.3 | Disponible avec limites documentées |
 | Comparaison | Compare des observations appartenant au même groupe de comparaison | Disponible |
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |

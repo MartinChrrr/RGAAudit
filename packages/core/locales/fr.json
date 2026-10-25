@@ -121,7 +121,9 @@
       "additionalContent": "Contenu additionnel",
       "timeLimit": "Limite de temps",
       "newWindow": "Ouverture de fenêtre",
-      "crypticContent": "Contenu cryptique"
+      "crypticContent": "Contenu cryptique",
+      "scriptAlternative": "Alternative de script",
+      "scriptControl": "Contrôle de script"
     },
     "disruptionsTitle": "Mouvements ou sons perturbateurs",
     "noDisruptions": "Aucun signal détecté — revue humaine requise.",
@@ -154,6 +156,11 @@
     },
     "crypticContentTitle": "Contenus cryptiques",
     "noCrypticContent": "Aucun contenu cryptique candidat observé — revue humaine requise.",
+    "scriptAlternativesTitle": "Alternatives de scripts",
+    "noScriptAlternatives": "Aucune alternative de script observée — revue humaine requise.",
+    "noScriptAlternative": "Aucune alternative textuelle observée",
+    "scriptControlsTitle": "Contrôles des scripts",
+    "noScriptControls": "Aucun événement de contrôle de script observé — revue humaine requise.",
     "motion": "Mouvement",
     "sound": "Son",
     "flash": "Flash ou variation lumineuse candidate",
