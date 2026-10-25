@@ -17,9 +17,19 @@ export interface ImageItem {
   linkText: string | null;
   alternativeSources?: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'>;
   manualChecks?: string[];
+  detailedDescription?: string | null;
+  evidence?: ImageEvidenceItem[];
   pageUrl?: string;
   pageId?: string;
   elementIndex?: number;
+}
+
+export interface ImageEvidenceItem {
+  criterionId: string;
+  state: 'observed' | 'missing' | 'not_applicable' | 'to_review';
+  proof: string[];
+  limits: string[];
+  humanChecks?: string[];
 }
 
 export interface ImageDecision {
@@ -66,6 +76,16 @@ function imageKey(image: Pick<ImageItem, 'pageUrl' | 'pageId' | 'selector' | 'el
 }
 
 type ImageNature = 'decorative' | 'informative';
+
+function evidenceStateLabel(state: ImageEvidenceItem['state']): string {
+  const labels: Record<ImageEvidenceItem['state'], string> = {
+    observed: 'Signal observé — à confirmer',
+    missing: 'Signal candidat absent — à vérifier',
+    not_applicable: 'Non applicable au signal détecté',
+    to_review: 'Revue humaine requise',
+  };
+  return labels[state];
+}
 
 function suggestedNature(image: ImageItem): ImageNature {
   return image.altStatus === 'empty' ? 'decorative' : 'informative';
@@ -478,6 +498,24 @@ export default function AnnexeImages({
                         <p className="mt-1 text-xs text-gray-600">
                           Alternatives détectées : {img.alternativeSources.join(', ')}
                         </p>
+                      )}
+                      {img.detailedDescription && (
+                        <p className="mt-1 text-xs text-gray-600">Description détaillée candidate : {img.detailedDescription}</p>
+                      )}
+                      {(img.evidence ?? []).length > 0 && (
+                        <details className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                          <summary className="cursor-pointer font-medium">Preuves techniques et validation humaine (1.4 à 1.8)</summary>
+                          <ul className="mt-1 list-disc space-y-1 pl-4">
+                            {img.evidence!.map((evidence) => (
+                              <li key={evidence.criterionId}>
+                                <strong>{evidence.criterionId}</strong> — {evidenceStateLabel(evidence.state)}<br />
+                                Preuves : {evidence.proof.join(' · ') || 'aucune'}<br />
+                                Limites : {evidence.limits.join(' · ') || 'aucune'}
+                                {evidence.humanChecks?.length ? <><br />Validation humaine : {evidence.humanChecks.join(' · ')}</> : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
                       )}
                       {(img.manualChecks ?? []).length > 0 && (
                         <details className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">

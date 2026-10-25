@@ -15,6 +15,49 @@ describe('formatContrastRatio', () => {
 });
 
 describe('buildReportFromSession', () => {
+  it('rédige les preuves et limites des images dans la réponse publique', () => {
+    const publicData = redactCollectedData({
+      images: [{
+        selector: 'img#captcha', tagName: 'img', src: 'https://example.com/captcha?token=secret',
+        altAttribute: 'Captcha https://example.com/alt?token=secret', altStatus: 'present',
+        ariaLabel: null, ariaLabelledby: null, rolePresentation: false, surroundingText: '',
+        parentFigcaption: null, isInLink: false, linkHref: null, linkText: null,
+        axeViolations: [], automatedStatus: 'manual', flags: [], screenshotPath: null,
+        detailedDescription: 'Description https://example.com/description?token=secret',
+        evidence: [{
+          criterionId: '1.6', state: 'observed',
+          proof: ['description https://example.com/proof?token=secret'],
+          limits: ['Limite https://example.com/limit?token=secret'],
+          humanChecks: ['Vérifier https://example.com/check?token=secret'],
+        }],
+      }],
+      frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },
+    });
+
+    expect(publicData?.images[0]?.src).toBe('https://example.com/captcha');
+    expect(publicData?.images[0]?.detailedDescription).toBe('Description https://example.com/description');
+    expect(publicData?.images[0]?.evidence?.[0]?.proof[0]).toBe('description https://example.com/proof');
+    expect(publicData?.images[0]?.evidence?.[0]?.humanChecks?.[0]).toBe('Vérifier https://example.com/check');
+    expect(JSON.stringify(publicData)).not.toContain('secret');
+  });
+
+  it('rédige les URL relatives longdesc avant exposition publique', () => {
+    const publicData = redactCollectedData({
+      images: [{
+        selector: 'img#detail', tagName: 'img', src: '/image.png',
+        altAttribute: 'Image', altStatus: 'present', ariaLabel: null, ariaLabelledby: null,
+        rolePresentation: false, surroundingText: '', parentFigcaption: null, isInLink: false,
+        linkHref: null, linkText: null, axeViolations: [], automatedStatus: 'manual', flags: [],
+        screenshotPath: null, detailedDescription: '/description?token=secret#fragment',
+        detailedDescriptionSource: 'longdesc', evidence: [],
+      }],
+      frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },
+    });
+
+    expect(publicData?.images[0]?.detailedDescription).toBe('/description');
+    expect(JSON.stringify(publicData)).not.toContain('secret');
+  });
+
   it('rédige les preuves et limites des médias dans la réponse publique', () => {
     const publicData = redactCollectedData({
       images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },

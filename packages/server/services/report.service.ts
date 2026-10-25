@@ -397,6 +397,17 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
       surroundingText: redactTextUrls(image.surroundingText),
       parentFigcaption: image.parentFigcaption ? redactTextUrls(image.parentFigcaption) : image.parentFigcaption,
       linkText: image.linkText ? redactTextUrls(image.linkText) : image.linkText,
+      detailedDescription: image.detailedDescription
+        ? image.detailedDescriptionSource === 'longdesc'
+          ? redactUrl(image.detailedDescription)
+          : redactTextUrls(image.detailedDescription)
+        : image.detailedDescription,
+      evidence: image.evidence?.map((evidence) => ({
+        ...evidence,
+        proof: evidence.proof.map(redactTextUrls),
+        limits: evidence.limits.map(redactTextUrls),
+        humanChecks: evidence.humanChecks?.map(redactTextUrls),
+      })),
     })),
     media: collectedData.media?.map((media) => ({
       ...media,

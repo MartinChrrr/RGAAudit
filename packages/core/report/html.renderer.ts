@@ -6,6 +6,7 @@ import type { Report, AggregatedCriterion } from '../mapping/mapper';
 import type { JourneyReportAnnex } from '../journey/journey';
 import type {
   CollectedData,
+  ImageData,
   FormDataItem,
   MediaData,
   HiddenContentObservation,
@@ -87,6 +88,7 @@ export interface RenderOptions {
 }
 
 type CollectedPage = { url: string; pageId?: string; collectedData: CollectedData | null };
+type ImageAnnexItem = { url: string; pageId?: string; image: ImageData };
 type FormAnnexItem = { url: string; pageId?: string; form: FormDataItem };
 type MediaAnnexItem = { url: string; pageId?: string; item: MediaData };
 type PresentationAnnexItem = { url: string; pageId?: string; snapshot: PresentationSnapshot; hiddenContent: HiddenContentObservation[] };
@@ -95,6 +97,15 @@ type NavigationAnnexItem = { url: string; pageId?: string; system: NavigationSys
 type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
 type TableAnnexItem = { url: string; pageId?: string; table: StructureTableData };
 type ComparisonItem = NonNullable<Report['comparisons']>[number];
+
+const IMAGE_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], ImageAnnexItem> = {
+  id: 'annex-images',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.images ?? []).map((image) => ({ url, pageId, image }))
+  )),
+};
 
 const FORM_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], FormAnnexItem> = {
   id: 'annex-forms',
@@ -303,6 +314,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
     : '';
 
   const collectedPages = allCollected ?? [];
+  const imagesSection = buildImagesSection(runReportExtractor(IMAGE_ANNEX_EXTRACTOR, collectedPages).items);
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
   const tablesSection = buildTablesSection(runReportExtractor(TABLE_ANNEX_EXTRACTOR, collectedPages).items);
@@ -438,6 +450,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
     ${uncoveredSection}
 
     ${buildContrastSection(contrastViolations ?? [])}
+
+    ${imagesSection}
 
     ${mediaSection}
 
@@ -671,6 +685,47 @@ function buildNavigationSection(items: NavigationAnnexItem[]): string {
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.navigationEvidence'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.navigationPosition'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationSignals'))}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function buildImagesSection(images: ImageAnnexItem[]): string {
+  if (images.length === 0) return '';
+
+  const rows = images.map(({ url, pageId, image }) => {
+    const evidence = image.evidence?.map((item) => `
+      <li>
+        <strong>${escapeHtml(item.criterionId)}</strong> — ${escapeHtml(item.state)}<br>
+        Preuves techniques : ${escapeHtml(item.proof.join(' · ') || 'aucune')}<br>
+        <span class="text-amber-900">Limites : ${escapeHtml(item.limits.join(' · ') || 'aucune')}</span>
+        ${item.humanChecks?.length ? `<br><span class="text-amber-900">Validation humaine : ${escapeHtml(item.humanChecks.join(' · '))}</span>` : ''}
+      </li>`).join('') ?? '';
+    return `
+      <tr>
+        <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(image.tagName)}<br><code>${escapeHtml(image.selector)}</code><br><span class="text-gray-500">${escapeHtml(pageLabel(url, pageId))}</span></td>
+        <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(image.altAttribute ?? 'Alt absent')}<br>${escapeHtml(image.detailedDescription ?? 'Aucune description détaillée candidate')}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${evidence ? `<ul class="space-y-1">${evidence}</ul>` : escapeHtml(t('annexes.images.noEvidence'))}</td>
+        <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(t('annexes.images.humanReview'))}<br>${escapeHtml(image.manualChecks?.join(' ') ?? '')}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <section class="mb-8" data-testid="images-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('annexes.images.title'))}</h2>
+      <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('annexes.images.evidenceDescription'))}</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(t('annexes.images.tableScrollLabel'))}">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">${escapeHtml(t('annexes.images.title'))}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-3 py-2">Image et page</th>
+              <th scope="col" class="px-3 py-2">Alternative</th>
+              <th scope="col" class="px-3 py-2">Preuves 1.4 à 1.8</th>
+              <th scope="col" class="px-3 py-2">Revue humaine</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">${rows}</tbody>

@@ -25,10 +25,26 @@ export interface ImageData {
   alternativeSources?: Array<'alt' | 'aria-label' | 'aria-labelledby' | 'figcaption' | 'link-text' | 'surrounding-text'>;
   /** Explicit checks for the specialized image criteria covered by the backlog. */
   manualChecks?: string[];
+  /** Candidate evidence for image criteria 1.4–1.8; never a conformance verdict. */
+  evidence?: ImageCriterionEvidence[];
+  /** Resolved detailed description candidate, when declared with aria-describedby or longdesc. */
+  detailedDescription?: string | null;
+  /** Source attribute for the detailed description candidate, when available. */
+  detailedDescriptionSource?: 'aria-describedby' | 'longdesc' | null;
   axeViolations: string[];
   automatedStatus: 'violation' | 'pass' | 'manual';
   flags: string[];
   screenshotPath: string | null;
+}
+
+export type ImageEvidenceState = 'observed' | 'missing' | 'not_applicable' | 'to_review';
+
+export interface ImageCriterionEvidence {
+  criterionId: string;
+  state: ImageEvidenceState;
+  proof: string[];
+  limits: string[];
+  humanChecks?: string[];
 }
 
 export type MediaKind = 'audio' | 'video' | 'canvas' | 'object' | 'embed';
@@ -391,6 +407,8 @@ export interface CollectedData {
 }
 
 const IMAGE_MANUAL_CRITERIA = ['1.3', '1.4', '1.5', '1.6', '1.7', '1.8'] as const;
+const IMAGE_SPECIALIZED_CRITERIA = ['1.4', '1.5', '1.6', '1.7', '1.8'] as const;
+const IMAGE_CAPTCHA_HINT = /captcha|recaptcha|hcaptcha|challenge|image[-_ ]?test/i;
 // Media inventory scope: temporal media (4.1–4.7, 4.11, 4.13) and
 // non-temporal media (4.8, 4.9, 4.12, 4.13). Criteria 4.10 remains separate
 // manual/backlog work and is not silently presented as covered by this inventory.
@@ -409,6 +427,61 @@ function getSpecializedImageChecks(): string[] {
   return IMAGE_MANUAL_CRITERIA.flatMap((id) => {
     const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
     return checks.map((check) => `${id} — ${check}`);
+  });
+}
+
+function imageHumanChecks(criterionId: string): string[] {
+  const criterion = getCriterion(criterionId);
+  if (!criterion) return [];
+  const checks = criterion.heuristicPatterns.manualChecks ?? [];
+  return (checks.length > 0 ? checks : [criterion.rgaa.title]).map((check) => `${criterionId} — ${check}`);
+}
+
+function buildImageEvidence(image: Pick<ImageData, 'altAttribute' | 'src' | 'surroundingText' | 'alternativeSources' | 'detailedDescription'>): ImageCriterionEvidence[] {
+  const alternativeSources = image.alternativeSources ?? [];
+  const captchaCandidate = IMAGE_CAPTCHA_HINT.test([
+    image.src,
+    image.altAttribute ?? '',
+    image.surroundingText,
+  ].join(' '));
+  const hasAlternative = alternativeSources.some((source) => source === 'link-text' || source === 'surrounding-text');
+  const hasDetailedDescription = Boolean(image.detailedDescription);
+  const signalProof: Record<string, string[]> = {
+    '1.4': image.altAttribute ? ['alternative textuelle de candidat CAPTCHA observée'] : [],
+    '1.5': hasAlternative ? ['alternative d’accès candidate observée'] : [],
+    '1.6': hasDetailedDescription ? ['description détaillée candidate observée'] : [],
+    '1.7': hasDetailedDescription ? ['description détaillée candidate observée'] : [],
+    '1.8': image.src
+      ? ['Image observée ; contenu textuel dans les pixels non détecté automatiquement.']
+      : ['Contenu textuel dans les pixels non détecté automatiquement.'],
+  };
+
+  return IMAGE_SPECIALIZED_CRITERIA.map((criterionId) => {
+    const applicable = (criterionId === '1.4' || criterionId === '1.5') ? captchaCandidate : true;
+    const signalObserved = signalProof[criterionId].length > 0;
+    const state: ImageEvidenceState = !applicable
+      ? 'not_applicable'
+      : criterionId === '1.8'
+        ? 'to_review'
+      : criterionId === '1.7' && !hasDetailedDescription
+        ? 'to_review'
+        : signalObserved
+          ? 'observed'
+          : criterionId === '1.4' || criterionId === '1.5'
+            ? 'missing'
+            : 'to_review';
+    return {
+      criterionId,
+      state,
+      proof: !applicable
+        ? ['Aucun indice de CAPTCHA ou image-test observé.']
+        : signalObserved ? signalProof[criterionId] : ['Aucun signal candidat observé pour ce critère.'],
+      limits: [
+        getCriterion(criterionId)?.limits,
+        'La présence d’un signal ne permet pas de conclure à la pertinence ou à la conformité ; la validation humaine reste nécessaire.',
+      ].filter((limit): limit is string => Boolean(limit)),
+      humanChecks: imageHumanChecks(criterionId),
+    };
   });
 }
 
@@ -596,6 +669,20 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
         .join(' ')
         .replace(/\s+/g, ' ')
         .trim();
+      const ariaDescribedby = el.getAttribute('aria-describedby');
+      const describedByText = (ariaDescribedby ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const longdesc = el.getAttribute('longdesc');
+      const detailedDescriptionSource: 'aria-describedby' | 'longdesc' | null = describedByText
+        ? 'aria-describedby'
+        : longdesc
+          ? 'longdesc'
+          : null;
       const role = el.getAttribute('role');
       const rolePresentation = role === 'presentation' || role === 'none';
 
@@ -642,6 +729,8 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
         altAttribute: altAttr,
         ariaLabel,
         ariaLabelledby,
+        detailedDescription: describedByText || longdesc || null,
+        detailedDescriptionSource,
         rolePresentation,
         surroundingText,
         parentFigcaption,
@@ -695,6 +784,7 @@ export async function collectImages(page: Page): Promise<ImageData[]> {
       manualChecks: getSpecializedImageChecks().filter((check) => (
         altRelevanceStatus === 'to_review' || !check.startsWith('1.3 —')
       )),
+      evidence: buildImageEvidence(img),
       altStatus,
       altRelevanceStatus,
       axeViolations: [],

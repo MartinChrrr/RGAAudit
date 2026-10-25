@@ -173,6 +173,21 @@ essai réel au clavier et avec un dispositif de pointage ; le critère 4.13
 nécessite une vérification avec les technologies d’assistance. Aucun de ces
 signaux ne produit un verdict automatique.
 
+### 5.8. Vérifier les images spécialisées (US-51)
+
+Dans l’annexe **Images**, les images candidates pour un CAPTCHA ou une
+image-test sont rattachées aux critères RGAA 1.4 et 1.5. Les déclarations
+`aria-describedby` et `longdesc` sont conservées comme candidates pour les
+critères 1.6 et 1.7. Les images sont également signalées pour la revue du
+critère 1.8 lorsqu’une vérification de texte dans l’image est nécessaire.
+
+La section **Preuves techniques et validation humaine** distingue le signal
+observé, les limites et la question à vérifier. Une image ordinaire est indiquée
+comme non applicable aux critères CAPTCHA uniquement lorsque aucun indice de
+CAPTCHA ou d’image-test n’est observé. La collecte ne juge jamais la pertinence
+de l’alternative, d’une description, de la solution de CAPTCHA ou d’un éventuel
+remplacement par du texte stylé.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

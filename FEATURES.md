@@ -33,6 +33,7 @@ site.
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |
 | Repères visuels candidats | Inventaire des indices DOM/CSS de couleur, forme, taille et position pour la revue humaine des critères 3.1, 10.9 et 10.10 | Disponible avec limites documentées |
 | Pertinence des alternatives d’image | Signal de revue pour les alternatives non vides du critère 1.3, avec distinction des cas absents/vides | Partiel — synchronisation de la décision 1.3 à décider |
+| Images spécialisées et descriptions | L’annexe Images rattache des preuves candidates et validations humaines aux critères RGAA 1.4 à 1.8, notamment CAPTCHA, descriptions détaillées et images-texte | Disponible avec limites documentées |
 | Tableaux complexes et de mise en forme | Candidats de tableaux, signaux de complexité, titre/résumé, lecture linéarisée et preuves des associations d’en-têtes pour les critères 5.1, 5.2, 5.3, 5.5 et 5.7 | Disponible avec limites documentées |
 | Visibilité du focus et responsive | Observations candidates par état de présentation et viewport pour le critère 10.7, avec annexe filtrable et vérification humaine au clavier | Disponible avec limites documentées |
 | Scénarios contrôlés d’interaction | Observations de focus, flash, pointer/touch et APIs de mouvement rattachées aux parcours pour revue humaine | Disponible avec limites documentées |

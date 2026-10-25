@@ -110,6 +110,13 @@ function makeCollectedData(): CollectedData {
         automatedStatus: 'violation' as const,
         flags: ['ALT_ABSENT'],
         screenshotPath: null,
+        evidence: [{
+          criterionId: '1.4',
+          state: 'not_applicable',
+          proof: ['Aucun indice de CAPTCHA ou image-test observé.'],
+          limits: ['Validation humaine requise'],
+          humanChecks: ['1.4 — Vérifier le CAPTCHA'],
+        }],
       },
     ],
     frames: [],
@@ -219,6 +226,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('id="rgaaudit-data"');
     expect(html).toContain('type="application/json"');
     expect(html).toContain('img#hero');
+    expect(html).toContain('data-testid="images-section"');
+    expect(html).toContain('1.4 — Vérifier le CAPTCHA');
   });
 
   it('affiche l’annexe versionnée des parcours rattachés', () => {

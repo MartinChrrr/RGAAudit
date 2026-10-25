@@ -75,6 +75,13 @@ describe('AnnexeImages', () => {
         ...mockImages[1],
         alternativeSources: ['alt', 'figcaption'],
         manualChecks: ['1.3 — Vérifier la pertinence', '1.4 — Vérifier le CAPTCHA', '1.8 — Vérifier le texte dans l’image'],
+        evidence: [{
+          criterionId: '1.4',
+          state: 'to_review',
+          proof: ['image observée'],
+          limits: ['Validation humaine requise'],
+          humanChecks: ['1.4 — Vérifier le CAPTCHA'],
+        }],
       }]}
       sessionId="test-specialized"
     />);
@@ -82,7 +89,9 @@ describe('AnnexeImages', () => {
     expect(screen.getByText(/Alternatives détectées : alt, figcaption/)).toBeInTheDocument();
     expect(screen.getByText(/Contrôles manuels associés/)).toBeInTheDocument();
     expect(screen.getAllByText(/Pertinence de l’alternative à vérifier/)).toHaveLength(2);
-    expect(screen.getByText(/1\.4 — Vérifier le CAPTCHA/)).toBeInTheDocument();
+    expect(screen.getAllByText(/1\.4 — Vérifier le CAPTCHA/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Preuves techniques et validation humaine/)).toBeInTheDocument();
+    expect(screen.getByText(/Preuves : image observée/)).toBeInTheDocument();
   });
 
   it('filtre "Violations" masque les passes', async () => {

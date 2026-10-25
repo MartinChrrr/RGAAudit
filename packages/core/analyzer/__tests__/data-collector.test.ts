@@ -72,6 +72,44 @@ async function withPage<T>(url: string, fn: (page: Page) => Promise<T>): Promise
 // ───────────────────────────────────────────────────────────────
 
 describe('collectImages', () => {
+  it('US-51 distingue les preuves candidates CAPTCHA, descriptions et image-texte', async () => {
+    const images = await withPage(`${baseUrl}/images/us-51-images-candidates.html`, collectImages);
+    const captcha = images.find((image) => image.selector === 'img#captcha-ok');
+    const detailed = images.find((image) => image.selector === 'img#detailed-image');
+    const textImage = images.find((image) => image.selector === 'img#text-image');
+
+    expect(captcha?.evidence?.find((item) => item.criterionId === '1.4')).toMatchObject({ state: 'observed' });
+    expect(captcha?.evidence?.find((item) => item.criterionId === '1.5')).toMatchObject({ state: 'observed' });
+    expect(captcha?.detailedDescription).toContain('solution audio');
+    expect(detailed?.evidence?.find((item) => item.criterionId === '1.6')).toMatchObject({ state: 'observed' });
+    expect(detailed?.evidence?.find((item) => item.criterionId === '1.7')).toMatchObject({ state: 'observed' });
+    expect(textImage?.evidence?.find((item) => item.criterionId === '1.8')).toMatchObject({ state: 'to_review' });
+    expect(textImage?.evidence?.every((item) => item.humanChecks?.length)).toBe(true);
+  });
+
+  it('US-51 conserve les absences comme signaux à vérifier, sans verdict automatique', async () => {
+    const images = await withPage(`${baseUrl}/images/us-51-images-missing.html`, collectImages);
+    const captcha = images.find((image) => image.selector === 'img#captcha-missing');
+    const detailed = images.find((image) => image.selector === 'img#detailed-missing');
+
+    expect(captcha?.evidence?.find((item) => item.criterionId === '1.4')).toMatchObject({ state: 'missing' });
+    expect(captcha?.evidence?.find((item) => item.criterionId === '1.5')).toMatchObject({ state: 'missing' });
+    expect(detailed?.evidence?.find((item) => item.criterionId === '1.6')).toMatchObject({ state: 'to_review' });
+    expect(JSON.stringify(images)).not.toMatch(/conforme|non conforme/i);
+  });
+
+  it('US-51 marque les critères CAPTCHA non applicables pour une image ordinaire', async () => {
+    const images = await withPage(`${baseUrl}/images/us-51-images-non-applicable.html`, collectImages);
+    const evidence = images[0]?.evidence ?? [];
+
+    expect(evidence.find((item) => item.criterionId === '1.4')).toMatchObject({ state: 'not_applicable' });
+    expect(evidence.find((item) => item.criterionId === '1.5')).toMatchObject({ state: 'not_applicable' });
+    expect(evidence.find((item) => item.criterionId === '1.8')).toMatchObject({
+      state: 'to_review',
+      proof: expect.arrayContaining([expect.stringContaining('pixels non détecté automatiquement')]),
+    });
+  });
+
   it('produit un sélecteur CSS unique et utilisable pour chaque image', async () => {
     await withPage(`${baseUrl}/images/alt-missing.html`, async (page) => {
       const images = await collectImages(page);
