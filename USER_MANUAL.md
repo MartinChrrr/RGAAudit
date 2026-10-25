@@ -142,6 +142,22 @@ la correspondance fonctionnelle avec le script, les touches attendues, le
 pointage, le focus et les technologies d’assistance avant d’enregistrer une
 décision humaine.
 
+### 5.6. Vérifier les médias temporels et leurs pistes (US-49)
+
+Dans l’annexe **Médias**, chaque élément audio ou vidéo conserve les sources,
+le contenu de secours, les pistes `subtitles`/`captions` et `descriptions`,
+ainsi qu’une ligne de preuve candidate pour chacun des critères RGAA 4.1 à 4.6.
+Chaque ligne indique un état d’observation (`signal observé`, `signal candidat
+absent`, `revue humaine requise` ou `hors périmètre du média temporel`), les
+preuves observées et leurs limites.
+
+Un signal de piste ou de contenu de secours ne valide ni la transcription, ni la
+qualité, ni la synchronisation, ni la pertinence de la piste. Un état `missing`
+signale seulement qu’aucun signal candidat n’a été observé ; il ne constitue pas
+un verdict de non-conformité. Vérifier le média réellement joué, les besoins du
+contenu, la synchronisation et la pertinence des sous-titres ou de
+l’audiodescription avant d’enregistrer une décision humaine.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

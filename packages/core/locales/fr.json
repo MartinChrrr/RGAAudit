@@ -280,9 +280,18 @@
       "colContext": "Contexte",
       "colAlternatives": "Alternatives observées",
       "colTracks": "Pistes",
+      "colEvidence": "Preuves et limites par critère",
       "manualChecks": "Contrôles manuels associés",
+      "tableScrollLabel": "Annexe Médias — faites défiler horizontalement pour consulter toutes les colonnes",
       "noTracks": "Aucune piste déclarée",
       "noAlternative": "Aucune alternative observée",
+      "noEvidence": "Aucune preuve structurée observée",
+      "evidenceStates": {
+        "observed": "signal observé — à confirmer",
+        "missing": "signal candidat absent — à vérifier",
+        "not_applicable": "hors périmètre du média temporel",
+        "to_review": "revue humaine requise"
+      },
       "noResults": "Aucun média à afficher"
     },
     "tables": {

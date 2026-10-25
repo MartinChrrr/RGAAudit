@@ -223,6 +223,34 @@ describe('collectImages', () => {
 });
 
 describe('collectMedia', () => {
+  it('US-49 conserve une preuve candidate et les limites pour chaque critère temporel', async () => {
+    const media = await withPage(`${baseUrl}/media/us-49-media-with-tracks.html`, collectMedia);
+    const evidence = media[0]?.evidence ?? [];
+
+    expect(evidence).toHaveLength(6);
+    expect(evidence.find((item) => item.criterionId === '4.3')).toMatchObject({ state: 'observed' });
+    expect(evidence.find((item) => item.criterionId === '4.5')).toMatchObject({ state: 'observed' });
+    expect(evidence.every((item) => item.limits.some((limit) => limit.includes('vérification humaine')))).toBe(true);
+  });
+
+  it('US-49 distingue l’absence de piste candidate sans produire de verdict', async () => {
+    const media = await withPage(`${baseUrl}/media/us-49-media-without-tracks.html`, collectMedia);
+    const evidence = media[0]?.evidence ?? [];
+
+    expect(evidence.find((item) => item.criterionId === '4.3')).toMatchObject({ state: 'missing' });
+    expect(evidence.find((item) => item.criterionId === '4.4')).toMatchObject({ state: 'to_review' });
+    expect(JSON.stringify(media[0])).not.toMatch(/conforme|non conforme/i);
+  });
+
+  it('US-49 marque les critères temporels non applicables pour un média non temporel', async () => {
+    const media = await withPage(`${baseUrl}/media/us-49-media-non-applicable.html`, collectMedia);
+    const evidence = media[0]?.evidence ?? [];
+
+    expect(media[0]?.kind).toBe('canvas');
+    expect(evidence).toHaveLength(6);
+    expect(evidence.every((item) => item.state === 'not_applicable')).toBe(true);
+  });
+
   it('inventorie les sources, les pistes et les alternatives des médias', async () => {
     const media = await withPage(`${baseUrl}/media/tracks.html`, collectMedia);
 

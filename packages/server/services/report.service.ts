@@ -405,6 +405,11 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
       accessibleName: media.accessibleName ? redactTextUrls(media.accessibleName) : media.accessibleName,
       fallbackText: media.fallbackText ? redactTextUrls(media.fallbackText) : media.fallbackText,
       surroundingText: redactTextUrls(media.surroundingText),
+      evidence: media.evidence?.map((evidence) => ({
+        ...evidence,
+        proof: evidence.proof.map(redactTextUrls),
+        limits: evidence.limits.map(redactTextUrls),
+      })),
     })),
     specializedContent: collectedData.specializedContent?.map((item) => ({
       ...item,

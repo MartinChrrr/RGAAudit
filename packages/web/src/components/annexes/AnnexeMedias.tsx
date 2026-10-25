@@ -9,6 +9,13 @@ export interface MediaTrackItem {
   isDefault: boolean;
 }
 
+export interface MediaEvidenceItem {
+  criterionId: string;
+  state: 'observed' | 'missing' | 'not_applicable' | 'to_review';
+  proof: string[];
+  limits: string[];
+}
+
 export interface MediaItem {
   selector: string;
   kind: 'audio' | 'video' | 'canvas' | 'object' | 'embed';
@@ -24,6 +31,7 @@ export interface MediaItem {
   manualChecks: string[];
   flags: string[];
   requiresHumanReview: true;
+  evidence?: MediaEvidenceItem[];
   pageUrl?: string;
   pageId?: string;
 }
@@ -39,6 +47,10 @@ function trackLabel(track: MediaTrackItem): string {
   const language = track.srcLang ? ` · ${track.srcLang}` : '';
   const defaultMarker = track.isDefault ? ' · par défaut' : '';
   return `${label}${language}${defaultMarker}`;
+}
+
+function evidenceStateLabel(state: MediaEvidenceItem['state']): string {
+  return t(`annexes.media.evidenceStates.${state}`);
 }
 
 export default function AnnexeMedias({ media, initialPageUrl, initialPageId }: Props) {
@@ -74,7 +86,12 @@ export default function AnnexeMedias({ media, initialPageUrl, initialPageId }: P
       {visible.length === 0 ? (
         <p className="py-4 text-sm text-gray-600">{t('annexes.media.noResults')}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto"
+          role="region"
+          tabIndex={0}
+          aria-label={t('annexes.media.tableScrollLabel')}
+        >
           <table className="w-full min-w-[960px] text-left text-sm">
             <caption className="sr-only">{t('annexes.media.title')}</caption>
             <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700">
@@ -84,6 +101,7 @@ export default function AnnexeMedias({ media, initialPageUrl, initialPageId }: P
                 <th scope="col" className="px-3 py-2">{t('annexes.media.colContext')}</th>
                 <th scope="col" className="px-3 py-2">{t('annexes.media.colAlternatives')}</th>
                 <th scope="col" className="px-3 py-2">{t('annexes.media.colTracks')}</th>
+                <th scope="col" className="px-3 py-2">{t('annexes.media.colEvidence')}</th>
                 <th scope="col" className="px-3 py-2">{t('annexes.media.manualChecks')}</th>
               </tr>
             </thead>
@@ -120,6 +138,19 @@ export default function AnnexeMedias({ media, initialPageUrl, initialPageId }: P
                         {item.tracks.map((track, index) => <li key={`${track.src ?? track.kind}-${index}`}>{trackLabel(track)}</li>)}
                       </ul>
                     ) : t('annexes.media.noTracks')}
+                  </td>
+                  <td className="max-w-md px-3 py-3 text-xs text-gray-700">
+                    {item.evidence && item.evidence.length > 0 ? (
+                      <ul className="space-y-2">
+                        {item.evidence.map((evidence) => (
+                          <li key={evidence.criterionId}>
+                            <p><strong>{evidence.criterionId}</strong> — {evidenceStateLabel(evidence.state)}</p>
+                            <p className="text-gray-600">Preuves : {evidence.proof.join(' · ') || 'aucune'}</p>
+                            <p className="text-amber-900">Limites : {evidence.limits.join(' · ') || 'aucune'}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : t('annexes.media.noEvidence')}
                   </td>
                   <td className="px-3 py-3 text-xs text-amber-900">
                     <ul className="list-disc space-y-1 pl-4">

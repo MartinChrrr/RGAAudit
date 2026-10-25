@@ -42,6 +42,17 @@ export interface MediaTrackData {
   isDefault: boolean;
 }
 
+/** Candidate state for a temporal-media criterion; it is never a conformance verdict. */
+export type MediaEvidenceState = 'observed' | 'missing' | 'not_applicable' | 'to_review';
+
+/** Observable proof and explicit limits attached to one criterion for one media element. */
+export interface MediaCriterionEvidence {
+  criterionId: string;
+  state: MediaEvidenceState;
+  proof: string[];
+  limits: string[];
+}
+
 /** Inventory of a temporal media element; all conformance decisions remain human. */
 export interface MediaData {
   selector: string;
@@ -60,6 +71,8 @@ export interface MediaData {
   requiresHumanReview: true;
   /** True when collection caps were reached for this element or its evidence. */
   truncated?: boolean;
+  /** Candidate evidence only; a human must determine applicability and conformance. */
+  evidence?: MediaCriterionEvidence[];
 }
 
 export type SpecializedContentKind = 'media' | 'captcha' | 'document';
@@ -400,6 +413,54 @@ function getSpecializedMediaChecks(ids: readonly string[]): string[] {
   return ids.flatMap((id) => {
     const checks = getCriterion(id)?.heuristicPatterns.manualChecks ?? [];
     return checks.map((check) => `${id} — ${check}`);
+  });
+}
+
+const MEDIA_EVIDENCE_CRITERIA = [...TEMPORAL_MEDIA_CRITERIA];
+
+function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'fallbackText' | 'tracks' | 'truncated'>): MediaCriterionEvidence[] {
+  const isTemporal = media.kind === 'audio' || media.kind === 'video';
+  const trackSummary = media.tracks
+    .filter((track) => track.kind === 'subtitles' || track.kind === 'captions' || track.kind === 'descriptions')
+    .map((track) => `piste ${track.kind}${track.srcLang ? ` (${track.srcLang})` : ''}${track.label ? ` — ${track.label}` : ''}`);
+  const commonProof = [
+    ...(media.sources.length > 0 ? [`${media.sources.length} source(s) média observée(s)`] : []),
+    ...(media.fallbackText ? ['contenu de secours textuel observé'] : []),
+    ...trackSummary,
+    ...(media.truncated ? ['collecte tronquée'] : []),
+  ];
+  const genericLimit = 'La présence d’un signal DOM ne permet pas de conclure à la pertinence, la synchronisation ou la conformité ; une vérification humaine reste nécessaire.';
+
+  if (!isTemporal) {
+    return MEDIA_EVIDENCE_CRITERIA.map((criterionId) => ({
+      criterionId,
+      state: 'not_applicable' as const,
+      proof: [`Média de type ${media.kind}, hors média temporel audio/vidéo.`],
+      limits: [getCriterion(criterionId)?.limits, genericLimit].filter((limit): limit is string => Boolean(limit)),
+    }));
+  }
+
+  const hasAlternative = Boolean(media.fallbackText) || media.tracks.some((track) => track.kind === 'descriptions');
+  const hasCaptions = media.tracks.some((track) => track.kind === 'subtitles' || track.kind === 'captions');
+  const hasDescriptions = media.tracks.some((track) => track.kind === 'descriptions');
+  const candidateSignals: Record<string, boolean> = {
+    '4.1': hasAlternative,
+    '4.2': hasAlternative,
+    '4.3': hasCaptions,
+    '4.4': hasCaptions,
+    '4.5': hasDescriptions,
+    '4.6': hasDescriptions,
+  };
+  const presenceCriteria = new Set(['4.1', '4.3', '4.5']);
+
+  return MEDIA_EVIDENCE_CRITERIA.map((criterionId) => {
+    const signalObserved = candidateSignals[criterionId];
+    return {
+      criterionId,
+      state: signalObserved ? 'observed' : presenceCriteria.has(criterionId) ? 'missing' : 'to_review',
+      proof: signalObserved ? commonProof : ['Aucun signal candidat observé pour ce critère.'],
+      limits: [getCriterion(criterionId)?.limits, genericLimit].filter((limit): limit is string => Boolean(limit)),
+    };
   });
 }
 
@@ -753,6 +814,13 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
       manualChecks: getSpecializedMediaChecks(criterionIds),
       flags,
       requiresHumanReview: true as const,
+      evidence: buildMediaEvidence({
+        kind: media.kind,
+        sources: media.sources,
+        fallbackText: media.fallbackText,
+        tracks: media.tracks,
+        truncated: media.truncated,
+      }),
     };
   });
 }

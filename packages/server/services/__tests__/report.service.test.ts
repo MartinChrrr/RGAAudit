@@ -15,6 +15,27 @@ describe('formatContrastRatio', () => {
 });
 
 describe('buildReportFromSession', () => {
+  it('rédige les preuves et limites des médias dans la réponse publique', () => {
+    const publicData = redactCollectedData({
+      images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },
+      media: [{
+        selector: 'video#demo', kind: 'video', sources: ['https://example.com/video?token=secret'],
+        accessibleName: 'Démonstration', fallbackText: null, surroundingText: '', controls: true, autoplay: false,
+        tracks: [], alternativeSources: [], criterionIds: ['4.1'], manualChecks: [], flags: [], requiresHumanReview: true,
+        evidence: [{
+          criterionId: '4.1', state: 'observed',
+          proof: ['source https://example.com/proof?token=secret'],
+          limits: ['Limite https://example.com/limit?token=secret'],
+        }],
+      }],
+    });
+
+    expect(publicData?.media?.[0]?.sources[0]).toBe('https://example.com/video');
+    expect(publicData?.media?.[0]?.evidence?.[0]?.proof[0]).toBe('source https://example.com/proof');
+    expect(publicData?.media?.[0]?.evidence?.[0]?.limits[0]).toBe('Limite https://example.com/limit');
+    expect(JSON.stringify(publicData)).not.toContain('secret');
+  });
+
   it('rédige les relations de formulaires dans les réponses publiques', () => {
     const publicData = redactCollectedData({
       images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },

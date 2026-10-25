@@ -682,6 +682,17 @@ function buildNavigationSection(items: NavigationAnnexItem[]): string {
 function buildMediaSection(media: MediaAnnexItem[]): string {
   if (media.length === 0) return '';
 
+  const renderEvidence = (item: MediaData): string => {
+    if (!item.evidence?.length) return escapeHtml(t('annexes.media.noEvidence'));
+    const entries = item.evidence.map((evidence) => `
+      <li>
+        <strong>${escapeHtml(evidence.criterionId)}</strong> — ${escapeHtml(t(`annexes.media.evidenceStates.${evidence.state}`))}<br>
+        Preuves : ${escapeHtml(evidence.proof.join(' · ') || 'aucune')}<br>
+        <span class="text-amber-900">Limites : ${escapeHtml(evidence.limits.join(' · ') || 'aucune')}</span>
+      </li>`).join('');
+    return `<ul class="space-y-1">${entries}</ul>`;
+  };
+
   const rows = media.map(({ url, pageId, item }) => `
     <tr>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
@@ -692,6 +703,7 @@ function buildMediaSection(media: MediaAnnexItem[]): string {
         <div class="text-gray-500">Contexte : ${escapeHtml(item.surroundingText || 'aucun')}</div>
       </td>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.tracks.map((track) => `${track.kind}${track.srcLang ? ` (${track.srcLang})` : ''}`).join(', ') || 'Aucune piste déclarée')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${renderEvidence(item)}</td>
       <td class="px-3 py-2 text-xs text-amber-900">
         <div>Revue humaine requise</div>
         <div>Contrôles : ${item.controls ? 'oui' : 'non'} · Autoplay : ${item.autoplay ? 'oui' : 'non'}</div>
@@ -706,7 +718,7 @@ function buildMediaSection(media: MediaAnnexItem[]): string {
     <section class="mb-8" data-testid="media-section">
       <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeMedia'))}</h2>
       <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('annexes.media.description'))}</p>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(t('annexes.media.tableScrollLabel'))}">
         <table class="w-full text-sm text-left">
           <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeMedia'))}</caption>
           <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
@@ -715,6 +727,7 @@ function buildMediaSection(media: MediaAnnexItem[]): string {
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colSource'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colAlternatives'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colTracks'))}</th>
+              <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.colEvidence'))}</th>
               <th scope="col" class="px-3 py-2">${escapeHtml(t('annexes.media.manualChecks'))}</th>
             </tr>
           </thead>

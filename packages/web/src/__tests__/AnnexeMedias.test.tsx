@@ -17,6 +17,12 @@ const media: MediaItem[] = [{
   manualChecks: ['4.1 — Vérifier la transcription'],
   flags: ['MEDIA_REQUIRES_HUMAN_REVIEW'],
   requiresHumanReview: true,
+  evidence: [{
+    criterionId: '4.3',
+    state: 'observed',
+    proof: ['piste captions (fr)'],
+    limits: ['Vérification humaine requise'],
+  }],
   pageUrl: 'https://example.com/',
 }];
 
@@ -29,6 +35,9 @@ describe('AnnexeMedias', () => {
     expect(screen.getByText('https://example.com/demo.mp4')).toBeInTheDocument();
     expect(screen.getByText(/Français · fr · par défaut/)).toBeInTheDocument();
     expect(screen.getByText('4.1 — Vérifier la transcription')).toBeInTheDocument();
+    expect(screen.getByText(/piste captions \(fr\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Vérification humaine requise/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /Annexe Médias — faites défiler horizontalement/ })).toHaveAttribute('tabindex', '0');
   });
 
   it('permet de filtrer les médias par page', () => {

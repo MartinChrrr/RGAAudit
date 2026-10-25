@@ -26,6 +26,7 @@ site.
 | Changements de contexte et divulgations | Les parcours rejoués consignent les navigations, changements de titre, dialogues, régions live et divulgations `aria-expanded`/`details` pour les critères RGAA 7.4, 7.5 et 10.13 | Disponible avec limites documentées |
 | Consultation, délais et contenus additionnels | Les parcours consignent des candidats de contenu additionnel, minuteurs/rafraîchissements, ouvertures de fenêtre et contenus cryptiques pour les critères RGAA 12.11, 13.1, 13.2 et 13.6 | Disponible avec limites documentées |
 | Alternatives et contrôles des scripts | Les parcours partagent les alternatives `noscript` candidates et les événements clavier/pointage observés sur les contrôles scriptés pour les critères RGAA 7.2 et 7.3 | Disponible avec limites documentées |
+| Médias temporels et pistes d’accessibilité | L’annexe Médias rattache à chaque média des preuves candidates et limites pour les critères RGAA 4.1 à 4.6, notamment les sous-titres et audiodescriptions | Disponible avec limites documentées |
 | Comparaison | Compare des observations appartenant au même groupe de comparaison | Disponible |
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |

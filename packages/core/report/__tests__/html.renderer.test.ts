@@ -357,6 +357,12 @@ describe('renderReportHtml', () => {
       manualChecks: ['4.1 — Vérifier la transcription'],
       flags: ['MEDIA_REQUIRES_HUMAN_REVIEW'],
       requiresHumanReview: true,
+      evidence: [{
+        criterionId: '4.3',
+        state: 'observed',
+        proof: ['piste captions (fr)'],
+        limits: ['Vérification humaine requise'],
+      }],
     }];
 
     const html = renderReportHtml({
@@ -372,6 +378,9 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Contexte : Présentation');
     expect(html).toContain('Signaux : MEDIA_REQUIRES_HUMAN_REVIEW');
     expect(html).toContain('Critères : 4.1, 4.3');
+    expect(html).toContain('piste captions (fr)');
+    expect(html).toContain('Vérification humaine requise');
+    expect(html).toContain('role="region" tabindex="0" aria-label="Annexe Médias — faites défiler horizontalement pour consulter toutes les colonnes"');
   });
 
   it('affiche l’annexe des états de présentation', () => {
