@@ -39,6 +39,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
 const APP_VERSION: string = pkg.version;
 
+/** Redact absolute and relative URLs embedded in journey observation details. */
+function redactJourneyUrlDetails(value: string): string {
+  return redactTextUrls(value).replace(/\b(url|href)=([^;\s]+)/gi, (_match, key: string, candidate: string) => (
+    `${key}=${redactUrl(candidate)}`
+  ));
+}
+
 export interface ContrastViolationItem {
   pageUrl: string;
   pageId?: string;
@@ -236,6 +243,28 @@ export function toPublicJourneyRun(run: JourneyRunState, publicSessionId = run.s
                 ...disclosure,
                 selector: redactTextUrls(disclosure.selector),
                 detail: redactTextUrls(disclosure.detail),
+              })),
+              additionalContent: (step.context.additionalContent ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                detail: redactTextUrls(item.detail),
+              })),
+              timeLimits: (step.context.timeLimits ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                detail: redactJourneyUrlDetails(item.detail),
+              })),
+              newWindows: (step.context.newWindows ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                detail: redactJourneyUrlDetails(item.detail),
+              })),
+              crypticContent: (step.context.crypticContent ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                content: redactTextUrls(item.content),
+                alternative: item.alternative ? redactTextUrls(item.alternative) : item.alternative,
+                detail: redactTextUrls(item.detail),
               })),
               interactions: (step.context.interactions ?? []).map((interaction) => ({
                 ...interaction,

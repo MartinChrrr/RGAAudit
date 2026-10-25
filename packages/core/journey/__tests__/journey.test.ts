@@ -9,6 +9,7 @@ import { replayJourney, type JourneyDefinition } from '../journey';
 const FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey.html');
 const US31_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-31-controlled-interactions.html');
 const US46_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-46-context-disclosures.html');
+const US47_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-47-consultation-evidence.html');
 let server: http.Server;
 let baseUrl: string;
 
@@ -20,6 +21,8 @@ beforeAll(async () => {
         ? US31_FIXTURE_PATH
         : req.url === '/journey/us-46-context-disclosures.html'
           ? US46_FIXTURE_PATH
+          : req.url === '/journey/us-47-consultation-evidence.html'
+            ? US47_FIXTURE_PATH
         : null;
     if (!fixture) {
       res.writeHead(404);
@@ -201,6 +204,49 @@ describe('replayJourney', () => {
     ]));
     expect(observation?.criterionIds).toEqual(expect.arrayContaining(['13.7', '13.10', '13.11', '13.12']));
     expect(observation?.requiresHumanReview).toBe(true);
+  }, 30_000);
+
+  it('observe les contenus additionnels, délais, fenêtres et contenus cryptiques', async () => {
+    const journey: JourneyDefinition = {
+      id: 'journey-us47',
+      name: 'Consultation et délais',
+      startUrl: `${baseUrl}/journey/us-47-consultation-evidence.html`,
+      createdAt: new Date().toISOString(),
+      steps: [
+        { id: 'reveal-help', action: 'click', selector: '#reveal' },
+        { id: 'start-timer', action: 'click', selector: '#start-timer' },
+        { id: 'open-window', action: 'click', selector: '#open-window' },
+      ],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    expect(run.steps[0]?.context).toMatchObject({
+      changeTypes: expect.arrayContaining(['additional-content', 'cryptic-content']),
+      criterionIds: expect.arrayContaining(['12.11', '13.5', '13.6']),
+      additionalContent: [expect.objectContaining({ selector: '#extra' })],
+      crypticContent: [expect.objectContaining({ selector: '#cryptic', alternative: 'Icône d’information' })],
+    });
+    expect(run.steps[1]?.context).toMatchObject({
+      changeTypes: expect.arrayContaining(['time-limit']),
+      criterionIds: expect.arrayContaining(['13.1']),
+      timeLimits: expect.arrayContaining([expect.objectContaining({ kind: 'timer', detail: expect.stringContaining('1000 ms') })]),
+    });
+    expect(run.steps[2]?.context?.timeLimits).toEqual([
+      expect.objectContaining({ kind: 'countdown', detail: expect.stringContaining('Délai écoulé') }),
+    ]);
+    expect(run.steps[2]?.context?.timeLimits).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'meta-refresh' }),
+    ]));
+    expect(run.steps[2]?.context?.crypticContent).toEqual([]);
+    expect(run.steps[2]?.context).toMatchObject({
+      changeTypes: expect.arrayContaining(['new-window']),
+      criterionIds: expect.arrayContaining(['13.2']),
+      newWindows: [expect.objectContaining({ kind: 'window-open' })],
+    });
   }, 30_000);
 
   it('désactive les captures après une action sensible échouée', async () => {

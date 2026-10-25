@@ -21,6 +21,10 @@ interface JourneyContext {
   changeTypes: string[];
   disruptions: Array<{ kind: 'motion' | 'sound' | 'flash'; selector: string; detail: string }>;
   disclosures?: Array<{ kind: 'aria-expanded' | 'details'; selector: string; detail: string }>;
+  additionalContent?: Array<{ selector: string; trigger: 'hover' | 'focus' | 'activation' | 'unknown'; detail: string }>;
+  timeLimits?: Array<{ kind: 'timer' | 'meta-refresh' | 'countdown'; selector: string; detail: string }>;
+  newWindows?: Array<{ kind: 'window-open' | 'target-blank'; selector: string; detail: string }>;
+  crypticContent?: Array<{ selector: string; content: string; alternative: string | null; detail: string }>;
   interactions?: Array<{
     kind: 'complex-gesture' | 'single-pointer' | 'device-motion';
     selector: string;
@@ -96,6 +100,10 @@ const changeTypeKeys: Record<string, string> = {
   'live-region': 'journey.changeTypes.liveRegion',
   disclosure: 'journey.changeTypes.disclosure',
   disruption: 'journey.changeTypes.disruption',
+  'additional-content': 'journey.changeTypes.additionalContent',
+  'time-limit': 'journey.changeTypes.timeLimit',
+  'new-window': 'journey.changeTypes.newWindow',
+  'cryptic-content': 'journey.changeTypes.crypticContent',
 };
 
 function formatDate(value?: string): string {
@@ -318,6 +326,54 @@ function JourneyStepCard({
                       <span className="font-medium">{t(`journey.disclosureKind.${disclosure.kind}`)}</span>
                       {' — '}{disclosure.selector}: {disclosure.detail}
                     </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.additionalContentTitle')}</h4>
+              {!step.context.additionalContent?.length ? (
+                <p>{t('journey.noAdditionalContent')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.additionalContent.map((item, itemIndex) => (
+                    <li key={`${item.selector}-${itemIndex}`}><span className="font-medium">{t(`journey.additionalContentTrigger.${item.trigger}`)}</span>{' — '}{item.selector}: {item.detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.timeLimitsTitle')}</h4>
+              {!step.context.timeLimits?.length ? (
+                <p>{t('journey.noTimeLimits')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.timeLimits.map((item, itemIndex) => (
+                    <li key={`${item.kind}-${item.selector}-${itemIndex}`}><span className="font-medium">{t(`journey.timeLimitKind.${item.kind}`)}</span>{' — '}{item.selector}: {item.detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.newWindowsTitle')}</h4>
+              {!step.context.newWindows?.length ? (
+                <p>{t('journey.noNewWindows')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.newWindows.map((item, itemIndex) => (
+                    <li key={`${item.kind}-${item.selector}-${itemIndex}`}><span className="font-medium">{t(`journey.newWindowKind.${item.kind}`)}</span>{' — '}{item.selector}: {item.detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.crypticContentTitle')}</h4>
+              {!step.context.crypticContent?.length ? (
+                <p>{t('journey.noCrypticContent')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.crypticContent.map((item, itemIndex) => (
+                    <li key={`${item.selector}-${itemIndex}`}>{item.selector}: <code>{item.content}</code> — {item.detail}</li>
                   ))}
                 </ul>
               )}

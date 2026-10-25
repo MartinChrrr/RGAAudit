@@ -272,6 +272,10 @@ describe('renderReportHtml', () => {
                 changeTypes: ['disruption'],
                 disruptions: [{ kind: 'flash', selector: '#flash', detail: 'animation=flash' }],
                 disclosures: [{ kind: 'details', selector: '#details', detail: 'open=true' }],
+                additionalContent: [{ selector: '#tooltip', trigger: 'focus', detail: 'clavier=atteignable' }],
+                timeLimits: [{ kind: 'timer', selector: 'window', detail: 'setTimeout enregistré avec un délai de 1000 ms' }],
+                newWindows: [{ kind: 'window-open', selector: 'window.open', detail: 'target=_blank' }],
+                crypticContent: [{ selector: '#emoji', content: '🙂', alternative: 'Information', detail: 'alternative observée=Information' }],
                 interactions: [{
                   kind: 'complex-gesture',
                   selector: '#slider',
@@ -294,6 +298,10 @@ describe('renderReportHtml', () => {
     expect(html).toContain('photographie versionnée');
     expect(html).toContain('Flash ou variation lumineuse candidate');
     expect(html).toContain('Élément details');
+    expect(html).toContain('Contenus additionnels');
+    expect(html).toContain('Limites de temps et rafraîchissements');
+    expect(html).toContain('Ouvertures de fenêtres');
+    expect(html).toContain('Contenus cryptiques');
     expect(html).toContain('Geste complexe candidat');
     expect(html).toContain('320 × 256');
     expect(html).toContain('indicateur non observé');

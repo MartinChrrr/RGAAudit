@@ -92,6 +92,35 @@ export interface JourneyDisclosureObservation {
   detail: string;
 }
 
+/** Candidate content that appears around a hover, focus or activation target. */
+export interface JourneyAdditionalContentObservation {
+  selector: string;
+  trigger: 'hover' | 'focus' | 'activation' | 'unknown';
+  detail: string;
+}
+
+/** Candidate time limit or refresh observed during a replay. */
+export interface JourneyTimeLimitObservation {
+  kind: 'timer' | 'meta-refresh' | 'countdown';
+  selector: string;
+  detail: string;
+}
+
+/** Candidate new-window opening observed during a replay. */
+export interface JourneyNewWindowObservation {
+  kind: 'window-open' | 'target-blank';
+  selector: string;
+  detail: string;
+}
+
+/** Candidate cryptic content and its observable alternative. */
+export interface JourneyCrypticContentObservation {
+  selector: string;
+  content: string;
+  alternative: string | null;
+  detail: string;
+}
+
 export interface JourneyContextObservation {
   trigger: {
     stepId: string;
@@ -104,10 +133,18 @@ export interface JourneyContextObservation {
   titleBefore: string;
   titleAfter: string;
   changed: boolean;
-  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption'>;
+  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption' | 'additional-content' | 'time-limit' | 'new-window' | 'cryptic-content'>;
   disruptions: JourneyDisruptionObservation[];
   /** Optional for runs persisted before disclosure observations were added. */
   disclosures?: JourneyDisclosureObservation[];
+  /** Optional evidence for RGAA 12.11. */
+  additionalContent?: JourneyAdditionalContentObservation[];
+  /** Optional evidence for RGAA 13.1. */
+  timeLimits?: JourneyTimeLimitObservation[];
+  /** Optional evidence for RGAA 13.2. */
+  newWindows?: JourneyNewWindowObservation[];
+  /** Optional evidence for RGAA 13.6 (and 13.5 when no alternative is exposed). */
+  crypticContent?: JourneyCrypticContentObservation[];
   /** Optional for runs persisted before controlled-interaction observations. */
   interactions?: JourneyInteractionObservation[];
   criterionIds: string[];
@@ -326,6 +363,10 @@ interface JourneyContextSignals {
   }>;
   disruptions: JourneyDisruptionObservation[];
   interactions: JourneyInteractionObservation[];
+  additionalContent: Array<{ selector: string; trigger: JourneyAdditionalContentObservation['trigger']; state: string; detail: string }>;
+  timeLimits: JourneyTimeLimitObservation[];
+  newWindows: JourneyNewWindowObservation[];
+  crypticContent: JourneyCrypticContentObservation[];
 }
 
 async function installInteractionProbe(page: Page): Promise<void> {
@@ -339,6 +380,8 @@ async function installInteractionProbe(page: Page): Promise<void> {
     const state = {
       events: [] as Array<{ type: string; selector: string; x: number | null; y: number | null; pointerId: number | null }>,
       registrations: [] as string[],
+      timers: [] as Array<{ kind: 'setTimeout' | 'setInterval'; delay: number }>,
+      windowOpens: [] as Array<{ url: string; target: string }>,
     };
     const selectorOf = (target: EventTarget | null): string => {
       if (!(target instanceof Element)) return target === window ? 'window' : 'document';
@@ -366,6 +409,21 @@ async function installInteractionProbe(page: Page): Promise<void> {
       return originalAddEventListener.call(this, type, listener, options);
     };
     Object.defineProperty(window, '__rgauditInteractionProbe', { value: state, configurable: true });
+    const originalSetTimeout = window.setTimeout.bind(window);
+    const originalSetInterval = window.setInterval.bind(window);
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (state.timers.length < 100) state.timers.push({ kind: 'setTimeout', delay: Number(timeout) || 0 });
+      return originalSetTimeout(handler, timeout, ...args);
+    }) as typeof window.setTimeout;
+    window.setInterval = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (state.timers.length < 100) state.timers.push({ kind: 'setInterval', delay: Number(timeout) || 0 });
+      return originalSetInterval(handler, timeout, ...args);
+    }) as typeof window.setInterval;
+    const originalOpen = window.open.bind(window);
+    window.open = ((url?: string | URL, target?: string, features?: string) => {
+      if (state.windowOpens.length < 50) state.windowOpens.push({ url: String(url ?? ''), target: target ?? '' });
+      return originalOpen(url, target, features);
+    }) as typeof window.open;
     for (const type of eventTypes) originalAddEventListener.call(window, type, record, true);
   });
 }
@@ -397,10 +455,14 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
       __rgauditInteractionProbe?: {
         events: Array<{ type: string; selector: string; x: number | null; y: number | null; pointerId: number | null }>;
         registrations: string[];
+        timers: Array<{ kind: 'setTimeout' | 'setInterval'; delay: number }>;
+        windowOpens: Array<{ url: string; target: string }>;
       };
     }).__rgauditInteractionProbe;
     const probeEvents = interactionEvents?.events.splice(0) ?? [];
     const registeredSensors = interactionEvents?.registrations ?? [];
+    const timers = interactionEvents?.timers.splice(0) ?? [];
+    const windowOpens = interactionEvents?.windowOpens.splice(0) ?? [];
     for (const element of Array.from(document.querySelectorAll('*'))) {
       if (!visible(element)) continue;
       const style = window.getComputedStyle(element);
@@ -489,6 +551,77 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         detail: `${kind === 'details' ? `open=${open}` : `aria-expanded=${expanded ?? 'absent'}`}${controlledState ? `; contrôles : ${controlledState}` : ''}`,
       };
     });
+    const selectorForReference = (element: Element): string => getUniqueSelector(element);
+    const isFocusable = (element: Element): boolean => {
+      if (element.matches('a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"])')) return true;
+      return element.getAttribute('tabindex') !== null;
+    };
+    const additionalContentSignals = Array.from(document.querySelectorAll('[aria-describedby], [aria-details], [popover], [role="tooltip"], [data-tooltip]')).flatMap((element) => {
+      const refs = [
+        ...(element.getAttribute('aria-describedby') ?? '').split(/\s+/),
+        ...(element.getAttribute('aria-details') ?? '').split(/\s+/),
+      ].filter(Boolean).map((id) => document.getElementById(id)).filter((target): target is HTMLElement => Boolean(target));
+      const popover = element.matches('[popover]') ? element : null;
+      const targets: Element[] = [...refs, ...(popover ? [popover] : [])];
+      return targets.map((target) => {
+        const trigger = element.matches(':focus, :focus-within') ? 'focus' as const
+          : element.matches('[aria-expanded="true"], [aria-pressed="true"]') ? 'activation' as const
+            : element.hasAttribute('title') || element.hasAttribute('data-tooltip') ? 'hover' as const : 'unknown' as const;
+        const targetVisible = visible(target);
+        return {
+          selector: selectorForReference(target),
+          trigger,
+          state: `visible=${targetVisible};focusable=${isFocusable(target)}`,
+          detail: `déclencheur=${selectorForReference(element)}; contenu=${targetVisible ? 'visible' : 'masqué'}; clavier=${isFocusable(target) ? 'atteignable' : 'à vérifier'}`,
+        };
+      });
+    });
+    const timeLimits: JourneyTimeLimitObservation[] = [
+      ...timers.map((timer) => ({
+        kind: 'timer' as const,
+        selector: 'window',
+        detail: `${timer.kind} enregistré avec un délai de ${timer.delay} ms`,
+      })),
+      ...Array.from(document.querySelectorAll('meta[http-equiv]')).filter((element) => (
+        (element.getAttribute('http-equiv') ?? '').toLowerCase() === 'refresh'
+      )).map((element) => ({
+        kind: 'meta-refresh' as const,
+        selector: selectorForReference(element),
+        detail: `http-equiv=refresh; content=${element.getAttribute('content') ?? ''}`,
+      })),
+      ...Array.from(document.querySelectorAll('[role="timer"], [data-time-limit], [data-countdown]')).map((element) => ({
+        kind: 'countdown' as const,
+        selector: selectorForReference(element),
+        detail: `contenu=${(element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)}`,
+      })),
+    ];
+    const newWindows: JourneyNewWindowObservation[] = [
+      ...windowOpens.map((opening) => ({
+        kind: 'window-open' as const,
+        selector: 'window.open',
+        detail: `url=${opening.url.slice(0, 240)}; target=${opening.target || 'absent'}`,
+      })),
+      ...Array.from(document.querySelectorAll('a[target="_blank"], area[target="_blank"]')).map((element) => ({
+        kind: 'target-blank' as const,
+        selector: selectorForReference(element),
+        detail: `href=${(element.getAttribute('href') ?? '').slice(0, 240)}; avertissement=${Boolean((element.textContent ?? '').match(/nouvelle fenêtre|nouvel onglet|new window|new tab/i) || element.getAttribute('aria-label')?.match(/nouvelle fenêtre|nouvel onglet|new window|new tab/i) || element.getAttribute('title')?.match(/nouvelle fenêtre|nouvel onglet|new window|new tab/i)) ? 'observé' : 'non observé'}`,
+      })),
+    ];
+    const crypticPattern = /(?:[\u{1F300}-\u{1FAFF}]|(?:^|\s)[!?;:()<>/\\|*_+=~#@$%^&-]{2,}(?:\s|$))/u;
+    const crypticContent = Array.from(document.querySelectorAll('pre, code, [role="img"], [aria-label], [title]')).flatMap((element) => {
+      const content = (element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 240);
+      if (!content || !crypticPattern.test(content)) return [];
+      const alternative = element.getAttribute('aria-label')?.trim()
+        || element.getAttribute('title')?.trim()
+        || (element.getAttribute('aria-labelledby') ?? '').split(/\s+/).map((id) => document.getElementById(id)?.textContent?.trim() ?? '').filter(Boolean).join(' ')
+        || null;
+      return [{
+        selector: selectorForReference(element),
+        content,
+        alternative,
+        detail: alternative ? `alternative observée=${alternative.slice(0, 160)}` : 'aucune alternative textuelle observée',
+      }];
+    }).slice(0, 50);
     return {
       dialogs: Array.from(document.querySelectorAll('[role="dialog"], dialog'))
         .filter(visible)
@@ -499,6 +632,10 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         .map((element) => `${getUniqueSelector(element)}:${(element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)}`)
         .slice(0, 20),
       disclosures: disclosureSignals.slice(0, 50),
+      additionalContent: additionalContentSignals.slice(0, 50),
+      timeLimits: timeLimits.slice(0, 50),
+      newWindows: newWindows.slice(0, 50),
+      crypticContent,
       disruptions,
       interactions,
     };
@@ -520,6 +657,27 @@ function buildContextObservation(
     .filter((item) => beforeDisclosures.get(item.selector) !== item.state)
     .map((item) => ({ kind: item.kind, selector: item.selector, detail: item.detail }));
   if (disclosures.length > 0) changeTypes.push('disclosure');
+  const beforeAdditionalContent = new Map(before.additionalContent.map((item) => [item.selector, item.state]));
+  const additionalContent = after.additionalContent
+    .filter((item) => beforeAdditionalContent.get(item.selector) !== item.state)
+    .map((item) => ({ selector: item.selector, trigger: item.trigger, detail: item.detail }));
+  if (additionalContent.length > 0) changeTypes.push('additional-content');
+  const beforeTimeLimits = new Map(before.timeLimits.map((item) => [`${item.kind}|${item.selector}`, item.detail]));
+  const timeLimits = after.timeLimits.filter((item) => (
+    beforeTimeLimits.get(`${item.kind}|${item.selector}`) !== item.detail
+  ));
+  if (timeLimits.length > 0) changeTypes.push('time-limit');
+  const beforeWindows = new Set(before.newWindows.map((item) => `${item.kind}|${item.selector}|${item.detail}`));
+  const newWindows = after.newWindows.filter((item) => (
+    !beforeWindows.has(`${item.kind}|${item.selector}|${item.detail}`)
+      || (item.kind === 'target-blank' && item.selector === step.selector)
+  ));
+  if (newWindows.length > 0) changeTypes.push('new-window');
+  const beforeCrypticContent = new Map(before.crypticContent.map((item) => [item.selector, `${item.content}|${item.alternative ?? ''}`]));
+  const crypticContent = after.crypticContent.filter((item) => (
+    beforeCrypticContent.get(item.selector) !== `${item.content}|${item.alternative ?? ''}`
+  ));
+  if (crypticContent.length > 0) changeTypes.push('cryptic-content');
   const beforeDisruptions = new Map(before.disruptions.map((item) => [`${item.kind}|${item.selector}`, item.detail]));
   const disruptions = after.disruptions.filter((item) => (
     beforeDisruptions.get(`${item.kind}|${item.selector}`) !== item.detail
@@ -529,6 +687,13 @@ function buildContextObservation(
   if (changeTypes.some((type) => ['navigation', 'title', 'dialog'].includes(type))) criterionIds.add('7.4');
   if (changeTypes.includes('live-region')) criterionIds.add('7.5');
   if (changeTypes.includes('disclosure')) criterionIds.add('10.13');
+  if (changeTypes.includes('additional-content')) criterionIds.add('12.11');
+  if (changeTypes.includes('time-limit')) criterionIds.add('13.1');
+  if (changeTypes.includes('new-window')) criterionIds.add('13.2');
+  if (changeTypes.includes('cryptic-content')) {
+    criterionIds.add('13.5');
+    if (crypticContent.some((item) => item.alternative)) criterionIds.add('13.6');
+  }
   for (const disruption of disruptions) {
     if (disruption.kind === 'sound') criterionIds.add('4.10');
     if (disruption.kind === 'motion') criterionIds.add('13.8');
@@ -553,6 +718,10 @@ function buildContextObservation(
     changeTypes,
     disruptions,
     disclosures,
+    additionalContent,
+    timeLimits,
+    newWindows,
+    crypticContent,
     interactions,
     criterionIds: [...criterionIds],
     requiresHumanReview: true,

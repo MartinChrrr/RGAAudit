@@ -108,6 +108,27 @@ restitué ou que la divulgation est contrôlable. L’auditeur doit rejouer le c
 vérifier le clavier et les technologies d’assistance, puis enregistrer une
 décision humaine depuis la revue du parcours.
 
+### 5.4. Vérifier la consultation, les délais et les contenus additionnels (US-47)
+
+Dans une exécution de parcours, l’annexe de chaque étape peut afficher :
+
+- les contenus référencés par un composant et observés autour du focus ou de
+  l’activation, avec leur sélecteur et leur atteignabilité clavier candidate
+  (RGAA 12.11) ;
+- les minuteurs JavaScript, rafraîchissements `meta` et comptes à rebours
+  observés (RGAA 13.1) ;
+- les appels `window.open` et les liens `target="_blank"` observés (RGAA 13.2) ;
+- les contenus cryptiques candidats et les alternatives textuelles observées
+  (RGAA 13.5 et 13.6).
+
+Chaque signal conserve l’étape qui l’a déclenché et l’horodatage de cette
+observation. Ces données ne constituent jamais un verdict : vérifier au clavier
+les contenus additionnels, le contrôle laissé à l’utilisateur sur le délai,
+l’absence d’ouverture automatique et la pertinence de l’alternative avant de
+prendre une décision humaine. Les minuteurs détectés correspondent aux
+enregistrements observables du navigateur et ne prouvent ni la durée réelle ni
+la possibilité de prolonger ou d’arrêter le délai.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

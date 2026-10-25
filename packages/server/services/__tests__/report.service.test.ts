@@ -95,6 +95,9 @@ describe('buildReportFromSession', () => {
             changeTypes: ['navigation'],
             disruptions: [{ kind: 'motion', selector: 'https://example.com/disruption?token=secret', detail: 'https://example.com/detail?token=secret' }],
             disclosures: [{ kind: 'aria-expanded', selector: 'https://example.com/disclosure?token=secret', detail: 'https://example.com/disclosure-detail?token=secret' }],
+            timeLimits: [{ kind: 'meta-refresh', selector: 'meta', detail: 'content=120;url=/renewed?token=secret' }],
+            newWindows: [{ kind: 'target-blank', selector: 'a#external', detail: 'href=/resource?token=secret; avertissement=non observé' }],
+            crypticContent: [{ selector: '#emoji', content: '🙂', alternative: 'Information', detail: 'alternative observée=Information' }],
             interactions: [{
               kind: 'complex-gesture',
               selector: 'https://example.com/interaction?token=secret',
@@ -144,6 +147,8 @@ describe('buildReportFromSession', () => {
       selector: 'https://example.com/disclosure',
       detail: 'https://example.com/disclosure-detail',
     });
+    expect(publicStep?.context?.timeLimits?.[0]?.detail).toBe('content=120;url=/renewed');
+    expect(publicStep?.context?.newWindows?.[0]?.detail).toBe('href=/resource; avertissement=non observé');
     expect(publicStep?.context?.interactions?.[0]).toMatchObject({
       selector: 'https://example.com/interaction',
       detail: 'https://example.com/interaction-detail',

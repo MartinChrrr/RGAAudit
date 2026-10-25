@@ -117,7 +117,11 @@
       "dialog": "Boîte de dialogue",
       "liveRegion": "Région live",
       "disclosure": "Divulgation ou changement d’état",
-      "disruption": "Mouvement ou son"
+      "disruption": "Mouvement ou son",
+      "additionalContent": "Contenu additionnel",
+      "timeLimit": "Limite de temps",
+      "newWindow": "Ouverture de fenêtre",
+      "crypticContent": "Contenu cryptique"
     },
     "disruptionsTitle": "Mouvements ou sons perturbateurs",
     "noDisruptions": "Aucun signal détecté — revue humaine requise.",
@@ -127,6 +131,29 @@
       "aria-expanded": "État aria-expanded",
       "details": "Élément details"
     },
+    "additionalContentTitle": "Contenus additionnels",
+    "noAdditionalContent": "Aucun contenu additionnel observable — revue humaine requise.",
+    "additionalContentTrigger": {
+      "hover": "Survol candidat",
+      "focus": "Focus candidat",
+      "activation": "Activation candidate",
+      "unknown": "Déclencheur à déterminer"
+    },
+    "timeLimitsTitle": "Limites de temps et rafraîchissements",
+    "noTimeLimits": "Aucune limite de temps observable — revue humaine requise.",
+    "timeLimitKind": {
+      "timer": "Minuteur JavaScript",
+      "meta-refresh": "Rafraîchissement meta",
+      "countdown": "Compte à rebours candidat"
+    },
+    "newWindowsTitle": "Ouvertures de fenêtres",
+    "noNewWindows": "Aucune ouverture de fenêtre observable — revue humaine requise.",
+    "newWindowKind": {
+      "window-open": "window.open",
+      "target-blank": "Lien target=_blank"
+    },
+    "crypticContentTitle": "Contenus cryptiques",
+    "noCrypticContent": "Aucun contenu cryptique candidat observé — revue humaine requise.",
     "motion": "Mouvement",
     "sound": "Son",
     "flash": "Flash ou variation lumineuse candidate",

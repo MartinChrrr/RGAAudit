@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <title>Fixture US-47 — consultation</title>
+    <style>
+      [hidden] { display: none; }
+      #extra { padding: 0.5rem; border: 1px solid #666; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Preuves de consultation</h1>
+      <button id="reveal" aria-describedby="extra" aria-expanded="false">Afficher l’aide</button>
+      <p id="extra" role="tooltip" hidden>Une aide complémentaire atteignable au clavier.</p>
+      <button id="start-timer">Démarrer le délai</button>
+      <p id="countdown" role="timer" aria-live="polite">Délai non démarré</p>
+      <button id="open-window">Ouvrir la ressource</button>
+      <a id="external" href="/resource" target="_blank">Ressource externe</a>
+      <p id="cryptic" role="img">🙂 !?</p>
+    </main>
+    <script>
+      document.querySelector('#reveal').addEventListener('click', (event) => {
+        const button = event.currentTarget;
+        const content = document.querySelector('#extra');
+        const open = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!open));
+        content.hidden = open;
+        document.querySelector('#cryptic').setAttribute('aria-label', 'Icône d’information');
+      });
+      document.querySelector('#start-timer').addEventListener('click', () => {
+        setTimeout(() => {
+          document.querySelector('#countdown').textContent = 'Délai écoulé';
+        }, 1000);
+      });
+      document.querySelector('#open-window').addEventListener('click', () => {
+        window.open('/resource', '_blank', 'noopener');
+      });
+    </script>
+  </body>
+</html>
