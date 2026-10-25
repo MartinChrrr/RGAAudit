@@ -158,6 +158,21 @@ un verdict de non-conformité. Vérifier le média réellement joué, les besoin
 contenu, la synchronisation et la pertinence des sous-titres ou de
 l’audiodescription avant d’enregistrer une décision humaine.
 
+### 5.7. Vérifier l’identification et l’utilisation des médias (US-50)
+
+L’annexe **Médias** affiche aussi les critères RGAA 4.7, 4.11, 4.12 et 4.13.
+Pour chaque média, la colonne **Preuves techniques** reprend les signaux DOM
+observés (nom accessible, alternatives déclarées, contrôles natifs et type de
+média). La colonne **Validation humaine** rappelle la question du mapping à
+vérifier.
+
+La présence d’un nom ou de l’attribut `controls` ne prouve pas que le média est
+clairement identifiable, utilisable au clavier ou au pointage, ni compatible
+avec les technologies d’assistance. Les critères 4.11 et 4.12 nécessitent un
+essai réel au clavier et avec un dispositif de pointage ; le critère 4.13
+nécessite une vérification avec les technologies d’assistance. Aucun de ces
+signaux ne produit un verdict automatique.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

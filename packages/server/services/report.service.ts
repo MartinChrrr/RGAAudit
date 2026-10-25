@@ -409,6 +409,7 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
         ...evidence,
         proof: evidence.proof.map(redactTextUrls),
         limits: evidence.limits.map(redactTextUrls),
+        humanChecks: evidence.humanChecks?.map(redactTextUrls),
       })),
     })),
     specializedContent: collectedData.specializedContent?.map((item) => ({

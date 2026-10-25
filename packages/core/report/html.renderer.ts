@@ -689,6 +689,7 @@ function buildMediaSection(media: MediaAnnexItem[]): string {
         <strong>${escapeHtml(evidence.criterionId)}</strong> — ${escapeHtml(t(`annexes.media.evidenceStates.${evidence.state}`))}<br>
         Preuves : ${escapeHtml(evidence.proof.join(' · ') || 'aucune')}<br>
         <span class="text-amber-900">Limites : ${escapeHtml(evidence.limits.join(' · ') || 'aucune')}</span>
+        ${evidence.humanChecks?.length ? `<br><span class="text-amber-900">Validation humaine : ${escapeHtml(evidence.humanChecks.join(' · '))}</span>` : ''}
       </li>`).join('');
     return `<ul class="space-y-1">${entries}</ul>`;
   };

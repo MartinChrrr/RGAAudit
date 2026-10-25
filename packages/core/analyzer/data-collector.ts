@@ -51,6 +51,8 @@ export interface MediaCriterionEvidence {
   state: MediaEvidenceState;
   proof: string[];
   limits: string[];
+  /** Mapping question to validate manually; never an automated decision. */
+  humanChecks?: string[];
 }
 
 /** Inventory of a temporal media element; all conformance decisions remain human. */
@@ -389,11 +391,12 @@ export interface CollectedData {
 }
 
 const IMAGE_MANUAL_CRITERIA = ['1.3', '1.4', '1.5', '1.6', '1.7', '1.8'] as const;
-// US-16 scope: temporal media (4.1–4.6) and non-temporal media (4.8–4.9).
-// Criteria 4.7, 4.10–4.13 remain separate manual/backlog work and are not
-// silently presented as covered by this inventory.
+// Media inventory scope: temporal media (4.1–4.7, 4.11, 4.13) and
+// non-temporal media (4.8, 4.9, 4.12, 4.13). Criteria 4.10 remains separate
+// manual/backlog work and is not silently presented as covered by this inventory.
 const TEMPORAL_MEDIA_CRITERIA = ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6'] as const;
 const NON_TEMPORAL_MEDIA_CRITERIA = ['4.8', '4.9'] as const;
+const MEDIA_ACCESSIBILITY_CRITERIA = ['4.7', '4.11', '4.12', '4.13'] as const;
 const MEDIA_LIMITS = {
   items: 100,
   sources: 20,
@@ -416,9 +419,25 @@ function getSpecializedMediaChecks(ids: readonly string[]): string[] {
   });
 }
 
-const MEDIA_EVIDENCE_CRITERIA = [...TEMPORAL_MEDIA_CRITERIA];
+const MEDIA_EVIDENCE_CRITERIA = [...TEMPORAL_MEDIA_CRITERIA, ...MEDIA_ACCESSIBILITY_CRITERIA];
 
-function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'fallbackText' | 'tracks' | 'truncated'>): MediaCriterionEvidence[] {
+function mediaCriterionIds(kind: MediaKind): string[] {
+  const temporal = kind === 'audio' || kind === 'video';
+  return [
+    ...(temporal ? TEMPORAL_MEDIA_CRITERIA : NON_TEMPORAL_MEDIA_CRITERIA),
+    ...(temporal ? ['4.7', '4.11'] : ['4.12']),
+    '4.13',
+  ];
+}
+
+function mediaHumanChecks(criterionId: string): string[] {
+  const criterion = getCriterion(criterionId);
+  if (!criterion) return [];
+  const checks = criterion.heuristicPatterns.manualChecks ?? [];
+  return (checks.length > 0 ? checks : [criterion.rgaa.title]).map((check) => `${criterionId} — ${check}`);
+}
+
+function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'accessibleName' | 'alternativeSources' | 'fallbackText' | 'controls' | 'tracks' | 'truncated'>): MediaCriterionEvidence[] {
   const isTemporal = media.kind === 'audio' || media.kind === 'video';
   const trackSummary = media.tracks
     .filter((track) => track.kind === 'subtitles' || track.kind === 'captions' || track.kind === 'descriptions')
@@ -431,18 +450,17 @@ function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'fallbac
   ];
   const genericLimit = 'La présence d’un signal DOM ne permet pas de conclure à la pertinence, la synchronisation ou la conformité ; une vérification humaine reste nécessaire.';
 
-  if (!isTemporal) {
-    return MEDIA_EVIDENCE_CRITERIA.map((criterionId) => ({
-      criterionId,
-      state: 'not_applicable' as const,
-      proof: [`Média de type ${media.kind}, hors média temporel audio/vidéo.`],
-      limits: [getCriterion(criterionId)?.limits, genericLimit].filter((limit): limit is string => Boolean(limit)),
-    }));
-  }
-
   const hasAlternative = Boolean(media.fallbackText) || media.tracks.some((track) => track.kind === 'descriptions');
   const hasCaptions = media.tracks.some((track) => track.kind === 'subtitles' || track.kind === 'captions');
   const hasDescriptions = media.tracks.some((track) => track.kind === 'descriptions');
+  const hasIdentification = Boolean(media.accessibleName) || media.alternativeSources.length > 0;
+  const hasNativeControls = isTemporal && media.controls;
+  const hasAccessibleName = Boolean(media.accessibleName) || media.alternativeSources.length > 0;
+  const identificationProof = [
+    ...(media.accessibleName ? ['nom accessible observé'] : []),
+    ...(media.alternativeSources.length > 0 ? [`alternative déclarée observée (${media.alternativeSources.join(', ')})`] : []),
+  ];
+  const controlsProof = hasNativeControls ? ['contrôles natifs observés'] : [];
   const candidateSignals: Record<string, boolean> = {
     '4.1': hasAlternative,
     '4.2': hasAlternative,
@@ -450,16 +468,30 @@ function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'fallbac
     '4.4': hasCaptions,
     '4.5': hasDescriptions,
     '4.6': hasDescriptions,
+    '4.7': hasIdentification,
+    '4.11': hasNativeControls,
+    '4.12': false,
+    '4.13': hasAccessibleName,
   };
   const presenceCriteria = new Set(['4.1', '4.3', '4.5']);
 
   return MEDIA_EVIDENCE_CRITERIA.map((criterionId) => {
+    const applicable = mediaCriterionIds(media.kind).includes(criterionId);
+    const humanChecks = mediaHumanChecks(criterionId);
     const signalObserved = candidateSignals[criterionId];
+    const criterionProof = criterionId === '4.7' || criterionId === '4.13'
+      ? identificationProof
+      : criterionId === '4.11'
+        ? controlsProof
+        : commonProof;
     return {
       criterionId,
-      state: signalObserved ? 'observed' : presenceCriteria.has(criterionId) ? 'missing' : 'to_review',
-      proof: signalObserved ? commonProof : ['Aucun signal candidat observé pour ce critère.'],
+      state: !applicable ? 'not_applicable' : signalObserved ? 'observed' : presenceCriteria.has(criterionId) ? 'missing' : 'to_review',
+      proof: !applicable
+        ? [`Média de type ${media.kind}, hors périmètre de ce critère.`]
+        : signalObserved ? criterionProof : ['Aucun signal candidat observé pour ce critère.'],
       limits: [getCriterion(criterionId)?.limits, genericLimit].filter((limit): limit is string => Boolean(limit)),
+      humanChecks,
     };
   });
 }
@@ -794,9 +826,7 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
   }, MEDIA_LIMITS);
 
   return rawMedia.map((media) => {
-    const criterionIds = media.kind === 'audio' || media.kind === 'video'
-      ? [...TEMPORAL_MEDIA_CRITERIA]
-      : [...NON_TEMPORAL_MEDIA_CRITERIA];
+    const criterionIds = mediaCriterionIds(media.kind);
     const flags: string[] = ['MEDIA_REQUIRES_HUMAN_REVIEW'];
     if (media.sources.length === 0) flags.push('MEDIA_SOURCE_ABSENT');
     if (media.truncated) flags.push('MEDIA_EVIDENCE_TRUNCATED');
@@ -817,7 +847,10 @@ export async function collectMedia(page: Page): Promise<MediaData[]> {
       evidence: buildMediaEvidence({
         kind: media.kind,
         sources: media.sources,
+        accessibleName: media.accessibleName,
+        alternativeSources: media.alternativeSources,
         fallbackText: media.fallbackText,
+        controls: media.controls,
         tracks: media.tracks,
         truncated: media.truncated,
       }),

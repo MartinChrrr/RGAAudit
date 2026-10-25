@@ -14,6 +14,7 @@ export interface MediaEvidenceItem {
   state: 'observed' | 'missing' | 'not_applicable' | 'to_review';
   proof: string[];
   limits: string[];
+  humanChecks?: string[];
 }
 
 export interface MediaItem {
@@ -147,6 +148,9 @@ export default function AnnexeMedias({ media, initialPageUrl, initialPageId }: P
                             <p><strong>{evidence.criterionId}</strong> — {evidenceStateLabel(evidence.state)}</p>
                             <p className="text-gray-600">Preuves : {evidence.proof.join(' · ') || 'aucune'}</p>
                             <p className="text-amber-900">Limites : {evidence.limits.join(' · ') || 'aucune'}</p>
+                            {evidence.humanChecks && evidence.humanChecks.length > 0 && (
+                              <p className="text-amber-900">Validation humaine : {evidence.humanChecks.join(' · ')}</p>
+                            )}
                           </li>
                         ))}
                       </ul>

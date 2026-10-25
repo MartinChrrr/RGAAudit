@@ -26,6 +26,7 @@ describe('buildReportFromSession', () => {
           criterionId: '4.1', state: 'observed',
           proof: ['source https://example.com/proof?token=secret'],
           limits: ['Limite https://example.com/limit?token=secret'],
+          humanChecks: ['Vérifier https://example.com/check?token=secret'],
         }],
       }],
     });
@@ -33,6 +34,7 @@ describe('buildReportFromSession', () => {
     expect(publicData?.media?.[0]?.sources[0]).toBe('https://example.com/video');
     expect(publicData?.media?.[0]?.evidence?.[0]?.proof[0]).toBe('source https://example.com/proof');
     expect(publicData?.media?.[0]?.evidence?.[0]?.limits[0]).toBe('Limite https://example.com/limit');
+    expect(publicData?.media?.[0]?.evidence?.[0]?.humanChecks?.[0]).toBe('Vérifier https://example.com/check');
     expect(JSON.stringify(publicData)).not.toContain('secret');
   });
 

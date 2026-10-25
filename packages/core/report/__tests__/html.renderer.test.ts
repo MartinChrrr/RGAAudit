@@ -362,6 +362,7 @@ describe('renderReportHtml', () => {
         state: 'observed',
         proof: ['piste captions (fr)'],
         limits: ['Vérification humaine requise'],
+        humanChecks: ['4.3 — Vérifier la synchronisation'],
       }],
     }];
 
@@ -380,6 +381,7 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Critères : 4.1, 4.3');
     expect(html).toContain('piste captions (fr)');
     expect(html).toContain('Vérification humaine requise');
+    expect(html).toContain('Validation humaine : 4.3 — Vérifier la synchronisation');
     expect(html).toContain('role="region" tabindex="0" aria-label="Annexe Médias — faites défiler horizontalement pour consulter toutes les colonnes"');
   });
 

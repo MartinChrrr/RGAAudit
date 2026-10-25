@@ -223,11 +223,51 @@ describe('collectImages', () => {
 });
 
 describe('collectMedia', () => {
+  it('US-50 rattache les preuves techniques aux validations humaines des médias', async () => {
+    const media = await withPage(`${baseUrl}/media/us-50-media-identifiable.html`, collectMedia);
+    const video = media.find((item) => item.selector === 'video#identified-video');
+    const canvas = media.find((item) => item.selector === 'canvas#identified-canvas');
+
+    expect(video?.criterionIds).toEqual(expect.arrayContaining(['4.7', '4.11', '4.13']));
+    expect(video?.evidence?.find((item) => item.criterionId === '4.7')).toMatchObject({ state: 'observed' });
+    expect(video?.evidence?.find((item) => item.criterionId === '4.11')).toMatchObject({ state: 'observed' });
+    expect(video?.evidence?.find((item) => item.criterionId === '4.13')?.humanChecks).toEqual(
+      expect.arrayContaining([expect.stringContaining('4.13')]),
+    );
+    expect(video?.evidence?.find((item) => item.criterionId === '4.13')?.proof).toEqual(
+      expect.arrayContaining([expect.stringContaining('nom accessible observé')]),
+    );
+    const controlsWithoutSource = media.find((item) => item.selector === 'video#controls-without-source');
+    expect(controlsWithoutSource?.evidence?.find((item) => item.criterionId === '4.11')).toMatchObject({
+      state: 'observed',
+      proof: expect.arrayContaining(['contrôles natifs observés']),
+    });
+    expect(media.find((item) => item.selector === 'canvas#identified-canvas')?.evidence?.find((item) => item.criterionId === '4.13')?.proof).toEqual(
+      expect.arrayContaining([expect.stringContaining('nom accessible observé')]),
+    );
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.11')?.state).toBe('not_applicable');
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.12')?.state).toBe('to_review');
+  });
+
+  it('US-50 conserve l’absence de signal comme preuve à vérifier, jamais comme verdict', async () => {
+    const media = await withPage(`${baseUrl}/media/us-50-media-unidentified.html`, collectMedia);
+    const video = media.find((item) => item.selector === 'video#unidentified-video');
+
+    expect(video?.evidence?.find((item) => item.criterionId === '4.7')).toMatchObject({ state: 'to_review' });
+    expect(video?.evidence?.find((item) => item.criterionId === '4.11')).toMatchObject({ state: 'to_review' });
+    expect(JSON.stringify(video)).not.toMatch(/conforme|non conforme/i);
+  });
+
+  it('US-50 signale l’absence de média comme cas non applicable', async () => {
+    const media = await withPage(`${baseUrl}/media/us-50-media-non-applicable.html`, collectMedia);
+    expect(media).toEqual([]);
+  });
+
   it('US-49 conserve une preuve candidate et les limites pour chaque critère temporel', async () => {
     const media = await withPage(`${baseUrl}/media/us-49-media-with-tracks.html`, collectMedia);
     const evidence = media[0]?.evidence ?? [];
 
-    expect(evidence).toHaveLength(6);
+    expect(evidence).toHaveLength(10);
     expect(evidence.find((item) => item.criterionId === '4.3')).toMatchObject({ state: 'observed' });
     expect(evidence.find((item) => item.criterionId === '4.5')).toMatchObject({ state: 'observed' });
     expect(evidence.every((item) => item.limits.some((limit) => limit.includes('vérification humaine')))).toBe(true);
@@ -247,8 +287,8 @@ describe('collectMedia', () => {
     const evidence = media[0]?.evidence ?? [];
 
     expect(media[0]?.kind).toBe('canvas');
-    expect(evidence).toHaveLength(6);
-    expect(evidence.every((item) => item.state === 'not_applicable')).toBe(true);
+    expect(evidence).toHaveLength(10);
+    expect(evidence.filter((item) => ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6'].includes(item.criterionId)).every((item) => item.state === 'not_applicable')).toBe(true);
   });
 
   it('inventorie les sources, les pistes et les alternatives des médias', async () => {
@@ -280,14 +320,14 @@ describe('collectMedia', () => {
 
     expect(media.find((item) => item.kind === 'canvas')).toMatchObject({
       selector: 'canvas#chart',
-      criterionIds: ['4.8', '4.9'],
+      criterionIds: expect.arrayContaining(['4.8', '4.9', '4.12', '4.13']),
       flags: expect.arrayContaining(['MEDIA_REQUIRES_HUMAN_REVIEW']),
     });
 
     expect(media.find((item) => item.kind === 'object')).toMatchObject({
       selector: 'object#document',
       sources: [`${baseUrl}/media/document.pdf`],
-      criterionIds: ['4.8', '4.9'],
+      criterionIds: expect.arrayContaining(['4.8', '4.9', '4.12', '4.13']),
     });
   });
 

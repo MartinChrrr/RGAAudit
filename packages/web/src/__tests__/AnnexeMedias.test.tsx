@@ -22,6 +22,7 @@ const media: MediaItem[] = [{
     state: 'observed',
     proof: ['piste captions (fr)'],
     limits: ['Vérification humaine requise'],
+    humanChecks: ['4.3 — Vérifier la synchronisation'],
   }],
   pageUrl: 'https://example.com/',
 }];
@@ -37,6 +38,7 @@ describe('AnnexeMedias', () => {
     expect(screen.getByText('4.1 — Vérifier la transcription')).toBeInTheDocument();
     expect(screen.getByText(/piste captions \(fr\)/)).toBeInTheDocument();
     expect(screen.getByText(/Vérification humaine requise/)).toBeInTheDocument();
+    expect(screen.getByText(/Validation humaine : 4.3/)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /Annexe Médias — faites défiler horizontalement/ })).toHaveAttribute('tabindex', '0');
   });
 
