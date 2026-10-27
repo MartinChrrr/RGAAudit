@@ -19,6 +19,7 @@ const {
   mockRenderReportHtml,
   mockGeneratePDF,
   mockGetPdfPathIfExists,
+  mockCreatePdfCacheVersion,
 } = vi.hoisted(() => ({
   mockParseSitemap: vi.fn(),
   mockAuditPages: vi.fn(),
@@ -30,6 +31,7 @@ const {
   mockRenderReportHtml: vi.fn(),
   mockGeneratePDF: vi.fn(),
   mockGetPdfPathIfExists: vi.fn(),
+  mockCreatePdfCacheVersion: vi.fn(),
 }));
 
 vi.mock('@rgaaudit/core/crawler/sitemap.parser', () => ({
@@ -55,6 +57,7 @@ vi.mock('@rgaaudit/core/report/html.renderer', () => ({
 vi.mock('@rgaaudit/core/report/pdf.generator', () => ({
   generatePDF: mockGeneratePDF,
   getPdfPathIfExists: mockGetPdfPathIfExists,
+  createPdfCacheVersion: mockCreatePdfCacheVersion,
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -70,6 +73,7 @@ import { app } from '../index';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockCreatePdfCacheVersion.mockReturnValue('tables-annex-v2-test');
   mockSummarizeCoverage.mockReturnValue({
     total: 0,
     integrated: 0,
@@ -458,7 +462,11 @@ describe('GET /api/report/:sessionId/pdf', () => {
     expect(res.headers['content-type']).toContain('application/pdf');
     expect(res.headers['content-disposition']).toContain('attachment');
     expect(res.headers['content-disposition']).toContain('rapport-rgaa-pdf-test-session.pdf');
-    expect(mockGeneratePDF).toHaveBeenCalledWith(expect.objectContaining({ cacheVersion: 'tables-annex-v1' }));
+    expect(mockCreatePdfCacheVersion).toHaveBeenCalledWith(
+      expect.objectContaining({ report: expect.any(Object), allCollected: expect.any(Array) }),
+      'tables-annex-v2',
+    );
+    expect(mockGeneratePDF).toHaveBeenCalledWith(expect.objectContaining({ cacheVersion: 'tables-annex-v2-test' }));
   });
 
   it('retourne 404 si session introuvable', async () => {

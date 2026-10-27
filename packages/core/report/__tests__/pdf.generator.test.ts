@@ -16,6 +16,7 @@ const mockPdfBuffer = Buffer.from('%PDF-1.4 mock');
 
 const mockPage = {
   setContent: vi.fn(),
+  evaluate: vi.fn().mockResolvedValue(undefined),
   pdf: vi.fn().mockResolvedValue(mockPdfBuffer),
 };
 
@@ -43,10 +44,10 @@ vi.mock('playwright', () => ({
 }));
 
 vi.mock('../html.renderer', () => ({
-  renderReportHtml: vi.fn().mockReturnValue('<!DOCTYPE html><html><body>Test</body></html>'),
+  renderReportHtml: vi.fn().mockReturnValue('<!DOCTYPE html><html><head></head><body>Test</body></html>'),
 }));
 
-import { generatePDF, getPdfPathIfExists } from '../pdf.generator';
+import { createPdfCacheVersion, generatePDF, getPdfPathIfExists } from '../pdf.generator';
 import type { Report } from '../../mapping/mapper';
 
 beforeEach(() => {
@@ -194,5 +195,98 @@ describe('getPdfPathIfExists', () => {
     const result = await getPdfPathIfExists('missing-session', '2026-03-01');
 
     expect(result).toBeNull();
+  });
+});
+
+describe('createPdfCacheVersion', () => {
+  it('varie lorsque le contenu public du rapport change', () => {
+    const first = createPdfCacheVersion(makeReportData(), 'tables-annex-v2');
+    const second = createPdfCacheVersion({
+      report: {
+        ...makeReportData().report,
+        limitBanner: 'Rapport modifié',
+      },
+    }, 'tables-annex-v2');
+
+    expect(first).toMatch(/^tables-annex-v2-[a-f0-9]{16}$/);
+    expect(second).not.toBe(first);
+  });
+
+  it('ignore la date de génération volatile de l’annexe parcours', () => {
+    const base = makeReportData();
+    const first = createPdfCacheVersion({
+      ...base,
+      journeyAnnex: {
+        schemaVersion: 1,
+        generatedAt: '2026-03-01T10:00:00.000Z',
+        sessionId: 'test-session',
+        runs: [],
+      },
+    }, 'tables-annex-v2');
+    const second = createPdfCacheVersion({
+      ...base,
+      journeyAnnex: {
+        schemaVersion: 1,
+        generatedAt: '2026-03-01T11:00:00.000Z',
+        sessionId: 'test-session',
+        runs: [],
+      },
+    }, 'tables-annex-v2');
+
+    expect(second).toBe(first);
+  });
+
+  it('varie lorsqu’une décision de parcours change', () => {
+    const makeJourneyAnnex = (status: 'compliant' | 'non_compliant') => ({
+      schemaVersion: 1 as const,
+      generatedAt: '2026-03-01T10:00:00.000Z',
+      sessionId: 'test-session',
+      runs: [{
+        schemaVersion: 1 as const,
+        runId: 'run-1',
+        journeyId: 'journey-1',
+        journeyDefinitionHash: 'hash-1',
+        sessionId: 'test-session',
+        status: 'completed' as const,
+        startedAt: '2026-03-01T09:00:00.000Z',
+        finishedAt: '2026-03-01T09:01:00.000Z',
+        run: {
+          runId: 'run-1',
+          journeyId: 'journey-1',
+          startedAt: '2026-03-01T09:00:00.000Z',
+          finishedAt: '2026-03-01T09:01:00.000Z',
+          steps: [],
+          decisions: [{
+            stepId: 'step-1',
+            evidenceIndex: 0,
+            criterionId: '1.1',
+            status,
+            comment: '',
+            reviewedAt: '2026-03-01T09:02:00.000Z',
+          }],
+        },
+      }],
+    });
+
+    const first = createPdfCacheVersion({ ...makeReportData(), journeyAnnex: makeJourneyAnnex('compliant') }, 'tables-annex-v2');
+    const second = createPdfCacheVersion({ ...makeReportData(), journeyAnnex: makeJourneyAnnex('non_compliant') }, 'tables-annex-v2');
+
+    expect(second).not.toBe(first);
+  });
+});
+
+describe('generatePDF', () => {
+  it('ajoute une base locale pour charger les miniatures de parcours', async () => {
+    await generatePDF({
+      reportData: makeReportData(),
+      sessionId: 'session-1',
+      resourceBaseUrl: 'http://127.0.0.1:3001/',
+    });
+
+    expect(mockPage.setContent).toHaveBeenCalledWith(
+      expect.stringContaining('<base href="http://127.0.0.1:3001/" />'),
+      expect.objectContaining({ waitUntil: 'networkidle' }),
+    );
+    expect(mockPage.evaluate).toHaveBeenCalled();
   });
 });

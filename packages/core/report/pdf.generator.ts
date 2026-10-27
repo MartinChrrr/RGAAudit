@@ -1,4 +1,5 @@
 import { mkdir, writeFile, rename, access } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { chromium } from 'playwright';
@@ -10,10 +11,52 @@ export interface GeneratePDFOptions {
   sessionId: string;
   /** Changes the cache key when the public report serialization changes. */
   cacheVersion?: string;
+  /** Same-origin base used to resolve private journey screenshot URLs. */
+  resourceBaseUrl?: string;
 }
 
 export interface GeneratePDFResult {
   filePath: string;
+}
+
+/**
+ * Serialize JSON-like report data with object keys in a stable order.
+ * Arrays keep their order because it is meaningful for report sections.
+ */
+function stableSerialize(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
+
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`)
+    .join(',')}}`;
+}
+
+/**
+ * Build a content-addressed cache suffix for the public PDF inputs.
+ * `journeyAnnex.generatedAt` is intentionally excluded: it is generated at
+ * request time and is not a content change.
+ */
+export function createPdfCacheVersion(
+  reportData: RenderOptions,
+  baseVersion = 'v1',
+): string {
+  const fingerprintInput = {
+    report: reportData.report,
+    allCollected: reportData.allCollected ?? [],
+    contrastViolations: reportData.contrastViolations ?? [],
+    journeyAnnex: reportData.journeyAnnex
+      ? { ...reportData.journeyAnnex, generatedAt: undefined }
+      : undefined,
+  };
+  const digest = createHash('sha256')
+    .update(stableSerialize(fingerprintInput))
+    .digest('hex')
+    .slice(0, 16);
+  return `${baseVersion}-${digest}`;
 }
 
 function buildPdfPath(sessionId: string, date: string, cacheVersion = 'v1'): string {
@@ -31,8 +74,12 @@ export async function generatePDF({
   reportData,
   sessionId,
   cacheVersion = 'v1',
+  resourceBaseUrl,
 }: GeneratePDFOptions): Promise<GeneratePDFResult> {
-  const html = renderReportHtml(reportData);
+  const renderedHtml = renderReportHtml(reportData);
+  const html = resourceBaseUrl
+    ? renderedHtml.replace('<head>', `<head><base href="${resourceBaseUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" />`)
+    : renderedHtml;
 
   const date = reportData.report.metadata.date;
   const filePath = buildPdfPath(sessionId, date, cacheVersion);
@@ -46,6 +93,18 @@ export async function generatePDF({
     const page = await context.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle' });
+    if (resourceBaseUrl) {
+      await page.evaluate(async () => {
+        const pending = Array.from(document.images)
+          .filter((image) => !image.complete)
+          .map((image) => new Promise<void>((resolve) => {
+            const timer = window.setTimeout(resolve, 2_000);
+            image.addEventListener('load', () => { window.clearTimeout(timer); resolve(); }, { once: true });
+            image.addEventListener('error', () => { window.clearTimeout(timer); resolve(); }, { once: true });
+          }));
+        await Promise.all(pending);
+      });
+    }
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
