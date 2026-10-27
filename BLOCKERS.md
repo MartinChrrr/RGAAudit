@@ -1,5 +1,26 @@
 # Décisions bloquantes
 
+## 2026-10-27 — Synchronisation GitHub indisponible
+
+### Contexte
+
+Le navigateur GitHub a disparu de la session et le jeton `gh` local est
+invalide. La lecture publique des issues reste possible, mais l’accès au
+GitHub Project et les mutations GitHub ne le sont pas.
+
+### Impact
+
+Les commits des stories US-26 (#35), US-52 (#52), US-54 (#54) et US-55 (#55)
+sont poussés, mais leurs issues restent ouvertes et leurs colonnes du Project
+ne peuvent pas être vérifiées ou mises à jour. Il ne faut pas les déclarer
+`Done` par déduction à partir du dépôt local.
+
+### Reprise
+
+Rouvrir une session GitHub authentifiée, vérifier chaque issue et le Project 5,
+puis synchroniser les cartes et les états. Ce blocage n’empêche pas les tests
+ou les commits locaux, mais il empêche la clôture et la mise à jour du suivi.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte
