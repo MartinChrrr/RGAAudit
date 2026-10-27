@@ -95,6 +95,22 @@ export interface MediaData {
 
 export type SpecializedContentKind = 'media' | 'captcha' | 'document';
 
+/** Candidate evidence for RGAA 13.3/13.4; it never decides conformance. */
+export type DocumentEvidenceState = 'proof' | 'violation' | 'to_review' | 'manual';
+
+export interface DocumentEvidenceData {
+  state: DocumentEvidenceState;
+  declaredMime: string | null;
+  declaredSizeBytes: number | null;
+  downloadDeclared: boolean;
+  sourceExtension: string | null;
+  /** Remote documents are deliberately not downloaded or executed by collection. */
+  localAnalysis: 'not_executed';
+  proof: string[];
+  limits: string[];
+  humanChecks: string[];
+}
+
 /** Cross-theme inventory used by US-17; every entry remains a human review shell. */
 export interface SpecializedContentData {
   kind: SpecializedContentKind;
@@ -106,6 +122,8 @@ export interface SpecializedContentData {
   status: 'review_required';
   evidence: string[];
   flags: string[];
+  /** Present only for document candidates (RGAA 13.3 and 13.4). */
+  documentEvidence?: DocumentEvidenceData;
 }
 
 export interface LinkData {
@@ -1008,6 +1026,16 @@ export async function collectSpecializedContent(
       }
     };
 
+    const positiveIntegerAttribute = (element: Element, ...names: string[]): number | null => {
+      for (const name of names) {
+        const value = element.getAttribute(name);
+        if (!value || !/^\d+$/.test(value.trim())) continue;
+        const parsed = Number(value);
+        if (Number.isSafeInteger(parsed) && parsed >= 0) return parsed;
+      }
+      return null;
+    };
+
     const contextOf = (element: Element): string => {
       const parent = element.parentElement?.cloneNode(true) as HTMLElement | undefined;
       parent?.querySelectorAll('img, audio, video, canvas, object, embed').forEach((child) => child.remove());
@@ -1043,11 +1071,19 @@ export async function collectSpecializedContent(
       .map((element) => {
         const value = element.getAttribute('href') ?? element.getAttribute('data') ?? element.getAttribute('src');
         const source = resolveUrl(value);
+        const declaredMime = element.getAttribute('type')?.trim() || null;
+        const declaredSizeBytes = positiveIntegerAttribute(element, 'data-size-bytes', 'data-size');
+        const downloadDeclared = element.hasAttribute('download');
+        const sourceExtension = source?.match(/\.([a-z0-9]+)(?:[?#].*)?$/i)?.[1]?.toLowerCase() ?? null;
         return {
           selector: getUniqueSelector(element),
           source,
           label: normalize(element.textContent || element.getAttribute('aria-label') || element.getAttribute('title')) || null,
           context: contextOf(element),
+          declaredMime,
+          declaredSizeBytes,
+          downloadDeclared,
+          sourceExtension,
         };
       })
       .filter((candidate) => candidate.source && documentPattern.test(candidate.source));
@@ -1092,21 +1128,52 @@ export async function collectSpecializedContent(
     };
   });
 
-  const documentItems: SpecializedContentData[] = raw.documentCandidates.map((candidate) => ({
-    kind: 'document',
-    selector: candidate.selector,
-    source: candidate.source,
-    label: candidate.label,
-    context: candidate.context,
-    criterionIds: ['13.3', '13.4'],
-    status: 'review_required',
-    evidence: candidate.label ? ['label observed'] : [],
-    flags: [
+  const documentItems: SpecializedContentData[] = raw.documentCandidates.map((candidate) => {
+    const proof = [
+      ...(candidate.label ? ['label observed'] : []),
+      ...(candidate.declaredMime ? [`MIME déclaré: ${candidate.declaredMime}`] : []),
+      ...(candidate.declaredSizeBytes !== null ? [`taille déclarée: ${candidate.declaredSizeBytes} octets`] : []),
+      ...(candidate.downloadDeclared ? ['attribut download observé'] : []),
+      ...(candidate.sourceExtension ? [`extension de source observée: .${candidate.sourceExtension}`] : []),
+    ];
+    const flags = [
       'DOCUMENT_REQUIRES_HUMAN_REVIEW',
       'DOCUMENT_ACCESSIBLE_VERSION_UNKNOWN',
+      'DOCUMENT_MIME_HTTP_UNKNOWN',
+      'DOCUMENT_SIZE_HTTP_UNKNOWN',
+      'DOCUMENT_LOCAL_ANALYSIS_NOT_EXECUTED',
+      ...(candidate.downloadDeclared ? [] : ['DOCUMENT_DOWNLOAD_ATTRIBUTE_NOT_OBSERVED']),
       ...(candidate.truncated ? ['SPECIALIZED_EVIDENCE_TRUNCATED'] : []),
-    ],
-  }));
+    ];
+    return {
+      kind: 'document',
+      selector: candidate.selector,
+      source: candidate.source,
+      label: candidate.label,
+      context: candidate.context,
+      criterionIds: ['13.3', '13.4'],
+      status: 'review_required',
+      evidence: proof,
+      flags,
+      documentEvidence: {
+        state: 'to_review',
+        declaredMime: candidate.declaredMime,
+        declaredSizeBytes: candidate.declaredSizeBytes,
+        downloadDeclared: candidate.downloadDeclared,
+        sourceExtension: candidate.sourceExtension,
+        localAnalysis: 'not_executed',
+        proof,
+        limits: [
+          'Le type MIME et la taille HTTP réels ne sont pas récupérés par la collecte DOM.',
+          'Le document distant n’est ni téléchargé ni exécuté ; analyser localement le fichier et sa version accessible.',
+        ],
+        humanChecks: ['13.3', '13.4'].flatMap((criterionId) => {
+          const criterion = getCriterion(criterionId);
+          return criterion ? [`${criterion.rgaa.id} — ${criterion.rgaa.title}`] : [];
+        }),
+      },
+    };
+  });
 
   return [...mediaItems, ...captchaItems, ...documentItems];
 }

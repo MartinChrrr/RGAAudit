@@ -81,6 +81,30 @@ describe('buildReportFromSession', () => {
     expect(JSON.stringify(publicData)).not.toContain('secret');
   });
 
+  it('rédige les preuves de documents sans perdre leur statut d’analyse locale', () => {
+    const publicData = redactCollectedData({
+      images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },
+      specializedContent: [{
+        kind: 'document', selector: 'a#guide', source: 'https://example.com/guide.pdf?token=secret',
+        label: 'Guide https://example.com/label?token=secret', context: 'Contexte',
+        criterionIds: ['13.3', '13.4'], status: 'review_required', evidence: ['MIME déclaré: application/pdf'],
+        flags: ['DOCUMENT_LOCAL_ANALYSIS_NOT_EXECUTED'],
+        documentEvidence: {
+          state: 'to_review', declaredMime: 'application/pdf', declaredSizeBytes: 4096,
+          downloadDeclared: true, sourceExtension: 'pdf', localAnalysis: 'not_executed',
+          proof: ['MIME https://example.com/proof?token=secret'],
+          limits: ['Limite https://example.com/limit?token=secret'],
+          humanChecks: ['Vérifier https://example.com/check?token=secret'],
+        },
+      }],
+    });
+
+    expect(publicData?.specializedContent?.[0]?.source).toBe('https://example.com/guide.pdf');
+    expect(publicData?.specializedContent?.[0]?.documentEvidence?.localAnalysis).toBe('not_executed');
+    expect(publicData?.specializedContent?.[0]?.documentEvidence?.proof[0]).toBe('MIME https://example.com/proof');
+    expect(JSON.stringify(publicData)).not.toContain('secret');
+  });
+
   it('rédige les relations de formulaires dans les réponses publiques', () => {
     const publicData = redactCollectedData({
       images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },

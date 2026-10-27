@@ -11,6 +11,17 @@ export interface SpecializedContentItem {
   status: 'review_required';
   evidence: string[];
   flags: string[];
+  documentEvidence?: {
+    state: 'proof' | 'violation' | 'to_review' | 'manual';
+    declaredMime: string | null;
+    declaredSizeBytes: number | null;
+    downloadDeclared: boolean;
+    sourceExtension: string | null;
+    localAnalysis: 'not_executed';
+    proof: string[];
+    limits: string[];
+    humanChecks: string[];
+  };
   pageUrl?: string;
   pageId?: string;
 }
@@ -34,6 +45,10 @@ const signalLabels: Record<string, string> = {
   DOCUMENT_ACCESSIBLE_VERSION_UNKNOWN: 'Version accessible non identifiée',
   MEDIA_REQUIRES_HUMAN_REVIEW: 'Écoute ou visionnage requis',
   SPECIALIZED_EVIDENCE_TRUNCATED: 'Preuves tronquées pour limiter le volume',
+  DOCUMENT_MIME_HTTP_UNKNOWN: 'MIME HTTP non récupéré — à vérifier',
+  DOCUMENT_SIZE_HTTP_UNKNOWN: 'Taille HTTP non récupérée — à vérifier',
+  DOCUMENT_LOCAL_ANALYSIS_NOT_EXECUTED: 'Analyse locale non exécutée automatiquement',
+  DOCUMENT_DOWNLOAD_ATTRIBUTE_NOT_OBSERVED: 'Attribut download non observé',
 };
 
 const evidenceLabels: Record<string, string> = {
@@ -97,7 +112,12 @@ export default function AnnexeContenusSpecialises({ items, initialPageUrl, initi
       {visible.length === 0 ? (
         <p className="py-4 text-sm text-gray-600">{t('annexes.specialized.noResults')}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto"
+          role="region"
+          tabIndex={0}
+          aria-label={`${t('annexes.specialized.title')} — faites défiler horizontalement pour consulter toutes les colonnes`}
+        >
           <table className="w-full min-w-[960px] text-left text-sm">
             <caption className="sr-only">{t('annexes.specialized.title')}</caption>
             <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700">
@@ -125,6 +145,23 @@ export default function AnnexeContenusSpecialises({ items, initialPageUrl, initi
                   </td>
                   <td className="max-w-xs px-3 py-3 text-xs text-gray-700">
                     {item.evidence.length > 0 ? item.evidence.map(readableEvidence).join(', ') : t('annexes.specialized.noEvidence')}
+                    {item.kind === 'document' && item.documentEvidence && (
+                      <details className="mt-2">
+                        <summary>Contrôles document (13.3–13.4)</summary>
+                        <dl className="mt-1 space-y-1 text-gray-600">
+                          <div><dt className="inline font-medium">État : </dt><dd className="inline">{item.documentEvidence.state === 'to_review' ? 'à vérifier' : item.documentEvidence.state}</dd></div>
+                          <div><dt className="inline font-medium">MIME déclaré : </dt><dd className="inline">{item.documentEvidence.declaredMime ?? 'non observé'}</dd></div>
+                          <div><dt className="inline font-medium">Taille déclarée : </dt><dd className="inline">{item.documentEvidence.declaredSizeBytes === null ? 'non observée' : `${item.documentEvidence.declaredSizeBytes} octets`}</dd></div>
+                          <div><dt className="inline font-medium">Téléchargement : </dt><dd className="inline">{item.documentEvidence.downloadDeclared ? 'attribut observé' : 'non observé'}</dd></div>
+                          <div><dt className="inline font-medium">Extension : </dt><dd className="inline">{item.documentEvidence.sourceExtension ? `.${item.documentEvidence.sourceExtension}` : 'non observée'}</dd></div>
+                          <div><dt className="inline font-medium">Analyse locale : </dt><dd className="inline">non exécutée automatiquement</dd></div>
+                        </dl>
+                        <p className="mt-1 text-gray-600">Preuves : {item.documentEvidence.proof.join(' · ') || 'aucune'}</p>
+                        <p className="mt-1 text-gray-600">Limites : {item.documentEvidence.limits.join(' · ') || 'aucune'}</p>
+                        <p className="mt-1 text-gray-600">Contrôles humains : {item.documentEvidence.humanChecks.join(' · ') || 'aucun'}</p>
+                        <p className="mt-1 text-amber-900">Revue humaine requise ; ces signaux ne constituent pas un verdict.</p>
+                      </details>
+                    )}
                     {item.flags.length > 0 && (
                       <details className="mt-2 text-amber-900">
                         <summary>Signaux techniques</summary>

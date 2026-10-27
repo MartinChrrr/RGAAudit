@@ -188,6 +188,21 @@ CAPTCHA ou d’image-test n’est observé. La collecte ne juge jamais la pertin
 de l’alternative, d’une description, de la solution de CAPTCHA ou d’un éventuel
 remplacement par du texte stylé.
 
+### 5.9. Vérifier les documents bureautiques (US-52)
+
+Dans l’annexe **Contenus spécialisés**, chaque lien vers un document bureautique
+est rattaché aux critères RGAA 13.3 et 13.4. Les preuves locales peuvent
+reprendre le type MIME déclaré dans le DOM, la taille déclarée, l’extension de
+la source et la présence de l’attribut `download`. L’annexe indique aussi que
+l’analyse locale n’a pas été exécutée automatiquement.
+
+Ces observations ne récupèrent pas le MIME ou la taille HTTP réels et ne
+téléchargent ni n’exécutent de contenu distant. Vérifier manuellement le
+téléchargement, le format et la taille effectivement servis, l’existence d’une
+version accessible lorsque nécessaire, puis l’équivalence des informations
+entre les deux versions. L’absence d’une métadonnée DOM n’est pas un verdict de
+non-conformité.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

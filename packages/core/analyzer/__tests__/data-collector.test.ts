@@ -406,6 +406,55 @@ describe('collectMedia', () => {
       expect(specialized.some((item) => item.flags.includes('SPECIALIZED_EVIDENCE_TRUNCATED'))).toBe(true);
     });
   });
+
+  it('US-52 conserve les métadonnées locales des documents sans télécharger ni exécuter leur contenu', async () => {
+    const specialized = await withPage(`${baseUrl}/documents/us-52-documents-candidates.html`, collectSpecializedContent);
+    const pdf = specialized.find((item) => item.selector === 'a#accessible-guide');
+
+    expect(pdf).toMatchObject({ kind: 'document', criterionIds: ['13.3', '13.4'], status: 'review_required' });
+    expect(pdf?.documentEvidence).toMatchObject({
+      state: 'to_review',
+      declaredMime: 'application/pdf',
+      declaredSizeBytes: 4096,
+      downloadDeclared: true,
+      sourceExtension: 'pdf',
+      localAnalysis: 'not_executed',
+    });
+    expect(pdf?.documentEvidence?.proof).toEqual(expect.arrayContaining([
+      'MIME déclaré: application/pdf',
+      'taille déclarée: 4096 octets',
+      'attribut download observé',
+    ]));
+    expect(pdf?.documentEvidence?.humanChecks).toEqual(expect.arrayContaining([
+      expect.stringContaining('13.3'),
+      expect.stringContaining('13.4'),
+    ]));
+    expect(JSON.stringify(pdf)).toContain('DOCUMENT_LOCAL_ANALYSIS_NOT_EXECUTED');
+  });
+
+  it('US-52 signale les métadonnées absentes sans en déduire une violation', async () => {
+    const specialized = await withPage(`${baseUrl}/documents/us-52-documents-missing.html`, collectSpecializedContent);
+    const document = specialized.find((item) => item.kind === 'document');
+
+    expect(document?.documentEvidence).toMatchObject({
+      state: 'to_review',
+      declaredMime: null,
+      declaredSizeBytes: null,
+      downloadDeclared: false,
+      localAnalysis: 'not_executed',
+    });
+    expect(document?.flags).toEqual(expect.arrayContaining([
+      'DOCUMENT_MIME_HTTP_UNKNOWN',
+      'DOCUMENT_SIZE_HTTP_UNKNOWN',
+      'DOCUMENT_DOWNLOAD_ATTRIBUTE_NOT_OBSERVED',
+    ]));
+    expect(JSON.stringify(document)).not.toMatch(/non conforme|violation/i);
+  });
+
+  it('US-52 ne crée pas de candidat pour une page sans document bureautique', async () => {
+    const specialized = await withPage(`${baseUrl}/documents/us-52-documents-non-applicable.html`, collectSpecializedContent);
+    expect(specialized.filter((item) => item.kind === 'document')).toHaveLength(0);
+  });
 });
 
 // ───────────────────────────────────────────────────────────────

@@ -836,21 +836,26 @@ function buildSpecializedContentSection(items: SpecializedAnnexItem[]): string {
   if (items.length === 0) return '';
 
   const reviewCount = items.filter(({ item }) => item.status === 'review_required').length;
-  const rows = items.map(({ url, pageId, item }) => `
+  const rows = items.map(({ url, pageId, item }) => {
+    const documentEvidence = item.kind === 'document' && item.documentEvidence
+      ? `<details class="mt-1"><summary>Contrôles document (13.3–13.4)</summary><span>État : ${escapeHtml(item.documentEvidence.state === 'to_review' ? 'à vérifier' : item.documentEvidence.state)}<br>MIME déclaré : ${escapeHtml(item.documentEvidence.declaredMime ?? 'non observé')}<br>Taille déclarée : ${escapeHtml(item.documentEvidence.declaredSizeBytes === null ? 'non observée' : `${item.documentEvidence.declaredSizeBytes} octets`)}<br>Téléchargement : ${escapeHtml(item.documentEvidence.downloadDeclared ? 'attribut observé' : 'non observé')}<br>Extension : ${escapeHtml(item.documentEvidence.sourceExtension ? `.${item.documentEvidence.sourceExtension}` : 'non observée')}<br>Analyse locale : non exécutée automatiquement</span><br>Preuves : ${escapeHtml(item.documentEvidence.proof.join(' · ') || 'aucune')}<br><span class="text-amber-900">Limites : ${escapeHtml(item.documentEvidence.limits.join(' · ') || 'aucune')}<br>Validation humaine : ${escapeHtml(item.documentEvidence.humanChecks.join(' · ') || 'aucune')}<br>Revue humaine requise ; aucun verdict automatique.</span></details>`
+      : '';
+    return `
     <tr>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}<br><code>${escapeHtml(item.selector)}</code></td>
       <td class="px-3 py-2 text-xs text-gray-700 break-all">${escapeHtml(item.source ?? 'Source absente')}<br>${escapeHtml(item.label ?? (item.context || 'Aucun libellé observé'))}</td>
-      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.evidence.join(', ') || 'Aucune preuve complémentaire observée')}</td>
+      <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.evidence.join(', ') || 'Aucune preuve complémentaire observée')}${documentEvidence}</td>
       <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.criterionIds.join(', '))}</td>
       <td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(t('annexes.specialized.reviewRequired'))}<br>${escapeHtml(item.flags.join(', ') || 'aucun signal')}<br><span class="text-gray-500">${escapeHtml(pageLabel(url, pageId))}</span></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   return `
     <section class="mb-8" data-testid="specialized-content-section">
       <h2 class="text-lg font-semibold text-gray-900 mb-3">${escapeHtml(t('report.htmlAnnexeSpecialized'))}</h2>
       <p class="text-sm text-gray-600 mb-3">${escapeHtml(t('annexes.specialized.description'))}</p>
       <p class="text-xs text-amber-900 mb-3">${escapeHtml(t('annexes.specialized.reviewRequired'))}: ${reviewCount}</p>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(`${t('annexes.specialized.title')} — faites défiler horizontalement pour consulter toutes les colonnes`)}">
         <table class="w-full text-sm text-left">
           <caption class="sr-only">${escapeHtml(t('report.htmlAnnexeSpecialized'))}</caption>
           <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200">

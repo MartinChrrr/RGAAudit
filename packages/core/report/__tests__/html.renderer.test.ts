@@ -508,6 +508,17 @@ describe('renderReportHtml', () => {
       status: 'review_required',
       evidence: ['label observed'],
       flags: ['DOCUMENT_REQUIRES_HUMAN_REVIEW'],
+      documentEvidence: {
+        state: 'to_review',
+        declaredMime: 'application/pdf',
+        declaredSizeBytes: 4096,
+        downloadDeclared: true,
+        sourceExtension: 'pdf',
+        localAnalysis: 'not_executed',
+        proof: ['MIME déclaré: application/pdf'],
+        limits: ['Document distant non exécuté'],
+        humanChecks: ['13.3 — version accessible', '13.4 — même information'],
+      },
     }];
 
     const html = renderReportHtml({
@@ -519,6 +530,13 @@ describe('renderReportHtml', () => {
     expect(html).toContain('a[href=&quot;guide.pdf&quot;]');
     expect(html).toContain('Revue humaine requise: 1');
     expect(html).toContain('13.3, 13.4');
+    expect(html).toContain('Contrôles document (13.3–13.4)');
+    expect(html).toContain('role="region"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain('application/pdf');
+    expect(html).toContain('Limites : Document distant non exécuté');
+    expect(html).toContain('Validation humaine : 13.3 — version accessible');
+    expect(html).toContain('aucun verdict automatique');
   });
 
   it('affiche les différences horodatées entre observations', () => {

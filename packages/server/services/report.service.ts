@@ -429,6 +429,12 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
       label: item.label ? redactTextUrls(item.label) : item.label,
       context: redactTextUrls(item.context),
       evidence: item.evidence.map(redactTextUrls),
+      documentEvidence: item.documentEvidence ? {
+        ...item.documentEvidence,
+        proof: item.documentEvidence.proof.map(redactTextUrls),
+        limits: item.documentEvidence.limits.map(redactTextUrls),
+        humanChecks: item.documentEvidence.humanChecks.map(redactTextUrls),
+      } : item.documentEvidence,
     })),
     frames: (collectedData.frames ?? []).map((frame) => ({
       ...frame,

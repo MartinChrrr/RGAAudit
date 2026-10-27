@@ -25,6 +25,17 @@ const items: SpecializedContentItem[] = [
     status: 'review_required',
     evidence: [],
     flags: ['DOCUMENT_REQUIRES_HUMAN_REVIEW'],
+    documentEvidence: {
+      state: 'to_review',
+      declaredMime: 'application/pdf',
+      declaredSizeBytes: 4096,
+      downloadDeclared: true,
+      sourceExtension: 'pdf',
+      localAnalysis: 'not_executed',
+      proof: ['MIME déclaré: application/pdf'],
+      limits: ['Le document distant n’est pas exécuté.'],
+      humanChecks: ['13.3 — version accessible', '13.4 — même information'],
+    },
     pageUrl: 'https://example.com/other',
   },
 ];
@@ -34,9 +45,13 @@ describe('AnnexeContenusSpecialises', () => {
     render(<AnnexeContenusSpecialises items={items} />);
 
     expect(screen.getByTestId('annexe-specialized')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /annexe contenus spécialisés/i })).toBeInTheDocument();
     expect(screen.getByText('CAPTCHA')).toBeInTheDocument();
     expect(screen.getByText('Revue humaine requise: 2')).toBeInTheDocument();
     expect(screen.getByText('1.4, 1.5')).toBeInTheDocument();
+    expect(screen.getByText('Contrôles document (13.3–13.4)')).toBeInTheDocument();
+    expect(screen.getByText('application/pdf')).toBeInTheDocument();
+    expect(screen.getByText(/Le document distant n’est pas exécuté/)).toBeInTheDocument();
   });
 
   it('filtre par page', () => {
