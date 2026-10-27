@@ -34,6 +34,10 @@ export interface ImageEvidenceItem {
 
 export interface ImageDecision {
   decision: 'decorative' | 'informative' | 'violation' | null;
+  /** Automatic 1.3 selection signal; it is never the human decision. */
+  suggestion?: 'not_applicable' | 'to_review';
+  relevanceStatus?: 'not_tested' | 'compliant' | 'non_compliant' | 'not_applicable';
+  relevanceReviewedAt?: string | null;
   status: 'not_tested' | 'compliant' | 'non_compliant' | 'not_applicable';
   correctedAlt: string;
   notes: string;
@@ -58,6 +62,7 @@ interface Props {
   focusedSelectors?: string[];
   focusedElementIndexes?: number[];
   focusedCriterionId?: string;
+  criterionReviews?: Array<{ pageUrl?: string; pageId?: string; criterionId: string; humanStatus: ImageDecision['relevanceStatus']; decisionSource?: 'criterion' | 'annex_images' }>;
   onSaved?: () => void | Promise<void>;
 }
 
@@ -104,12 +109,15 @@ export function deriveImageStatus(
 function emptyDecision(image: ImageItem): ImageDecision {
   const decision: ImageDecision = {
     decision: suggestedNature(image),
-    status: 'compliant',
+    suggestion: image.altRelevanceStatus ?? (image.altStatus === 'present' ? 'to_review' : 'not_applicable'),
+    relevanceStatus: 'not_tested',
+    relevanceReviewedAt: null,
+    status: 'not_tested',
     correctedAlt: '',
     notes: '',
     reviewedAt: null,
   };
-  return { ...decision, status: deriveImageStatus(image, decision) };
+  return decision;
 }
 
 function normalizeDecision(decision: Partial<ImageDecision>, image?: ImageItem): ImageDecision {
@@ -119,6 +127,11 @@ function normalizeDecision(decision: Partial<ImageDecision>, image?: ImageItem):
       ? 'informative'
       : (decision.decision ?? (image ? suggestedNature(image) : null)),
     status: decision.status ?? (wasLegacyViolation ? 'non_compliant' : image ? 'compliant' : 'not_tested'),
+    ...(decision.suggestion ? { suggestion: decision.suggestion } : image ? {
+      suggestion: image.altRelevanceStatus ?? (image.altStatus === 'present' ? 'to_review' : 'not_applicable'),
+    } : {}),
+    relevanceStatus: decision.relevanceStatus ?? 'not_tested',
+    relevanceReviewedAt: decision.relevanceReviewedAt ?? null,
     correctedAlt: decision.correctedAlt ?? '',
     notes: decision.notes ?? '',
     reviewedAt: decision.reviewedAt ?? null,
@@ -148,6 +161,7 @@ export default function AnnexeImages({
   focusedSelectors = [],
   focusedElementIndexes = [],
   focusedCriterionId,
+  criterionReviews = [],
   onSaved,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
@@ -212,6 +226,9 @@ export default function AnnexeImages({
         ...(prev[key] ?? emptyDecision(image)),
         ...update,
         reviewedAt: new Date().toISOString(),
+        ...(Object.prototype.hasOwnProperty.call(update, 'relevanceStatus')
+          ? { relevanceReviewedAt: update.relevanceStatus === 'not_tested' ? null : new Date().toISOString() }
+          : {}),
       },
     }));
     setDirtyKeys((current) => new Set(current).add(key));
@@ -229,6 +246,9 @@ export default function AnnexeImages({
           selector: image.selector,
           elementIndex: image.elementIndex,
           decision: decision.decision,
+          suggestion: decision.suggestion ?? image.altRelevanceStatus ?? (image.altStatus === 'present' ? 'to_review' : 'not_applicable'),
+          relevanceStatus: decision.relevanceStatus,
+          relevanceReviewedAt: decision.relevanceReviewedAt,
           status,
           correctedAlt: decision.correctedAlt,
           notes: decision.notes,
@@ -433,8 +453,16 @@ export default function AnnexeImages({
                 const storedDecision = decisions[key] ?? legacyDecision;
                 const stored = storedDecision ?? emptyDecision(img);
                 const dec = { ...stored, status: deriveImageStatus(img, stored) };
+                const criterionReview = criterionReviews.find((item) => item.criterionId === '1.3'
+                  && (item.pageId ? item.pageId === img.pageId : item.pageUrl === img.pageUrl));
+                const directCriterionDecision = criterionReview?.decisionSource === 'criterion'
+                  && criterionReview.humanStatus !== 'not_tested';
+                const effectiveRelevanceStatus = directCriterionDecision
+                  ? criterionReview?.humanStatus ?? dec.relevanceStatus
+                  : dec.relevanceStatus;
                 const relevanceApplicable = (img.altRelevanceStatus ?? (img.altStatus === 'present' ? 'to_review' : 'not_applicable')) === 'to_review';
-                const relevancePending = relevanceApplicable && !dec.reviewedAt;
+                const relevancePending = relevanceApplicable && !directCriterionDecision && !dec.relevanceReviewedAt;
+                const relevanceNotApplicable = !relevanceApplicable;
                 const suggestion = suggestedNature(img);
                 return (
                   <tr key={key} className="hover:bg-gray-50">
@@ -483,9 +511,11 @@ export default function AnnexeImages({
                         <span className="font-medium">{t('annexes.images.altRelevanceLabel')} : </span>
                         {!relevanceApplicable
                           ? t('annexes.images.altRelevanceNotApplicable')
+                          : directCriterionDecision
+                            ? `Décision du critère 1.3 : ${effectiveRelevanceStatus === 'non_compliant' ? 'Non conforme' : effectiveRelevanceStatus === 'compliant' ? 'Conforme' : effectiveRelevanceStatus === 'not_applicable' ? 'Non applicable' : 'Non testée'}`
                           : relevancePending
                           ? t('annexes.images.altRelevanceToReview')
-                          : dec.reviewedAt
+                          : dec.relevanceReviewedAt
                             ? t('annexes.images.altRelevanceHumanDecision')
                             : t('annexes.images.altRelevanceNotApplicable')}
                       </p>
@@ -540,10 +570,14 @@ export default function AnnexeImages({
 
                     {/* Automatic suggestion */}
                     <td className="w-[24%] px-3 py-3 align-top">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${relevancePending ? 'bg-amber-100 text-amber-900' : dec.status === 'non_compliant' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${relevancePending ? 'bg-amber-100 text-amber-900' : relevanceNotApplicable ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-900'}`}>
                         {relevancePending
                           ? t('annexes.images.altRelevanceToReview')
-                          : dec.status === 'non_compliant' ? 'Non conforme' : 'Conforme'}
+                          : relevanceNotApplicable
+                            ? t('annexes.images.altRelevanceNotApplicable')
+                            : directCriterionDecision
+                              ? `Décision du critère 1.3 : ${effectiveRelevanceStatus === 'non_compliant' ? 'Non conforme' : effectiveRelevanceStatus === 'compliant' ? 'Conforme' : effectiveRelevanceStatus === 'not_applicable' ? 'Non applicable' : 'Non testée'}`
+                              : `Décision humaine : ${effectiveRelevanceStatus === 'non_compliant' ? 'Non conforme' : effectiveRelevanceStatus === 'compliant' ? 'Conforme' : effectiveRelevanceStatus === 'not_applicable' ? 'Non applicable' : 'Non testée'}`}
                       </span>
                       <p className="mt-2 text-xs text-gray-700">
                         Suggestion : <strong>{suggestion === 'decorative' ? 'décorative' : 'porteuse d’information'}</strong>
@@ -575,6 +609,22 @@ export default function AnnexeImages({
                           >
                             <option value="decorative">Décorative</option>
                             <option value="informative">Porteuse d’information</option>
+                          </select>
+                        </label>
+
+                        <label className="block text-xs font-medium text-gray-800">
+                          Décision humaine — pertinence 1.3
+                          <select
+                            value={effectiveRelevanceStatus ?? 'not_tested'}
+                            onChange={(event) => updateDecision(img, { relevanceStatus: event.target.value as ImageDecision['relevanceStatus'] })}
+                            disabled={!relevanceApplicable || directCriterionDecision}
+                            className="mt-1 block w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-800 disabled:bg-gray-100"
+                            aria-label={`Décision humaine de pertinence 1.3 pour ${img.selector}`}
+                          >
+                            <option value="not_tested">Non testé</option>
+                            <option value="compliant">Conforme</option>
+                            <option value="non_compliant">Non conforme</option>
+                            <option value="not_applicable">Non applicable</option>
                           </select>
                         </label>
 

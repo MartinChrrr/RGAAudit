@@ -38,6 +38,8 @@ const imageDecisionSchema = z.object({
   selector: z.string().trim().min(1).max(2_000),
   elementIndex: z.number().int().min(0).optional(),
   decision: z.enum(['decorative', 'informative', 'violation']).nullable(),
+  relevanceStatus: z.enum(['not_tested', 'compliant', 'non_compliant', 'not_applicable']).optional(),
+  relevanceReviewedAt: z.string().datetime().nullable().optional(),
   status: z.enum(['not_tested', 'compliant', 'non_compliant', 'not_applicable']).default('not_tested'),
   correctedAlt: z.string().trim().max(2_000).default(''),
   notes: z.string().trim().max(5_000).default(''),
@@ -177,7 +179,7 @@ auditRouter.patch(
     const session = await loadSession(sessionId);
     if (!session) throw new HttpError(404, 'Session introuvable.');
 
-    const { pageId, pageUrl, selector, elementIndex, decision, status, correctedAlt, notes } = req.body;
+    const { pageId, pageUrl, selector, elementIndex, decision, relevanceStatus, relevanceReviewedAt, status, correctedAlt, notes } = req.body;
     const resolvedPageUrl = resolvePageUrl(sessionId, session, pageId, pageUrl);
     if (!resolvedPageUrl) throw new HttpError(400, 'Cette page ne fait pas partie de l\'audit.');
     const page = session.results[resolvedPageUrl];
@@ -193,11 +195,13 @@ auditRouter.patch(
       selector,
       elementIndex: resolvedIndex,
       decision,
+      suggestion: images[resolvedIndex]?.altRelevanceStatus ?? (images[resolvedIndex]?.altStatus === 'present' ? 'to_review' : 'not_applicable'),
+      ...(relevanceStatus ? { relevanceStatus, relevanceReviewedAt: relevanceReviewedAt ?? (relevanceStatus === 'not_tested' ? null : new Date().toISOString()) } : {}),
       status,
       correctedAlt,
       notes,
       reviewedAt: status === 'not_tested' ? null : new Date().toISOString(),
-    }, images.map((image) => image.selector));
+    }, images.map((image) => image.selector), images.map((image) => image.altRelevanceStatus ?? (image.altStatus === 'present' ? 'to_review' : 'not_applicable')));
     res.json({ review: await publicReview(sessionId, session) });
   }),
 );
@@ -211,6 +215,7 @@ auditRouter.patch(
     if (!session) throw new HttpError(404, 'Session introuvable.');
 
     const pageImageSelectorsByUrl: Record<string, string[]> = {};
+    const pageImageSuggestionsByUrl: Record<string, Array<'not_applicable' | 'to_review'>> = {};
     const decisions = req.body.decisions.map((input: z.infer<typeof imageDecisionSchema>) => {
       const resolvedPageUrl = resolvePageUrl(sessionId, session, input.pageId, input.pageUrl);
       if (!resolvedPageUrl) throw new HttpError(400, 'Une image concerne une page absente de l’audit.');
@@ -223,12 +228,15 @@ auditRouter.patch(
         throw new HttpError(400, 'Une image indiquée est inconnue pour cette page.');
       }
       pageImageSelectorsByUrl[resolvedPageUrl] = images.map((image) => image.selector);
+      pageImageSuggestionsByUrl[resolvedPageUrl] = images.map((image) => image.altRelevanceStatus ?? (image.altStatus === 'present' ? 'to_review' : 'not_applicable'));
 
       return {
         pageUrl: resolvedPageUrl,
         selector: input.selector,
         elementIndex: resolvedIndex,
         decision: input.decision,
+        suggestion: images[resolvedIndex]?.altRelevanceStatus ?? (images[resolvedIndex]?.altStatus === 'present' ? 'to_review' : 'not_applicable'),
+        ...(input.relevanceStatus ? { relevanceStatus: input.relevanceStatus, relevanceReviewedAt: input.relevanceReviewedAt ?? (input.relevanceStatus === 'not_tested' ? null : new Date().toISOString()) } : {}),
         status: input.status,
         correctedAlt: input.correctedAlt,
         notes: input.notes,
@@ -241,6 +249,7 @@ auditRouter.patch(
       decisions,
       pageImageSelectorsByUrl,
       req.body.markCriteriaNonCompliant,
+      pageImageSuggestionsByUrl,
     );
     res.json({ review: await publicReview(sessionId, session) });
   }),

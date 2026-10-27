@@ -27,6 +27,7 @@ export interface ReviewCriterion {
   wcag: string[];
   machineStatus: MachineStatus;
   humanStatus: HumanStatus;
+  decisionSource?: 'criterion' | 'annex_images';
   comment: string;
   reviewedAt: string | null;
   violationsCount: number;
@@ -72,6 +73,9 @@ export interface ReviewData {
     selector: string;
     elementIndex?: number;
     decision: 'decorative' | 'informative' | 'violation' | null;
+    suggestion?: 'not_applicable' | 'to_review';
+    relevanceStatus?: HumanStatus;
+    relevanceReviewedAt?: string | null;
     status: HumanStatus;
     correctedAlt: string;
     notes: string;
@@ -92,6 +96,9 @@ export interface ReviewData {
     selector: string;
     elementIndex?: number;
     decision: 'decorative' | 'informative' | 'violation' | null;
+    suggestion?: 'not_applicable' | 'to_review';
+    relevanceStatus?: HumanStatus;
+    relevanceReviewedAt?: string | null;
     status: HumanStatus;
     correctedAlt: string;
     notes: string;

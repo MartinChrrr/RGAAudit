@@ -41,6 +41,8 @@ export interface AuditDecision {
 }
 
 export type ImageClassification = 'decorative' | 'informative' | 'violation' | null;
+/** Automatic image signal used to select the 1.3 review scope; never a verdict. */
+export type ImageRelevanceSuggestion = 'not_applicable' | 'to_review';
 
 export interface ImageAuditDecision {
   pageUrl: string;
@@ -48,6 +50,11 @@ export interface ImageAuditDecision {
   /** Stable position in the collected page, used when CSS selectors are duplicated. */
   elementIndex?: number;
   decision: ImageClassification;
+  /** Automatic suggestion copied from collected image evidence, separate from the human status. */
+  suggestion?: ImageRelevanceSuggestion;
+  /** Human decision for the relevance of the alternative (RGAA 1.3). */
+  relevanceStatus?: HumanStatus;
+  relevanceReviewedAt?: string | null;
   status: HumanStatus;
   correctedAlt: string;
   notes: string;

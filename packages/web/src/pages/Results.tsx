@@ -712,6 +712,15 @@ export default function Results() {
                 focusedSelectors={annexTarget?.tab === 'images' ? annexTarget.selectors : undefined}
                 focusedElementIndexes={annexTarget?.tab === 'images' ? annexTarget.elementIndexes : undefined}
                 focusedCriterionId={annexTarget?.tab === 'images' ? annexTarget.criterionId : undefined}
+                criterionReviews={report.review?.pages.flatMap((page) => page.criteria
+                  .filter((criterion) => criterion.rgaaId === '1.3')
+                  .map((criterion) => ({
+                    pageUrl: page.url,
+                    pageId: page.pageId,
+                    criterionId: criterion.rgaaId,
+                    humanStatus: criterion.humanStatus,
+                    decisionSource: criterion.decisionSource,
+                  })))}
                 onSaved={loadReport}
               />
             )}

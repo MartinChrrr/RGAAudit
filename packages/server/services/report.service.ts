@@ -100,6 +100,7 @@ export interface ReviewCriterion {
   wcag: string[];
   machineStatus: MachineStatus;
   humanStatus: HumanStatus;
+  decisionSource?: 'criterion' | 'annex_images';
   comment: string;
   reviewedAt: string | null;
   violationsCount: number;
@@ -264,6 +265,12 @@ export function toPublicJourneyRun(run: JourneyRunState, publicSessionId = run.s
                 selector: redactTextUrls(item.selector),
                 content: redactTextUrls(item.content),
                 alternative: item.alternative ? redactTextUrls(item.alternative) : item.alternative,
+                detail: redactTextUrls(item.detail),
+              })),
+              animationControls: (step.context.animationControls ?? []).map((item) => ({
+                ...item,
+                selector: redactTextUrls(item.selector),
+                label: redactTextUrls(item.label),
                 detail: redactTextUrls(item.detail),
               })),
               scriptAlternatives: (step.context.scriptAlternatives ?? []).map((item) => ({
@@ -726,6 +733,7 @@ function buildReviewData(mappedPages: MappedPage[], state?: AuditReviewState): R
         wcag: mappingCriterion?.wcag ?? [],
         machineStatus: machineStatusFromLegacyStatus(criterion.status, criterion.coverage),
         humanStatus: decision?.status ?? 'not_tested',
+        ...(decision?.source ? { decisionSource: decision.source } : {}),
         comment: decision?.comment ?? '',
         reviewedAt: decision?.reviewedAt ?? null,
         violationsCount: criterion.violations?.length ?? 0,

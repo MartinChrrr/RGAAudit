@@ -147,9 +147,9 @@ describe('AnnexeImages', () => {
 
     render(<AnnexeImages images={mockImages} sessionId="test-4" />);
 
-    // Les anciennes décisions "violation" restent non conformes.
+    // Une décision héritée sur une image sans alternative ne tranche pas le critère 1.3.
     expect(screen.getByRole('combobox', { name: /nature validée.*img#hero/i })).toHaveValue('informative');
-    expect(screen.getByText('Non conforme')).toBeInTheDocument();
+    expect(screen.getAllByText(/Pertinence du critère 1\.3 non applicable/).length).toBeGreaterThan(0);
   });
 
   it('déduit le verdict depuis la nature et le alt', () => {
@@ -157,8 +157,6 @@ describe('AnnexeImages', () => {
 
     expect(screen.getByRole('combobox', { name: /nature validée.*img#hero/i })).toHaveValue('informative');
     expect(screen.getByRole('combobox', { name: /nature validée.*img#deco/i })).toHaveValue('decorative');
-    expect(screen.getAllByText('Non conforme', { exact: true })).toHaveLength(1);
-    expect(screen.getAllByText('Conforme', { exact: true })).toHaveLength(1);
     expect(screen.getAllByText(/Pertinence de l’alternative à vérifier/)).toHaveLength(2);
   });
 
@@ -183,7 +181,7 @@ describe('AnnexeImages', () => {
       }]}
     />);
 
-    expect(screen.getByText(/Pertinence du critère 1\.3 non applicable/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Pertinence du critère 1\.3 non applicable/).length).toBeGreaterThan(0);
     expect(screen.queryByText('Décision humaine enregistrée')).not.toBeInTheDocument();
   });
 
@@ -222,7 +220,6 @@ describe('AnnexeImages', () => {
       screen.getByRole('combobox', { name: /nature validée.*img#logo/i }),
       'decorative',
     );
-    expect(screen.getAllByText('Non conforme', { exact: true })).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Enregistrer les modifications' }));
 
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());

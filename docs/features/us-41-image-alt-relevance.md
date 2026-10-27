@@ -12,9 +12,12 @@ décision humaine. Les images sans alternative textuelle ou avec une alternative
 restent `not_applicable` pour le critère 1.3 ; leur absence ou leur caractère
 décoratif relève des contrôles correspondants. La décision finale du critère
 est saisie par l’auditeur dans l’espace de revue et n’est jamais déduite par le
-collecteur. L’affichage d’une décision d’image dans l’annexe n’est pas encore
-synchronisé avec cette décision de critère ; ce choix est consigné dans
-`BLOCKERS.md`.
+collecteur. Lorsqu’une décision humaine est enregistrée dans l’annexe Images,
+sa synthèse est synchronisée avec le critère 1.3 dans l’espace de revue. La
+suggestion automatique reste un champ distinct, une décision saisie directement
+sur le critère garde la priorité : l’annexe affiche alors ce statut et désactive
+son sélecteur de pertinence pour éviter deux vérités concurrentes. Les révisions
+remplacées sont conservées dans l’historique de la session.
 
 La fixture `e2e/fixtures/test-sites/images/us-41-alt-relevance.html` couvre les
 trois états observables : alternative non vide, `alt=""` et attribut `alt`

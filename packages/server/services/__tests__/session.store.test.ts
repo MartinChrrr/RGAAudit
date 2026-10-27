@@ -24,12 +24,16 @@ function emptyReview(): AuditReviewState {
 function imageDecision(
   elementIndex: number,
   status: ImageAuditDecision['status'],
+  relevanceStatus: ImageAuditDecision['relevanceStatus'] = status,
 ): ImageAuditDecision {
   return {
     pageUrl,
     selector: 'main > img',
     elementIndex,
     decision: 'informative',
+    suggestion: 'to_review',
+    relevanceStatus,
+    relevanceReviewedAt: reviewedAt,
     status,
     correctedAlt: '',
     notes: '',
@@ -38,7 +42,7 @@ function imageDecision(
 }
 
 describe('applyImageDecision', () => {
-  it('garde les lignes dupliquées distinctes et remonte une non-conformité au critère 1.1', () => {
+  it('garde les lignes dupliquées distinctes et remonte une non-conformité au critère 1.3', () => {
     const review = emptyReview();
     const selectors = ['main > img', 'main > img'];
 
@@ -48,8 +52,8 @@ describe('applyImageDecision', () => {
     applyImageDecision(review, imageDecision(1, 'non_compliant'), selectors, reviewedAt);
 
     expect(review.imageDecisions).toHaveLength(2);
-    expect(review.decisions[0]).toEqual(expect.objectContaining({
-      criterionId: '1.1',
+    expect(review.decisions.find((item) => item.criterionId === '1.3')).toEqual(expect.objectContaining({
+      criterionId: '1.3',
       status: 'non_compliant',
       source: 'annex_images',
       reviewedAt,
@@ -60,7 +64,7 @@ describe('applyImageDecision', () => {
     const review = emptyReview();
     review.decisions.push({
       pageUrl,
-      criterionId: '1.1',
+      criterionId: '1.3',
       status: 'compliant',
       comment: 'Validation directe',
       reviewedAt,
@@ -75,6 +79,23 @@ describe('applyImageDecision', () => {
       source: 'criterion',
     }));
   });
+
+  it('synchronise uniquement le critère 1.3 et conserve la suggestion automatique séparée', () => {
+    const review = emptyReview();
+    const decision = imageDecision(0, 'compliant');
+
+    applyImageDecision(review, decision, ['main > img'], reviewedAt, ['to_review']);
+
+    expect(review.imageDecisions[0]).toMatchObject({ suggestion: 'to_review', status: 'compliant' });
+    expect(review.decisions).toEqual(expect.arrayContaining([expect.objectContaining({ criterionId: '1.3', status: 'compliant' })]));
+  });
+
+  it('conserve le non-applicable du signal automatique sans le présenter comme une conformité', () => {
+    const review = emptyReview();
+    applyImageDecision(review, imageDecision(0, 'compliant'), ['main > img'], reviewedAt, ['not_applicable']);
+
+    expect(review.decisions).toEqual(expect.arrayContaining([expect.objectContaining({ criterionId: '1.3', status: 'not_applicable' })]));
+  });
 });
 
 describe('applyImageDecisions', () => {
@@ -86,8 +107,8 @@ describe('applyImageDecisions', () => {
       imageDecision(0, 'compliant'),
       { ...imageDecision(1, 'compliant'), selector: 'main > img:nth-of-type(2)' },
     ], selectors, false, reviewedAt);
-    expect(review.decisions[0]).toEqual(expect.objectContaining({
-      criterionId: '1.1',
+    expect(review.decisions.find((item) => item.criterionId === '1.3')).toEqual(expect.objectContaining({
+      criterionId: '1.3',
       status: 'compliant',
       source: 'annex_images',
     }));

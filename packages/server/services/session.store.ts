@@ -13,6 +13,7 @@ import {
   type AuditDecision,
   type AuditReviewState,
   type ImageAuditDecision,
+  type ImageRelevanceSuggestion,
   type HumanStatus,
 } from '@rgaaudit/core/domain/review';
 import { config } from '../config';
@@ -29,12 +30,14 @@ export interface AuditRepository {
     sessionId: string,
     decision: ImageAuditDecision,
     pageImageSelectors?: string[],
+    pageImageSuggestions?: ImageRelevanceSuggestion[],
   ): Promise<AuditReviewState>;
   saveImageDecisions(
     sessionId: string,
     decisions: ImageAuditDecision[],
     pageImageSelectorsByUrl: Record<string, string[]>,
     markCriteriaNonCompliant?: boolean,
+    pageImageSuggestionsByUrl?: Record<string, ImageRelevanceSuggestion[]>,
   ): Promise<AuditReviewState>;
 }
 
@@ -73,6 +76,13 @@ function normalizeImageDecision(value: unknown): ImageAuditDecision | null {
     decision: IMAGE_DECISIONS.includes(legacyDecision as ImageAuditDecision['decision'])
       ? legacyDecision as ImageAuditDecision['decision']
       : null,
+    ...(value.suggestion === 'not_applicable' || value.suggestion === 'to_review'
+      ? { suggestion: value.suggestion as ImageRelevanceSuggestion }
+      : {}),
+    ...(HUMAN_STATUSES.includes(value.relevanceStatus as HumanStatus) ? { relevanceStatus: value.relevanceStatus as HumanStatus } : {}),
+    ...(typeof value.relevanceReviewedAt === 'string' || value.relevanceReviewedAt === null
+      ? { relevanceReviewedAt: value.relevanceReviewedAt }
+      : {}),
     status: normalizeHumanStatus(value.status ?? (legacyDecision === 'informative' ? 'non_compliant' : 'not_tested')),
     correctedAlt: typeof value.correctedAlt === 'string' ? value.correctedAlt : '',
     notes: typeof value.notes === 'string' ? value.notes : '',
@@ -149,6 +159,7 @@ export function applyImageDecision(
   decision: ImageAuditDecision,
   pageImageSelectors: string[] = [],
   reviewedAt = new Date().toISOString(),
+  pageImageSuggestions: ImageRelevanceSuggestion[] = [],
 ): void {
   const index = review.imageDecisions.findIndex(
     (item) => item.pageUrl === decision.pageUrl && (
@@ -157,16 +168,20 @@ export function applyImageDecision(
         : item.elementIndex === undefined && item.selector === decision.selector
     ),
   );
-  if (index === -1) review.imageDecisions.push(decision);
-  else review.imageDecisions[index] = decision;
+  const persistedDecision = index === -1
+    ? decision
+    : { ...review.imageDecisions[index], ...decision };
+  if (index === -1) review.imageDecisions.push(persistedDecision);
+  else review.imageDecisions[index] = persistedDecision;
 
   if (pageImageSelectors.length === 0) return;
 
-  const imageStatuses = pageImageSelectors.map((selector, elementIndex) => {
+  const statusForImage = (elementIndex: number, field: 'status' | 'relevanceStatus'): HumanStatus => {
+    const selector = pageImageSelectors[elementIndex];
     const exactDecision = review.imageDecisions.find((item) => (
       item.pageUrl === decision.pageUrl && item.elementIndex === elementIndex
     ));
-    if (exactDecision) return exactDecision.status;
+    if (exactDecision) return exactDecision[field] ?? 'not_tested';
 
     // A legacy selector-only decision is associated with its first matching row only.
     if (pageImageSelectors.indexOf(selector) !== elementIndex) return 'not_tested';
@@ -174,27 +189,43 @@ export function applyImageDecision(
       item.pageUrl === decision.pageUrl
       && item.elementIndex === undefined
       && item.selector === selector
-    ))?.status ?? 'not_tested';
-  });
-  const criterionStatus = aggregateHumanStatus(imageStatuses);
-  const criterionIndex = review.decisions.findIndex((item) => (
-    item.pageUrl === decision.pageUrl && item.criterionId === '1.1'
-  ));
-  const currentCriterion = criterionIndex === -1 ? undefined : review.decisions[criterionIndex];
-
-  // A verdict entered directly on the criterion always has priority over the annex summary.
-  if (currentCriterion && currentCriterion.source !== 'annex_images') return;
-
-  const criterionDecision: AuditDecision = {
-    pageUrl: decision.pageUrl,
-    criterionId: '1.1',
-    status: criterionStatus,
-    comment: 'Synthèse des validations enregistrées dans l’annexe Images.',
-    reviewedAt: criterionStatus === 'not_tested' ? null : reviewedAt,
-    source: 'annex_images',
+    ))?.[field] ?? 'not_tested';
   };
-  if (criterionIndex === -1) review.decisions.push(criterionDecision);
-  else review.decisions[criterionIndex] = criterionDecision;
+
+  const upsertAnnexCriterion = (criterionId: '1.1' | '1.3', status: HumanStatus, comment: string, criterionReviewedAt?: string | null): void => {
+    const criterionIndex = review.decisions.findIndex((item) => (
+      item.pageUrl === decision.pageUrl && item.criterionId === criterionId
+    ));
+    const currentCriterion = criterionIndex === -1 ? undefined : review.decisions[criterionIndex];
+    // A verdict entered directly on the criterion always has priority over the annex summary.
+    if (currentCriterion && currentCriterion.source !== 'annex_images') return;
+    const criterionDecision: AuditDecision = {
+      pageUrl: decision.pageUrl,
+      criterionId,
+      status,
+      comment,
+      reviewedAt: criterionReviewedAt ?? (status === 'not_tested' ? null : reviewedAt),
+      source: 'annex_images',
+    };
+    if (criterionIndex === -1) review.decisions.push(criterionDecision);
+    else review.decisions[criterionIndex] = criterionDecision;
+  };
+
+  const imageStatuses = pageImageSelectors.map((_, elementIndex) => statusForImage(elementIndex, 'status'));
+  if (imageStatuses.some((status) => status !== 'not_tested')) {
+    upsertAnnexCriterion('1.1', aggregateHumanStatus(imageStatuses), 'Synthèse des validations humaines enregistrées dans l’annexe Images pour le critère 1.1.');
+  }
+
+  const relevanceStatuses = pageImageSelectors
+    .map((_, elementIndex) => pageImageSuggestions[elementIndex] === 'not_applicable'
+      ? null
+      : statusForImage(elementIndex, 'relevanceStatus'))
+    .filter((status): status is HumanStatus => status !== null);
+  if (relevanceStatuses.length === 0) {
+    upsertAnnexCriterion('1.3', 'not_applicable', 'Aucune image avec alternative textuelle non vide n’est dans le périmètre du critère 1.3.');
+  } else if (relevanceStatuses.some((status) => status !== 'not_tested')) {
+    upsertAnnexCriterion('1.3', aggregateHumanStatus(relevanceStatuses), 'Synthèse des validations humaines enregistrées dans l’annexe Images pour le critère 1.3.', persistedDecision.relevanceReviewedAt);
+  }
 }
 
 export function applyImageDecisions(
@@ -203,6 +234,7 @@ export function applyImageDecisions(
   pageImageSelectorsByUrl: Record<string, string[]> = {},
   markCriteriaNonCompliant = false,
   reviewedAt = new Date().toISOString(),
+  pageImageSuggestionsByUrl: Record<string, ImageRelevanceSuggestion[]> = {},
 ): void {
   for (const decision of decisions) {
     applyImageDecision(
@@ -210,6 +242,7 @@ export function applyImageDecisions(
       decision,
       pageImageSelectorsByUrl[decision.pageUrl] ?? [],
       reviewedAt,
+      pageImageSuggestionsByUrl[decision.pageUrl] ?? [],
     );
   }
 
@@ -227,6 +260,7 @@ export function applyImageDecisions(
     const index = review.decisions.findIndex((item) => (
       item.pageUrl === pageUrl && item.criterionId === '1.1'
     ));
+    if (index !== -1 && review.decisions[index].source === 'criterion') continue;
     if (index === -1) review.decisions.push(criterion);
     else review.decisions[index] = criterion;
   }
@@ -338,9 +372,10 @@ class JsonAuditRepository implements AuditRepository {
     sessionId: string,
     decision: ImageAuditDecision,
     pageImageSelectors: string[] = [],
+    pageImageSuggestions: ImageRelevanceSuggestion[] = [],
   ): Promise<AuditReviewState> {
     return this.updateReview(sessionId, (review) => {
-      applyImageDecision(review, decision, pageImageSelectors);
+      applyImageDecision(review, decision, pageImageSelectors, decision.reviewedAt ?? new Date().toISOString(), pageImageSuggestions);
     });
   }
 
@@ -349,9 +384,10 @@ class JsonAuditRepository implements AuditRepository {
     decisions: ImageAuditDecision[],
     pageImageSelectorsByUrl: Record<string, string[]>,
     markCriteriaNonCompliant = false,
+    pageImageSuggestionsByUrl: Record<string, ImageRelevanceSuggestion[]> = {},
   ): Promise<AuditReviewState> {
     return this.updateReview(sessionId, (review) => {
-      applyImageDecisions(review, decisions, pageImageSelectorsByUrl, markCriteriaNonCompliant);
+      applyImageDecisions(review, decisions, pageImageSelectorsByUrl, markCriteriaNonCompliant, new Date().toISOString(), pageImageSuggestionsByUrl);
     });
   }
 
@@ -399,8 +435,9 @@ export function saveImageDecision(
   sessionId: string,
   decision: ImageAuditDecision,
   pageImageSelectors?: string[],
+  pageImageSuggestions?: ImageRelevanceSuggestion[],
 ): Promise<AuditReviewState> {
-  return auditRepository.saveImageDecision(sessionId, decision, pageImageSelectors);
+  return auditRepository.saveImageDecision(sessionId, decision, pageImageSelectors, pageImageSuggestions);
 }
 
 export function saveImageDecisions(
@@ -408,11 +445,13 @@ export function saveImageDecisions(
   decisions: ImageAuditDecision[],
   pageImageSelectorsByUrl: Record<string, string[]>,
   markCriteriaNonCompliant = false,
+  pageImageSuggestionsByUrl: Record<string, ImageRelevanceSuggestion[]> = {},
 ): Promise<AuditReviewState> {
   return auditRepository.saveImageDecisions(
     sessionId,
     decisions,
     pageImageSelectorsByUrl,
     markCriteriaNonCompliant,
+    pageImageSuggestionsByUrl,
   );
 }
