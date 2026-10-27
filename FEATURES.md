@@ -33,7 +33,7 @@ site.
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |
 | Rapport PDF | Export du rapport avec avertissement sur les limites de l’accessibilité PDF | Disponible |
 | Repères visuels candidats | Inventaire des indices DOM/CSS de couleur, forme, taille et position pour la revue humaine des critères 3.1, 10.9 et 10.10 | Disponible avec limites documentées |
-| Pertinence des alternatives d’image | Signal de revue pour les alternatives non vides du critère 1.3, avec distinction des cas absents/vides | Partiel — synchronisation de la décision 1.3 à décider |
+| Pertinence des alternatives d’image | Suggestion automatique pour les alternatives non vides du critère 1.3, décision humaine synchronisée avec l’espace de revue et historique conservé | Disponible avec limites documentées |
 | Images spécialisées et descriptions | L’annexe Images rattache des preuves candidates et validations humaines aux critères RGAA 1.4 à 1.8, notamment CAPTCHA, descriptions détaillées et images-texte | Disponible avec limites documentées |
 | Documents bureautiques et versions accessibles | L’annexe Contenus spécialisés recense les téléchargements candidats pour les critères RGAA 13.3 et 13.4, avec MIME/taille déclarés, attribut `download` et analyse locale explicitement non exécutée | Disponible avec limites documentées |
 | Pertinence des titres de cadres | L’annexe Cadres conserve le titre et le contexte de chaque frame et rattache une preuve candidate au critère RGAA 2.2, sans juger automatiquement sa pertinence | Disponible avec limites documentées |
@@ -41,6 +41,7 @@ site.
 | Tableaux complexes et de mise en forme | Candidats de tableaux, signaux de complexité, titre/résumé, lecture linéarisée et preuves des associations d’en-têtes pour les critères 5.1, 5.2, 5.3, 5.5 et 5.7 | Disponible avec limites documentées |
 | Visibilité du focus et responsive | Observations candidates par état de présentation et viewport pour le critère 10.7, avec annexe filtrable et vérification humaine au clavier | Disponible avec limites documentées |
 | Scénarios contrôlés d’interaction | Observations de focus, flash, pointer/touch et APIs de mouvement rattachées aux parcours pour revue humaine | Disponible avec limites documentées |
+| Tabulation, contenus cryptiques et animations | Les actions `press` produisent des observations de focus ; les contenus cryptiques et contrôles pause/arrêt/masquage sont recensés comme candidats pour revue humaine | Disponible avec limites documentées |
 | Progression d’audit | Suivi temps réel d’une session et reprise depuis les fichiers persistés | Disponible |
 | Parcours interactifs | Création, édition, rejeu, captures contextuelles, preuves et décisions par exécution | En cours de finalisation (US-23) |
 | Annexe de parcours dans le rapport | Rattachement à une session et annexe versionnée HTML/PDF | En cours de finalisation (US-23) |

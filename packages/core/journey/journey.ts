@@ -121,6 +121,16 @@ export interface JourneyCrypticContentObservation {
   detail: string;
 }
 
+/** Candidate pause/stop/hide control for an animated content review. */
+export interface JourneyAnimationControlObservation {
+  selector: string;
+  kind: 'pause' | 'stop' | 'hide';
+  label: string;
+  detail: string;
+  criterionIds: ['13.8'];
+  requiresHumanReview: true;
+}
+
 /** Candidate alternative exposed for a script; relevance remains human-reviewed. */
 export interface JourneyScriptAlternativeObservation {
   selector: string;
@@ -149,7 +159,7 @@ export interface JourneyContextObservation {
   titleBefore: string;
   titleAfter: string;
   changed: boolean;
-  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption' | 'additional-content' | 'time-limit' | 'new-window' | 'cryptic-content' | 'script-alternative' | 'script-control'>;
+  changeTypes: Array<'navigation' | 'title' | 'dialog' | 'live-region' | 'disclosure' | 'disruption' | 'additional-content' | 'time-limit' | 'new-window' | 'cryptic-content' | 'script-alternative' | 'script-control' | 'animation-control'>;
   disruptions: JourneyDisruptionObservation[];
   /** Optional for runs persisted before disclosure observations were added. */
   disclosures?: JourneyDisclosureObservation[];
@@ -161,6 +171,8 @@ export interface JourneyContextObservation {
   newWindows?: JourneyNewWindowObservation[];
   /** Optional evidence for RGAA 13.6 (and 13.5 when no alternative is exposed). */
   crypticContent?: JourneyCrypticContentObservation[];
+  /** Candidate controls observed for an animated content review (RGAA 13.8). */
+  animationControls?: JourneyAnimationControlObservation[];
   /** Optional evidence for RGAA 7.2. */
   scriptAlternatives?: JourneyScriptAlternativeObservation[];
   /** Optional evidence for RGAA 7.3. */
@@ -387,6 +399,7 @@ interface JourneyContextSignals {
   timeLimits: JourneyTimeLimitObservation[];
   newWindows: JourneyNewWindowObservation[];
   crypticContent: JourneyCrypticContentObservation[];
+  animationControls: JourneyAnimationControlObservation[];
   scriptAlternatives: JourneyScriptAlternativeObservation[];
   scriptControls: JourneyScriptControlObservation[];
 }
@@ -700,6 +713,29 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
         detail: alternative ? `alternative observée=${alternative.slice(0, 160)}` : 'aucune alternative textuelle observée',
       }];
     }).slice(0, 50);
+    const animationControls: JourneyAnimationControlObservation[] = Array.from(document.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"], summary')).flatMap((element) => {
+      if (!visible(element)) return [];
+      const label = (element.getAttribute('aria-label')
+        || element.getAttribute('title')
+        || (element instanceof HTMLInputElement ? element.value : '')
+        || element.textContent
+        || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+      if (!label) return [];
+      const kind = /pause|mettre en pause|paus/i.test(label) ? 'pause' as const
+        : /stop|arr[eê]t|arrêter|arr[êe]ter/i.test(label) ? 'stop' as const
+          : /hide|masqu|cacher/i.test(label) ? 'hide' as const : null;
+      if (!kind) return [];
+      const selector = getUniqueSelector(element);
+      const controlled = (element.getAttribute('aria-controls') ?? '').split(/\s+/).filter(Boolean).join(', ');
+      return [{
+        selector,
+        kind,
+        label,
+        detail: controlled ? `contrôle candidat ; aria-controls=${controlled}` : 'contrôle candidat ; suffisance à vérifier',
+        criterionIds: ['13.8'],
+        requiresHumanReview: true,
+      } satisfies JourneyAnimationControlObservation];
+    }).slice(0, 50);
     return {
       dialogs: Array.from(document.querySelectorAll('[role="dialog"], dialog'))
         .filter(visible)
@@ -714,6 +750,7 @@ async function captureContextSignals(page: Page): Promise<JourneyContextSignals>
       timeLimits: timeLimits.slice(0, 50),
       newWindows: newWindows.slice(0, 50),
       crypticContent,
+      animationControls,
       scriptAlternatives,
       scriptControls,
       disruptions,
@@ -759,6 +796,12 @@ function buildContextObservation(
     beforeCrypticContent.get(item.selector) !== `${item.content}|${item.alternative ?? ''}`
   ));
   if (crypticContent.length > 0) changeTypes.push('cryptic-content');
+  const beforeAnimationControls = new Map(before.animationControls.map((item) => [item.selector, `${item.kind}|${item.label}`]));
+  const animationControls = after.animationControls;
+  const changedAnimationControls = animationControls.filter((item) => (
+    beforeAnimationControls.get(item.selector) !== `${item.kind}|${item.label}`
+  ));
+  if (changedAnimationControls.length > 0) changeTypes.push('animation-control');
   const beforeScriptAlternatives = new Map(before.scriptAlternatives.map((item) => [item.selector, `${item.alternativeSelector ?? ''}|${item.alternative ?? ''}`]));
   const scriptAlternatives = after.scriptAlternatives.filter((item) => (
     includeInitialScriptAlternatives
@@ -790,6 +833,7 @@ function buildContextObservation(
     if (disruption.kind === 'motion') criterionIds.add('13.8');
     if (disruption.kind === 'flash') criterionIds.add('13.7');
   }
+  if (animationControls.length > 0) criterionIds.add('13.8');
   const interactions = after.interactions;
   for (const interaction of interactions) {
     interaction.criterionIds.forEach((criterionId) => criterionIds.add(criterionId));
@@ -813,6 +857,7 @@ function buildContextObservation(
     timeLimits,
     newWindows,
     crypticContent,
+    animationControls,
     scriptAlternatives,
     scriptControls,
     interactions,

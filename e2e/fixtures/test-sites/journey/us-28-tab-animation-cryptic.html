@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <title>Parcours clavier, animation et contenu candidat</title>
+    <style>
+      #animated { animation: pulse 1s infinite; width: 140px; padding: 1rem; background: #dbeafe; }
+      @keyframes pulse { from { opacity: .7; } to { opacity: 1; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Contenus à vérifier</h1>
+      <button id="pause" type="button" aria-controls="animated">Mettre en pause</button>
+      <div id="animated" tabindex="0">Contenu animé</div>
+      <p id="cryptic" role="img" aria-label="Icône d’information"></p>
+      <button id="next" type="button">Continuer</button>
+    </main>
+    <script>
+      document.querySelector('#next').addEventListener('keydown', () => {
+        document.querySelector('#cryptic').textContent = '⚠️ !!';
+      });
+    </script>
+  </body>
+</html>

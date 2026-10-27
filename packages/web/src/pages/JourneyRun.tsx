@@ -25,6 +25,7 @@ interface JourneyContext {
   timeLimits?: Array<{ kind: 'timer' | 'meta-refresh' | 'countdown'; selector: string; detail: string }>;
   newWindows?: Array<{ kind: 'window-open' | 'target-blank'; selector: string; detail: string }>;
   crypticContent?: Array<{ selector: string; content: string; alternative: string | null; detail: string }>;
+  animationControls?: Array<{ selector: string; kind: 'pause' | 'stop' | 'hide'; label: string; detail: string; criterionIds: ['13.8']; requiresHumanReview: true }>;
   scriptAlternatives?: Array<{ selector: string; alternativeSelector: string | null; alternative: string | null; detail: string }>;
   scriptControls?: Array<{ selector: string; pointerEvents: string[]; keyboardEvents: string[]; detail: string }>;
   interactions?: Array<{
@@ -108,6 +109,7 @@ const changeTypeKeys: Record<string, string> = {
   'cryptic-content': 'journey.changeTypes.crypticContent',
   'script-alternative': 'journey.changeTypes.scriptAlternative',
   'script-control': 'journey.changeTypes.scriptControl',
+  'animation-control': 'journey.changeTypes.animationControl',
 };
 
 function formatDate(value?: string): string {
@@ -378,6 +380,21 @@ function JourneyStepCard({
                 <ul className="mt-1 space-y-1">
                   {step.context.crypticContent.map((item, itemIndex) => (
                     <li key={`${item.selector}-${itemIndex}`}>{item.selector}: <code>{item.content}</code> — {item.detail}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900">{t('journey.animationControlsTitle')}</h4>
+              {!step.context.animationControls?.length ? (
+                <p>{t('journey.noAnimationControls')}</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {step.context.animationControls.map((item, itemIndex) => (
+                    <li key={`${item.selector}-${item.kind}-${itemIndex}`}>
+                      <span className="font-medium">{t(`journey.animationControlKind.${item.kind}`)}</span>
+                      {' — '}{item.selector}: {item.label} ({item.detail}); {t('journey.animationControlHumanReview')}
+                    </li>
                   ))}
                 </ul>
               )}

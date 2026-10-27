@@ -285,6 +285,7 @@ describe('renderReportHtml', () => {
                 timeLimits: [{ kind: 'timer', selector: 'window', detail: 'setTimeout enregistré avec un délai de 1000 ms' }],
                 newWindows: [{ kind: 'window-open', selector: 'window.open', detail: 'target=_blank' }],
                 crypticContent: [{ selector: '#emoji', content: '🙂', alternative: 'Information', detail: 'alternative observée=Information' }],
+                animationControls: [{ selector: '#pause', kind: 'pause', label: 'Mettre en pause', detail: 'contrôle candidat', criterionIds: ['13.8'], requiresHumanReview: true }],
                 scriptAlternatives: [{ selector: 'script#app', alternativeSelector: 'noscript', alternative: 'Version sans JavaScript', detail: 'alternative candidate observée dans noscript' }],
                 scriptControls: [{ selector: '#script-action', pointerEvents: ['pointerdown', 'pointerup'], keyboardEvents: ['keydown', 'keyup'], detail: 'événements observés' }],
                 interactions: [{
@@ -297,6 +298,7 @@ describe('renderReportHtml', () => {
                 criterionIds: ['13.7', '13.10'],
                 requiresHumanReview: true,
               },
+              screenshotUrl: '/api/journey-runs/run-1/screenshots/000-step-1.png',
               result: null,
             }],
           },
@@ -313,11 +315,15 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Limites de temps et rafraîchissements');
     expect(html).toContain('Ouvertures de fenêtres');
     expect(html).toContain('Contenus cryptiques');
+    expect(html).toContain('Contrôles des contenus animés');
     expect(html).toContain('Alternatives de scripts');
     expect(html).toContain('Contrôles des scripts');
     expect(html).toContain('Geste complexe candidat');
     expect(html).toContain('320 × 256');
     expect(html).toContain('indicateur non observé');
+    expect(html).toContain('Miniature dans le rapport');
+    expect(html).toContain('000-step-1.png');
+    expect(html).toContain('<details open');
   });
 
   it('affiche l’annexe formulaires dans le rapport HTML', () => {

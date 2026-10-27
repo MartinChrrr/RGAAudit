@@ -1,5 +1,23 @@
 # Décisions bloquantes
 
+## Décisions produit confirmées — 2026-10-27
+
+Les choix suivants ont été confirmés par le client :
+
+- PDF : **toujours à jour** après un rejeu ou une décision ; le cache doit être
+  invalidé à partir des données du parcours et de ses décisions.
+- US-28 / 12.8 : réutiliser les actions `press` définies dans les parcours ; ne
+  pas généraliser automatiquement à toute la page.
+- US-28 / 13.5 et 13.8 : produire des signaux et orientations de revue, sans
+  décider automatiquement.
+- US-28 : réutiliser les preuves `keyboard/context` existantes et afficher les
+  captures en miniature dans le rapport, avec la taille complète dans l’annexe.
+- US-41 / critère 1.3 : synchroniser l’annexe Images et `ReviewWorkspace`.
+  Une suggestion peut être affichée, mais la décision humaine reste finale.
+
+Les sections ci-dessous conservent le contexte et les conséquences de ces
+choix. Elles ne constituent plus des questions ouvertes.
+
 ## 2026-10-27 — Synchronisation GitHub indisponible
 
 ### Contexte
@@ -21,26 +39,39 @@ Rouvrir une session GitHub authentifiée, vérifier chaque issue et le Project 5
 puis synchroniser les cartes et les états. Ce blocage n’empêche pas les tests
 ou les commits locaux, mais il empêche la clôture et la mise à jour du suivi.
 
+## 2026-10-27 — Revue manuelle de l’interface non disponible
+
+L’agent de test manuel n’a pas pu ouvrir l’application : aucun navigateur
+intégré ni environnement local accessible n’était disponible dans cette
+session. Les parcours PDF, US-41 et US-28 n’ont donc pas été validés comme un
+utilisateur.
+
+Ce n’est pas un blocage d’implémentation : les tests automatisés et les
+typechecks passent. Refaire la revue lorsque le navigateur intégré et
+l’application locale seront disponibles, sans transformer cette absence de
+preuve en conclusion de conformité.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte
 
 Le rapport HTML et le rapport JSON reconstruisent l’annexe des parcours à chaque demande. Le endpoint PDF réutilise toutefois le premier fichier PDF généré pour une session (`journey-annex-v1`). Si un rejeu ou une décision de preuve est enregistré après cette première génération, les téléchargements suivants peuvent donc continuer à servir un PDF sans ces dernières données.
 
-### Décision attendue
+### Décision retenue
 
-Choisir le comportement attendu pour le PDF :
-
-1. **PDF immuable dès la première génération** — le fichier représente un instantané explicite et il faut le documenter ainsi dans l’interface et le manuel ; ou
-2. **PDF toujours à jour** — recalculer la clé/invalidation du cache à partir des parcours et décisions rattachés à la session (recommandation PO/architecture).
+**Option 2 — PDF toujours à jour** : recalculer la clé/invalidation du cache à
+partir des parcours et décisions rattachés à la session.
 
 ### État
 
-La story d’intégration des parcours dans les rapports est implémentée et poussée, mais elle ne doit pas être clôturée avant cette décision. Aucune modification de comportement n’a été inventée.
+L’empreinte du rapport public inclut maintenant les parcours et décisions ; une
+modification force donc une nouvelle génération du PDF. Les tests de
+non-régression couvrent la différence entre deux versions.
 
-### Reprise au prochain échange
+### Reprise
 
-Me demander de confirmer l’option 1 ou 2, puis appliquer la décision, ajouter le test de non-régression correspondant et mettre à jour le manuel utilisateur.
+Vérifier la génération depuis une session réelle lorsque GitHub et l’interface
+sont à nouveau accessibles, puis synchroniser l’issue et le Project.
 
 ## 2026-10-25 — Périmètre de l’US-28 (tabulation, contenus cryptiques et contenus animés)
 
@@ -48,21 +79,30 @@ Me demander de confirmer l’option 1 ou 2, puis appliquer la décision, ajouter
 
 L’US-28 peut réutiliser le moteur de parcours, mais son périmètre exact conditionne les preuves à collecter. Le code actuel observe déjà partiellement le focus et les changements d’état, sans conclure automatiquement pour les critères 12.8, 13.5 et 13.8.
 
-### Décisions attendues
+### Décisions retenues
 
-1. Pour le critère 12.8, confirmer si le test doit parcourir toute la page avec Tab ou seulement les actions `press` définies dans un parcours.
-2. Pour le critère 13.5, préciser les motifs à inventorier comme contenu cryptique (par exemple emojis, art ASCII ou syntaxes techniques) et le niveau d’alternative attendu.
-3. Pour le critère 13.8, préciser quels contrôles sont acceptés comme mécanisme pause/arrêt/masquage pour les contenus animés.
-4. Confirmer si les décisions humaines doivent réutiliser les preuves `keyboard/context` ou disposer d’un modèle de décision dédié.
-5. Confirmer si les captures visuelles doivent être intégrées directement dans le rapport HTML/PDF ou seulement accessibles depuis la revue.
+1. Pour le critère 12.8, réutiliser les actions `press` définies dans un
+   parcours ; aucune tabulation exhaustive automatique n’est ajoutée.
+2. Pour le critère 13.5, inventorier des candidats de contenus cryptiques et
+   laisser la vérification de l’alternative à l’humain.
+3. Pour le critère 13.8, inventorier les contrôles de pause, d’arrêt ou de
+   masquage ; ne pas produire de décision automatique.
+4. Réutiliser les preuves `keyboard/context` avec des contrôles humains
+   propres aux critères concernés.
+5. Afficher une miniature dans le rapport et conserver la capture complète
+   dans l’annexe.
 
 ### Recommandation PO
 
-Ne pas déduire de non-conformité. Commencer par un inventaire de preuves reproductibles (ordre de focus observé, contenu animé détecté, contexte et capture lorsque disponible), puis conserver une décision humaine explicite par preuve. Reprendre les actions `press` existantes par défaut, et ne généraliser à toute la page qu’après confirmation.
+Ne pas déduire de non-conformité. Commencer par un inventaire de preuves
+reproductibles (ordre de focus observé, contenu animé détecté, contexte et
+capture lorsque disponible), puis conserver une décision humaine explicite par
+preuve. Les actions `press` existantes restent le périmètre confirmé.
 
-### Reprise au prochain échange
+### Reprise
 
-Me demander de choisir les options ci-dessus avant de démarrer l’US-28. En attendant, poursuivre les stories indépendantes qui ne dépendent pas de ces décisions.
+Les règles sont implémentées ; il reste à vérifier l’exposition complète depuis
+le parcours réel et à synchroniser l’issue lorsque GitHub sera accessible.
 
 ## 2026-10-25 — Synchronisation de la décision RGAA 1.3 pour les alternatives d’image (tâche #41)
 
@@ -77,26 +117,26 @@ de revue des critères, tandis que l’annexe Images persiste ses propres
 reliés : l’annexe ne sait donc pas si la décision 1.3 a été prise dans la revue,
 et une modification d’image ne peut pas clôturer le statut du critère 1.3.
 
-### Décision attendue
+### Décision retenue
 
 Choisir le flux de décision de la pertinence du critère 1.3 :
 
 1. **Décision uniquement dans `ReviewWorkspace`** — l’annexe reste un
    inventaire de signaux et doit employer une formulation qui ne prétend pas
    afficher une décision 1.3 enregistrée ; ou
-2. **Synchronisation annexe ↔ revue** — l’annexe enregistre ou met à jour une
-   décision humaine explicitement rattachée au critère 1.3, et `ReviewWorkspace`
-   recharge ce même état (recommandation PO/architecture : option 2 si l’on
-   veut décider depuis l’annexe).
+**Option 2 — synchronisation annexe ↔ revue** : l’annexe enregistre ou met à
+jour une décision humaine explicitement rattachée au critère 1.3, et
+`ReviewWorkspace` recharge ce même état. Une suggestion automatique ne peut
+jamais remplacer la décision humaine.
 
 ### État
 
-La signalisation `ALT_RELEVANCE_REVIEW`, le mapping manuel, la fixture et les
-tests sont implémentés et validés, mais la tâche #41 reste `In Progress` et ne
-doit pas être clôturée avant ce choix. Aucun verdict automatique n’est produit.
+La signalisation `ALT_RELEVANCE_REVIEW`, la fixture, la suggestion séparée et
+la synchronisation avec le critère 1.3 sont implémentées et validées. Aucun
+verdict automatique n’est produit ; une décision saisie directement dans
+`ReviewWorkspace` conserve la priorité.
 
-### Reprise au prochain échange
+### Reprise
 
-Me demander de choisir l’option 1 ou 2, puis implémenter le flux correspondant,
-ajouter le test de synchronisation et mettre à jour le manuel. En attendant,
-poursuivre les cartes indépendantes.
+Vérifier le flux depuis l’interface complète lorsque GitHub sera accessible,
+puis synchroniser l’issue et le Project.

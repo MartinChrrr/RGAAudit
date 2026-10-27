@@ -124,7 +124,8 @@
       "newWindow": "Ouverture de fenêtre",
       "crypticContent": "Contenu cryptique",
       "scriptAlternative": "Alternative de script",
-      "scriptControl": "Contrôle de script"
+      "scriptControl": "Contrôle de script",
+      "animationControl": "Contrôle de contenu animé"
     },
     "disruptionsTitle": "Mouvements ou sons perturbateurs",
     "noDisruptions": "Aucun signal détecté — revue humaine requise.",
@@ -157,6 +158,14 @@
     },
     "crypticContentTitle": "Contenus cryptiques",
     "noCrypticContent": "Aucun contenu cryptique candidat observé — revue humaine requise.",
+    "animationControlsTitle": "Contrôles des contenus animés",
+    "noAnimationControls": "Aucun contrôle pause, arrêt ou masquage candidat observé — revue humaine requise.",
+    "animationControlHumanReview": "suffisance à confirmer humainement",
+    "animationControlKind": {
+      "pause": "Pause candidate",
+      "stop": "Arrêt candidat",
+      "hide": "Masquage candidat"
+    },
     "scriptAlternativesTitle": "Alternatives de scripts",
     "noScriptAlternatives": "Aucune alternative de script observée — revue humaine requise.",
     "noScriptAlternative": "Aucune alternative textuelle observée",
@@ -183,6 +192,7 @@
     "humanReview": "Cette observation ne remplace pas une vérification humaine.",
     "screenshotTitle": "Capture visuelle",
     "screenshotAvailable": "Capture disponible ; la description textuelle ci-dessus reste la preuve accessible.",
+    "screenshotThumbnail": "Miniature dans le rapport ; ouvrir l’image pour la taille complète dans l’annexe.",
     "screenshotMissing": "La capture n’est plus disponible ; les observations textuelles restent consultables.",
     "screenshotAlt": "Capture après l’étape {id}. Les observations textuelles associées sont affichées avant cette image.",
     "noScreenshot": "Aucune capture visuelle n’est associée à cette étape.",

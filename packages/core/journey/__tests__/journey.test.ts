@@ -11,6 +11,7 @@ const US31_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test
 const US46_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-46-context-disclosures.html');
 const US47_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-47-consultation-evidence.html');
 const US48_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-48-script-controls.html');
+const US28_FIXTURE_PATH = path.resolve(__dirname, '../../../../e2e/fixtures/test-sites/journey/us-28-tab-animation-cryptic.html');
 let server: http.Server;
 let baseUrl: string;
 
@@ -26,6 +27,8 @@ beforeAll(async () => {
             ? US47_FIXTURE_PATH
             : req.url === '/journey/us-48-script-controls.html'
               ? US48_FIXTURE_PATH
+              : req.url === '/journey/us-28-tab-animation-cryptic.html'
+                ? US28_FIXTURE_PATH
         : null;
     if (!fixture) {
       res.writeHead(404);
@@ -249,6 +252,35 @@ describe('replayJourney', () => {
       changeTypes: expect.arrayContaining(['new-window']),
       criterionIds: expect.arrayContaining(['13.2']),
       newWindows: [expect.objectContaining({ kind: 'window-open' })],
+    });
+  }, 30_000);
+
+  it('observe les contrôles d’animation et conserve les contenus cryptiques comme candidats', async () => {
+    const screenshotDir = await mkdtemp(path.join(os.tmpdir(), 'rgaudit-us28-'));
+    const journey: JourneyDefinition = {
+      id: 'journey-us28',
+      name: 'Clavier et contenus animés',
+      startUrl: `${baseUrl}/journey/us-28-tab-animation-cryptic.html`,
+      createdAt: new Date().toISOString(),
+      steps: [{ id: 'press-next', action: 'press', selector: '#next', key: 'Enter' }],
+    };
+
+    const run = await replayJourney(journey, {
+      timeout: 10_000,
+      screenshotDir,
+      isRequestAllowed: async (url) => url.startsWith(baseUrl),
+    });
+
+    expect(run.steps[0]?.context).toMatchObject({
+      requiresHumanReview: true,
+      animationControls: [expect.objectContaining({
+        selector: '#pause',
+        kind: 'pause',
+        criterionIds: ['13.8'],
+        requiresHumanReview: true,
+      })],
+      crypticContent: [expect.objectContaining({ selector: '#cryptic', alternative: 'Icône d’information' })],
+      criterionIds: expect.arrayContaining(['13.5', '13.6', '13.8']),
     });
   }, 30_000);
 
