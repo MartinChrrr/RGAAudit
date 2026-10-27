@@ -150,7 +150,19 @@ export interface FrameData {
   elementIndex?: number;
   titleAttribute: string | null;
   titleStatus: 'absent' | 'empty' | 'present';
+  /** Candidate evidence for the human relevance review of RGAA 2.2. */
+  titleEvidence?: FrameCriterionEvidence;
   flags: string[];
+}
+
+export type FrameEvidenceState = 'not_applicable' | 'to_review';
+
+export interface FrameCriterionEvidence {
+  criterionId: '2.2';
+  state: FrameEvidenceState;
+  proof: string[];
+  limits: string[];
+  humanChecks: string[];
 }
 
 export interface HeadingData {
@@ -1382,7 +1394,24 @@ export async function collectFrames(page: Page): Promise<FrameData[]> {
     if (titleStatus === 'empty') flags.push('FRAME_TITLE_EMPTY');
     if (frame.evidenceStatus === 'unreadable') flags.push('FRAME_CONTENT_UNREADABLE');
 
-    return { ...frame, titleStatus, flags };
+    const criterion = getCriterion('2.2');
+    const hasTitle = titleStatus === 'present';
+    const titleEvidence: FrameCriterionEvidence = {
+      criterionId: '2.2',
+      state: 'to_review',
+      proof: hasTitle
+        ? [`Titre de cadre observé : ${frame.titleAttribute}`]
+        : ['Aucun titre de cadre observé ; la pertinence du titre ne peut pas être appréciée.'],
+      limits: [
+        criterion?.limits,
+        'La collecte ne détermine pas la pertinence du titre ; une vérification humaine du contexte et de la fonction du cadre reste nécessaire.',
+      ].filter((limit): limit is string => Boolean(limit)),
+      humanChecks: criterion
+        ? [`${criterion.rgaa.id} — ${criterion.rgaa.title}`]
+        : [],
+    };
+
+    return { ...frame, titleStatus, titleEvidence, flags };
   });
 }
 

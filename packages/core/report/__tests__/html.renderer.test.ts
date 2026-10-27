@@ -539,6 +539,30 @@ describe('renderReportHtml', () => {
     expect(html).toContain('aucun verdict automatique');
   });
 
+  it('affiche la pertinence candidate des titres de cadres dans le rapport', () => {
+    const collected = makeCollectedData();
+    collected.frames = [{
+      selector: 'iframe#help', tagName: 'iframe', src: '/help', sourceUrl: 'https://example.com/help',
+      origin: 'https://example.com', evidenceStatus: 'readable', elementIndex: 0,
+      titleAttribute: 'Aide', titleStatus: 'present', flags: [],
+      titleEvidence: {
+        criterionId: '2.2', state: 'to_review', proof: ['Titre de cadre observé : Aide'],
+        limits: ['Pertinence à vérifier'], humanChecks: ['2.2 — pertinence du titre'],
+      },
+    }];
+
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
+    });
+
+    expect(html).toContain('data-testid="frames-section"');
+    expect(html).toContain('Pertinence RGAA 2.2');
+    expect(html).toContain('Titre de cadre observé : Aide');
+    expect(html).toContain('aucun verdict automatique');
+    expect(html).toContain('role="region"');
+  });
+
   it('affiche les différences horodatées entre observations', () => {
     const html = renderReportHtml({
       report: {

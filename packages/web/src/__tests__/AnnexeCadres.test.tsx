@@ -18,6 +18,13 @@ const frames: FrameItem[] = [
     src: '/help',
     titleAttribute: 'Aide',
     titleStatus: 'present',
+    titleEvidence: {
+      criterionId: '2.2',
+      state: 'to_review',
+      proof: ['Titre de cadre observé : Aide'],
+      limits: ['Pertinence à vérifier'],
+      humanChecks: ['2.2 — pertinence du titre'],
+    },
     flags: [],
     pageUrl: 'https://example.com/',
   },
@@ -51,6 +58,7 @@ describe('AnnexeCadres', () => {
 
     expect(screen.getByText('Tous les cadres affichés possèdent un titre')).toBeInTheDocument();
     expect(screen.getByText('Aide')).toBeInTheDocument();
+    expect(screen.getByText(/Pertinence du titre — critère 2\.2/)).toBeInTheDocument();
   });
 
   it('signale une preuve de frame illisible même si son titre est présent', () => {
@@ -63,6 +71,7 @@ describe('AnnexeCadres', () => {
 
     expect(screen.getByText('Preuve illisible — à vérifier')).toBeInTheDocument();
     expect(screen.getByText('https://other.example')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /annexe cadres/i })).toBeInTheDocument();
     expect(screen.getByRole('table')).toHaveAccessibleName('Annexe Cadres');
     expect(screen.getAllByRole('columnheader')).toHaveLength(5);
   });

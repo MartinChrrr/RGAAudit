@@ -442,6 +442,12 @@ export function redactCollectedData(collectedData: CollectedData | null): Collec
       sourceUrl: frame.sourceUrl ? redactUrl(frame.sourceUrl) : frame.sourceUrl,
       origin: frame.origin ? redactUrl(frame.origin) : frame.origin,
       titleAttribute: frame.titleAttribute ? redactTextUrls(frame.titleAttribute) : frame.titleAttribute,
+      titleEvidence: frame.titleEvidence ? {
+        ...frame.titleEvidence,
+        proof: frame.titleEvidence.proof.map(redactTextUrls),
+        limits: frame.titleEvidence.limits.map(redactTextUrls),
+        humanChecks: frame.titleEvidence.humanChecks.map(redactTextUrls),
+      } : frame.titleEvidence,
     })),
     links: (collectedData.links ?? []).map((link) => ({
       ...link,

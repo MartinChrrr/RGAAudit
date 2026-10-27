@@ -6,6 +6,7 @@ import type { Report, AggregatedCriterion } from '../mapping/mapper';
 import type { JourneyReportAnnex } from '../journey/journey';
 import type {
   CollectedData,
+  FrameData,
   ImageData,
   FormDataItem,
   MediaData,
@@ -88,6 +89,7 @@ export interface RenderOptions {
 }
 
 type CollectedPage = { url: string; pageId?: string; collectedData: CollectedData | null };
+type FrameAnnexItem = { url: string; pageId?: string; frame: FrameData };
 type ImageAnnexItem = { url: string; pageId?: string; image: ImageData };
 type FormAnnexItem = { url: string; pageId?: string; form: FormDataItem };
 type MediaAnnexItem = { url: string; pageId?: string; item: MediaData };
@@ -104,6 +106,15 @@ const IMAGE_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], ImageAnnexItem> = 
   maxItems: 2_000,
   extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
     (collectedData?.images ?? []).map((image) => ({ url, pageId, image }))
+  )),
+};
+
+const FRAME_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], FrameAnnexItem> = {
+  id: 'annex-frames',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    (collectedData?.frames ?? []).map((frame) => ({ url, pageId, frame }))
   )),
 };
 
@@ -315,6 +326,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
 
   const collectedPages = allCollected ?? [];
   const imagesSection = buildImagesSection(runReportExtractor(IMAGE_ANNEX_EXTRACTOR, collectedPages).items);
+  const framesSection = buildFramesSection(runReportExtractor(FRAME_ANNEX_EXTRACTOR, collectedPages).items);
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
   const tablesSection = buildTablesSection(runReportExtractor(TABLE_ANNEX_EXTRACTOR, collectedPages).items);
@@ -452,6 +464,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
     ${buildContrastSection(contrastViolations ?? [])}
 
     ${imagesSection}
+
+    ${framesSection}
 
     ${mediaSection}
 
@@ -687,6 +701,39 @@ function buildNavigationSection(items: NavigationAnnexItem[]): string {
               <th scope="col" class="px-3 py-2">${escapeHtml(t('report.presentationSignals'))}</th>
             </tr>
           </thead>
+          <tbody class="divide-y divide-gray-100">${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+function buildFramesSection(frames: FrameAnnexItem[]): string {
+  if (frames.length === 0) return '';
+
+  const rows = frames.map(({ url, pageId, frame }) => {
+    const evidence = frame.titleEvidence;
+    return `
+      <tr>
+        <td class="px-3 py-2 text-xs text-gray-700"><code>${escapeHtml(frame.selector)}</code><br>${escapeHtml(pageLabel(url, pageId))}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(frame.sourceUrl ?? frame.src ?? 'Source absente')}<br>${escapeHtml(frame.origin ?? 'Origine absente')}</td>
+        <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(frame.titleAttribute ?? (frame.titleStatus === 'absent' ? 'Titre absent' : 'Titre vide'))}</td>
+        <td class="px-3 py-2 text-xs text-amber-900">${evidence ? `<details><summary>${escapeHtml(evidence.state === 'to_review' ? 'Pertinence à vérifier' : 'Non applicable')}</summary>Preuves : ${escapeHtml(evidence.proof.join(' · ') || 'aucune')}<br>Limites : ${escapeHtml(evidence.limits.join(' · ') || 'aucune')}<br>Contrôles humains : ${escapeHtml(evidence.humanChecks.join(' · ') || 'aucun')}<br>Revue humaine requise ; aucun verdict automatique.</details>` : 'Preuve de pertinence absente'}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <section class="mb-8" data-testid="frames-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Annexe — Cadres</h2>
+      <p class="text-sm text-gray-600 mb-3">Les titres de cadres sont observés ; leur pertinence au regard du critère 2.2 reste une décision humaine.</p>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto" role="region" tabindex="0" aria-label="Annexe Cadres — faites défiler horizontalement pour consulter toutes les colonnes">
+        <table class="w-full text-sm text-left">
+          <caption class="sr-only">Annexe Cadres</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200"><tr>
+            <th scope="col" class="px-3 py-2">Cadre et page</th>
+            <th scope="col" class="px-3 py-2">Source et origine</th>
+            <th scope="col" class="px-3 py-2">Titre</th>
+            <th scope="col" class="px-3 py-2">Pertinence RGAA 2.2</th>
+          </tr></thead>
           <tbody class="divide-y divide-gray-100">${rows}</tbody>
         </table>
       </div>

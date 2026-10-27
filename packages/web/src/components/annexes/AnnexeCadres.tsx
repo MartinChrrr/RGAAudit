@@ -11,6 +11,13 @@ export interface FrameItem {
   elementIndex?: number;
   titleAttribute: string | null;
   titleStatus: 'absent' | 'empty' | 'present';
+  titleEvidence?: {
+    criterionId: '2.2';
+    state: 'not_applicable' | 'to_review';
+    proof: string[];
+    limits: string[];
+    humanChecks: string[];
+  };
   flags: string[];
   pageUrl?: string;
   pageId?: string;
@@ -95,7 +102,12 @@ export default function AnnexeCadres({
               ? t('annexes.frames.issueCount', { count: issueCount })
               : t('annexes.frames.noIssues')}
           </p>
-          <div className="overflow-x-auto">
+          <div
+            className="overflow-x-auto"
+            role="region"
+            tabIndex={0}
+            aria-label={`${t('annexes.frames.title')} — faites défiler horizontalement pour consulter toutes les colonnes`}
+          >
             <table className="w-full text-left text-sm">
               <caption className="sr-only">{t('annexes.frames.title')}</caption>
               <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-700">
@@ -121,6 +133,15 @@ export default function AnnexeCadres({
                       {frame.titleStatus === 'present'
                         ? frame.titleAttribute
                         : <span className="italic text-red-700">{t(`annexes.frames.title${frame.titleStatus === 'absent' ? 'Absent' : 'Empty'}`)}</span>}
+                      {frame.titleEvidence && (
+                        <details className="mt-2 text-xs text-gray-600">
+                          <summary>Pertinence du titre — critère 2.2</summary>
+                          <p className="mt-1">État : à vérifier</p>
+                          <p className="mt-1">Preuves : {frame.titleEvidence.proof.join(' · ') || 'aucune'}</p>
+                          <p className="mt-1">Limites : {frame.titleEvidence.limits.join(' · ') || 'aucune'}</p>
+                          <p className="mt-1">Contrôles humains : {frame.titleEvidence.humanChecks.join(' · ') || 'aucun'}</p>
+                        </details>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${

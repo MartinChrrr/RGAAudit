@@ -203,6 +203,19 @@ version accessible lorsque nécessaire, puis l’équivalence des informations
 entre les deux versions. L’absence d’une métadonnée DOM n’est pas un verdict de
 non-conformité.
 
+### 5.10. Vérifier la pertinence des titres de cadres (US-54)
+
+Dans l’annexe **Cadres**, chaque `iframe` ou `frame` dont le titre est observé
+est rattaché au critère RGAA 2.2. La preuve rappelle le titre collecté, le
+contexte de la frame, les limites de la collecte et la question officielle à
+vérifier. Une frame sans titre reste « à vérifier » : l’absence est signalée
+comme preuve et ne remplace pas le contrôle de présence du critère 2.1.
+
+La collecte ne peut pas décider si « Aide », « Publicité » ou un autre titre
+décrit réellement la fonction du contenu embarqué. Comparer le titre avec le
+contenu et le rôle de la frame, puis enregistrer une décision humaine ; aucun
+signal n’est présenté comme une conformité automatique.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

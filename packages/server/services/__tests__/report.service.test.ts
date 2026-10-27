@@ -105,6 +105,26 @@ describe('buildReportFromSession', () => {
     expect(JSON.stringify(publicData)).not.toContain('secret');
   });
 
+  it('rédige les preuves de pertinence des cadres dans la réponse publique', () => {
+    const publicData = redactCollectedData({
+      images: [], frames: [{
+        selector: 'iframe#help', tagName: 'iframe', src: '/help?token=secret',
+        sourceUrl: 'https://example.com/help?token=secret', origin: 'https://example.com?token=secret',
+        evidenceStatus: 'readable', elementIndex: 0, titleAttribute: 'Aide https://example.com/title?token=secret',
+        titleStatus: 'present', flags: [],
+        titleEvidence: {
+          criterionId: '2.2', state: 'to_review', proof: ['Titre https://example.com/proof?token=secret'],
+          limits: ['Limite https://example.com/limit?token=secret'],
+          humanChecks: ['Vérifier https://example.com/check?token=secret'],
+        },
+      }], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },
+    });
+
+    expect(publicData?.frames[0]?.sourceUrl).toBe('https://example.com/help');
+    expect(publicData?.frames[0]?.titleEvidence?.proof[0]).toBe('Titre https://example.com/proof');
+    expect(JSON.stringify(publicData)).not.toContain('secret');
+  });
+
   it('rédige les relations de formulaires dans les réponses publiques', () => {
     const publicData = redactCollectedData({
       images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },

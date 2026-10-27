@@ -624,6 +624,7 @@ describe('collectFrames', () => {
       expect(frames.find((frame) => frame.selector === 'iframe#missing-title')).toMatchObject({
         titleAttribute: null,
         titleStatus: 'absent',
+        titleEvidence: { criterionId: '2.2', state: 'to_review' },
         flags: ['FRAME_TITLE_ABSENT'],
         elementIndex: 0,
       });
@@ -650,6 +651,11 @@ describe('collectFrames', () => {
       tagName: 'iframe',
       titleAttribute: 'Aide à la saisie',
       titleStatus: 'present',
+      titleEvidence: {
+        criterionId: '2.2',
+        state: 'to_review',
+        proof: ['Titre de cadre observé : Aide à la saisie'],
+      },
       flags: [],
     });
   });
