@@ -257,7 +257,14 @@ describe('renderReportHtml', () => {
               url: 'https://example.com',
               observedAt: '2026-10-20T00:00:10.000Z',
               title: 'Accueil',
-              evidence: [],
+              evidence: [{
+                selector: '#slider',
+                html: '<button id="slider">Slider</button>',
+                resultId: 'result-journey-1',
+                proofId: 'proof-journey-1',
+                criterionIds: ['10.7'],
+                elementIndex: 0,
+              }],
               keyboard: {
                 key: 'Tab',
                 componentSelector: '#slider',
@@ -301,6 +308,14 @@ describe('renderReportHtml', () => {
               screenshotUrl: '/api/journey-runs/run-1/screenshots/000-step-1.png',
               result: null,
             }],
+            decisions: [{
+              stepId: 'step-1',
+              evidenceIndex: 0,
+              criterionId: '10.7',
+              status: 'non_compliant',
+              comment: 'Le focus est masqué.',
+              reviewedAt: '2026-10-20T00:02:00.000Z',
+            }],
           },
         }],
       },
@@ -323,6 +338,8 @@ describe('renderReportHtml', () => {
     expect(html).toContain('indicateur non observé');
     expect(html).toContain('Miniature dans le rapport');
     expect(html).toContain('000-step-1.png');
+    expect(html).toContain('Non conforme');
+    expect(html).toContain('Le focus est masqué.');
     expect(html).toContain('<details open');
   });
 

@@ -280,17 +280,20 @@ de valeurs sensibles.
 
 ## 8. Parcours interactifs (US-23)
 
-La fonctionnalité est en cours de finalisation. Elle permet de définir des
-étapes `navigate`, `click`, `fill`, `press` et `wait`, puis de rejouer le
-parcours. Les preuves sont horodatées et peuvent recevoir une décision humaine.
+La fonctionnalité permet de définir des étapes `navigate`, `click`, `fill`,
+`press` et `wait`, puis de rejouer le parcours. Les preuves sont horodatées et
+peuvent recevoir une décision humaine.
 
 Les valeurs de champs marquées sensibles ne sont pas exposées dans les
 réponses publiques. Les URL complètes restent disponibles dans l’éditeur privé
 pour que le rejeu conserve son comportement ; elles sont rédigées dans les
 preuves, rapports et exports.
 
-Une annexe versionnée du parcours sera rattachée à la session d’audit lorsque
-la story US-23 sera terminée.
+Une annexe versionnée du parcours est rattachée à la session d’audit. Elle
+affiche les étapes, les preuves et, lorsqu’elle existe, la décision humaine
+(`conforme`, `non conforme`, `non applicable` ou `non testé`) ainsi que son
+commentaire. Les décisions ne remplacent pas la revue humaine globale du
+critère ; elles restent des décisions attachées à la preuve observée.
 
 ## 9. Repères visuels candidats (US-30)
 

@@ -43,8 +43,8 @@ site.
 | Scénarios contrôlés d’interaction | Observations de focus, flash, pointer/touch et APIs de mouvement rattachées aux parcours pour revue humaine | Disponible avec limites documentées |
 | Tabulation, contenus cryptiques et animations | Les actions `press` produisent des observations de focus ; les contenus cryptiques et contrôles pause/arrêt/masquage sont recensés comme candidats pour revue humaine | Disponible avec limites documentées |
 | Progression d’audit | Suivi temps réel d’une session et reprise depuis les fichiers persistés | Disponible |
-| Parcours interactifs | Création, édition, rejeu, captures contextuelles, preuves et décisions par exécution | En cours de finalisation (US-23) |
-| Annexe de parcours dans le rapport | Rattachement à une session et annexe versionnée HTML/PDF | En cours de finalisation (US-23) |
+| Parcours interactifs | Création, édition, rejeu, captures contextuelles, preuves et décisions par exécution | Disponible avec limites documentées |
+| Annexe de parcours dans le rapport | Rattachement à une session et annexe versionnée HTML/PDF, avec décisions humaines par preuve | Disponible avec limites documentées |
 
 ## Garanties et limites
 
