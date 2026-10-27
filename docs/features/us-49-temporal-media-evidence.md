@@ -8,8 +8,8 @@ pour les éléments `audio` et `video`, avec les signaux observables liés aux
 transcriptions textuelles, sous-titres/captions et audiodescriptions.
 
 Les éléments `canvas`, `object` et `embed` reçoivent un état `not_applicable`
-pour cette série de critères temporels ; leurs critères existants 4.8 et 4.9
-restent inchangés.
+pour cette série de critères temporels. Le traitement dédié de leurs critères
+4.8 et 4.9 est décrit dans `us-55-non-temporal-media-alternatives.md`.
 
 ## Contrat de preuve
 

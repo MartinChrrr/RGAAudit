@@ -27,6 +27,7 @@ site.
 | Consultation, délais et contenus additionnels | Les parcours consignent des candidats de contenu additionnel, minuteurs/rafraîchissements, ouvertures de fenêtre et contenus cryptiques pour les critères RGAA 12.11, 13.1, 13.2 et 13.6 | Disponible avec limites documentées |
 | Alternatives et contrôles des scripts | Les parcours partagent les alternatives `noscript` candidates et les événements clavier/pointage observés sur les contrôles scriptés pour les critères RGAA 7.2 et 7.3 | Disponible avec limites documentées |
 | Médias temporels et pistes d’accessibilité | L’annexe Médias rattache à chaque média des preuves candidates et limites pour les critères RGAA 4.1 à 4.6, notamment les sous-titres et audiodescriptions | Disponible avec limites documentées |
+| Alternatives des médias non temporels | L’annexe Médias rattache les contenus de secours candidats des `canvas`, `object` et `embed` aux critères RGAA 4.8 et 4.9, sans déduire la nécessité ni la pertinence de l’alternative | Disponible avec limites documentées |
 | Identification, contrôle et compatibilité des médias | L’annexe Médias sépare les signaux techniques des contrôles humains pour les critères RGAA 4.7, 4.11, 4.12 et 4.13 | Disponible avec limites documentées |
 | Comparaison | Compare des observations appartenant au même groupe de comparaison | Disponible |
 | Rapport HTML | Rapport local avec couverture, limites, critères, preuves et annexes | Disponible |

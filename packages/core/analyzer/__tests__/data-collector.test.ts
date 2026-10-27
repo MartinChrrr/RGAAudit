@@ -305,9 +305,11 @@ describe('collectMedia', () => {
     const media = await withPage(`${baseUrl}/media/us-49-media-with-tracks.html`, collectMedia);
     const evidence = media[0]?.evidence ?? [];
 
-    expect(evidence).toHaveLength(10);
+    expect(evidence).toHaveLength(12);
     expect(evidence.find((item) => item.criterionId === '4.3')).toMatchObject({ state: 'observed' });
     expect(evidence.find((item) => item.criterionId === '4.5')).toMatchObject({ state: 'observed' });
+    expect(evidence.find((item) => item.criterionId === '4.8')).toMatchObject({ state: 'not_applicable' });
+    expect(evidence.find((item) => item.criterionId === '4.9')).toMatchObject({ state: 'not_applicable' });
     expect(evidence.every((item) => item.limits.some((limit) => limit.includes('vérification humaine')))).toBe(true);
   });
 
@@ -325,8 +327,45 @@ describe('collectMedia', () => {
     const evidence = media[0]?.evidence ?? [];
 
     expect(media[0]?.kind).toBe('canvas');
-    expect(evidence).toHaveLength(10);
+    expect(evidence).toHaveLength(12);
     expect(evidence.filter((item) => ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6'].includes(item.criterionId)).every((item) => item.state === 'not_applicable')).toBe(true);
+    expect(evidence.find((item) => item.criterionId === '4.8')).toMatchObject({ state: 'observed' });
+    expect(evidence.find((item) => item.criterionId === '4.9')).toMatchObject({ state: 'observed' });
+  });
+
+  it('US-55 rattache les preuves des alternatives des médias non temporels', async () => {
+    const media = await withPage(`${baseUrl}/media/us-55-media-non-temporal-candidates.html`, collectMedia);
+    const canvas = media.find((item) => item.selector === 'canvas#chart');
+    const object = media.find((item) => item.selector === 'object#document');
+
+    expect(canvas?.criterionIds).toEqual(expect.arrayContaining(['4.8', '4.9']));
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.8')).toMatchObject({
+      state: 'observed',
+      proof: expect.arrayContaining(['contenu de secours textuel candidat observé']),
+    });
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.9')).toMatchObject({ state: 'observed' });
+    expect(object?.evidence?.find((item) => item.criterionId === '4.8')).toMatchObject({ state: 'observed' });
+    expect(object?.evidence?.find((item) => item.criterionId === '4.9')).toMatchObject({ state: 'observed' });
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.8')?.humanChecks).toEqual(
+      expect.arrayContaining([expect.stringContaining('4.8')]),
+    );
+  });
+
+  it('US-55 distingue l’absence d’alternative candidate sans produire de verdict', async () => {
+    const media = await withPage(`${baseUrl}/media/us-55-media-non-temporal-missing.html`, collectMedia);
+    const canvas = media.find((item) => item.selector === 'canvas#chart');
+
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.8')).toMatchObject({ state: 'missing' });
+    expect(canvas?.evidence?.find((item) => item.criterionId === '4.9')).toMatchObject({ state: 'to_review' });
+    expect(JSON.stringify(canvas)).not.toMatch(/conforme|non conforme/i);
+  });
+
+  it('US-55 marque les critères non temporels non applicables pour un média temporel', async () => {
+    const media = await withPage(`${baseUrl}/media/us-55-media-non-applicable.html`, collectMedia);
+    const video = media.find((item) => item.selector === 'video#video');
+
+    expect(video?.evidence?.find((item) => item.criterionId === '4.8')).toMatchObject({ state: 'not_applicable' });
+    expect(video?.evidence?.find((item) => item.criterionId === '4.9')).toMatchObject({ state: 'not_applicable' });
   });
 
   it('inventorie les sources, les pistes et les alternatives des médias', async () => {

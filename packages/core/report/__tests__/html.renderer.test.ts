@@ -373,6 +373,34 @@ describe('renderReportHtml', () => {
         limits: ['Vérification humaine requise'],
         humanChecks: ['4.3 — Vérifier la synchronisation'],
       }],
+    }, {
+      selector: 'canvas#chart',
+      kind: 'canvas',
+      sources: [],
+      accessibleName: 'Graphique des ventes',
+      fallbackText: 'Graphique des ventes du trimestre.',
+      surroundingText: 'Chiffre d’affaires trimestriel',
+      controls: false,
+      autoplay: false,
+      tracks: [],
+      alternativeSources: ['aria-label', 'fallback-text'],
+      criterionIds: ['4.8', '4.9', '4.12', '4.13'],
+      manualChecks: ['4.8 — Vérifier la présence d’une alternative', '4.9 — Vérifier la pertinence de l’alternative'],
+      flags: ['MEDIA_REQUIRES_HUMAN_REVIEW'],
+      requiresHumanReview: true,
+      evidence: [{
+        criterionId: '4.8',
+        state: 'observed',
+        proof: ['contenu de secours textuel candidat observé'],
+        limits: ['Validation humaine requise'],
+        humanChecks: ['4.8 — Vérifier la présence d’une alternative'],
+      }, {
+        criterionId: '4.9',
+        state: 'observed',
+        proof: ['contenu de secours textuel candidat observé'],
+        limits: ['Validation humaine requise'],
+        humanChecks: ['4.9 — Vérifier la pertinence de l’alternative'],
+      }],
     }];
 
     const html = renderReportHtml({
@@ -391,6 +419,9 @@ describe('renderReportHtml', () => {
     expect(html).toContain('piste captions (fr)');
     expect(html).toContain('Vérification humaine requise');
     expect(html).toContain('Validation humaine : 4.3 — Vérifier la synchronisation');
+    expect(html).toContain('canvas#chart');
+    expect(html).toContain('4.8 — Vérifier la présence d’une alternative');
+    expect(html).toContain('4.9 — Vérifier la pertinence de l’alternative');
     expect(html).toContain('role="region" tabindex="0" aria-label="Annexe Médias — faites défiler horizontalement pour consulter toutes les colonnes"');
   });
 

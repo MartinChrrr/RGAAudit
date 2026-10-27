@@ -27,9 +27,40 @@ const media: MediaItem[] = [{
   pageUrl: 'https://example.com/',
 }];
 
+const nonTemporalMedia: MediaItem = {
+  selector: 'canvas#chart',
+  kind: 'canvas',
+  sources: [],
+  accessibleName: 'Graphique des ventes',
+  fallbackText: 'Graphique des ventes du trimestre.',
+  surroundingText: 'Chiffre d’affaires trimestriel',
+  controls: false,
+  autoplay: false,
+  tracks: [],
+  alternativeSources: ['aria-label', 'fallback-text'],
+  criterionIds: ['4.8', '4.9', '4.12', '4.13'],
+  manualChecks: ['4.8 — Vérifier la présence d’une alternative', '4.9 — Vérifier la pertinence de l’alternative'],
+  flags: ['MEDIA_REQUIRES_HUMAN_REVIEW'],
+  requiresHumanReview: true,
+  evidence: [{
+    criterionId: '4.8',
+    state: 'observed',
+    proof: ['contenu de secours textuel candidat observé'],
+    limits: ['Vérification humaine requise'],
+    humanChecks: ['4.8 — Vérifier la présence d’une alternative'],
+  }, {
+    criterionId: '4.9',
+    state: 'observed',
+    proof: ['contenu de secours textuel candidat observé'],
+    limits: ['Vérification humaine requise'],
+    humanChecks: ['4.9 — Vérifier la pertinence de l’alternative'],
+  }],
+  pageUrl: 'https://example.com/',
+};
+
 describe('AnnexeMedias', () => {
   it('affiche la source, les pistes et les contrôles manuels', () => {
-    render(<AnnexeMedias media={media} />);
+    render(<AnnexeMedias media={[...media, nonTemporalMedia]} />);
 
     expect(screen.getByTestId('annexe-media')).toBeInTheDocument();
     expect(screen.getByText('video#demo')).toBeInTheDocument();
@@ -37,8 +68,11 @@ describe('AnnexeMedias', () => {
     expect(screen.getByText(/Français · fr · par défaut/)).toBeInTheDocument();
     expect(screen.getByText('4.1 — Vérifier la transcription')).toBeInTheDocument();
     expect(screen.getByText(/piste captions \(fr\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Vérification humaine requise/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Vérification humaine requise/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Validation humaine : 4.3/)).toBeInTheDocument();
+    expect(screen.getByText('canvas#chart')).toBeInTheDocument();
+    expect(screen.getByText('4.8 — Vérifier la présence d’une alternative')).toBeInTheDocument();
+    expect(screen.getByText('4.9 — Vérifier la pertinence de l’alternative')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /Annexe Médias — faites défiler horizontalement/ })).toHaveAttribute('tabindex', '0');
   });
 

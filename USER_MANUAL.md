@@ -158,7 +158,20 @@ un verdict de non-conformité. Vérifier le média réellement joué, les besoin
 contenu, la synchronisation et la pertinence des sous-titres ou de
 l’audiodescription avant d’enregistrer une décision humaine.
 
-### 5.7. Vérifier l’identification et l’utilisation des médias (US-50)
+### 5.7. Vérifier les alternatives des médias non temporels (US-55)
+
+Pour les `canvas`, `object` et `embed`, l’annexe **Médias** rattache les
+contenus de secours textuels candidats aux critères RGAA 4.8 et 4.9. L’état
+`observed` signifie seulement qu’un contenu de secours a été observé ; `missing`
+signale son absence dans le DOM observé et `to_review` rappelle que l’existence
+ou la pertinence d’une alternative ne peut pas être déduite automatiquement.
+Les médias audio et vidéo affichent ces critères comme `not_applicable`.
+
+Comparer l’alternative avec le rôle et le contenu réel du média, vérifier si une
+alternative est nécessaire dans le contexte, puis enregistrer la décision
+humaine. Un signal DOM ne produit aucun verdict de conformité.
+
+### 5.8. Vérifier l’identification et l’utilisation des médias (US-50)
 
 L’annexe **Médias** affiche aussi les critères RGAA 4.7, 4.11, 4.12 et 4.13.
 Pour chaque média, la colonne **Preuves techniques** reprend les signaux DOM
@@ -173,7 +186,7 @@ essai réel au clavier et avec un dispositif de pointage ; le critère 4.13
 nécessite une vérification avec les technologies d’assistance. Aucun de ces
 signaux ne produit un verdict automatique.
 
-### 5.8. Vérifier les images spécialisées (US-51)
+### 5.9. Vérifier les images spécialisées (US-51)
 
 Dans l’annexe **Images**, les images candidates pour un CAPTCHA ou une
 image-test sont rattachées aux critères RGAA 1.4 et 1.5. Les déclarations
@@ -188,7 +201,7 @@ CAPTCHA ou d’image-test n’est observé. La collecte ne juge jamais la pertin
 de l’alternative, d’une description, de la solution de CAPTCHA ou d’un éventuel
 remplacement par du texte stylé.
 
-### 5.9. Vérifier les documents bureautiques (US-52)
+### 5.10. Vérifier les documents bureautiques (US-52)
 
 Dans l’annexe **Contenus spécialisés**, chaque lien vers un document bureautique
 est rattaché aux critères RGAA 13.3 et 13.4. Les preuves locales peuvent
@@ -203,7 +216,7 @@ version accessible lorsque nécessaire, puis l’équivalence des informations
 entre les deux versions. L’absence d’une métadonnée DOM n’est pas un verdict de
 non-conformité.
 
-### 5.10. Vérifier la pertinence des titres de cadres (US-54)
+### 5.11. Vérifier la pertinence des titres de cadres (US-54)
 
 Dans l’annexe **Cadres**, chaque `iframe` ou `frame` dont le titre est observé
 est rattaché au critère RGAA 2.2. La preuve rappelle le titre collecté, le

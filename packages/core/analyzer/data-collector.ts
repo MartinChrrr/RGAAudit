@@ -522,7 +522,11 @@ function getSpecializedMediaChecks(ids: readonly string[]): string[] {
   });
 }
 
-const MEDIA_EVIDENCE_CRITERIA = [...TEMPORAL_MEDIA_CRITERIA, ...MEDIA_ACCESSIBILITY_CRITERIA];
+const MEDIA_EVIDENCE_CRITERIA = [
+  ...TEMPORAL_MEDIA_CRITERIA,
+  ...NON_TEMPORAL_MEDIA_CRITERIA,
+  ...MEDIA_ACCESSIBILITY_CRITERIA,
+];
 
 function mediaCriterionIds(kind: MediaKind): string[] {
   const temporal = kind === 'audio' || kind === 'video';
@@ -559,6 +563,7 @@ function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'accessi
   const hasIdentification = Boolean(media.accessibleName) || media.alternativeSources.length > 0;
   const hasNativeControls = isTemporal && media.controls;
   const hasAccessibleName = Boolean(media.accessibleName) || media.alternativeSources.length > 0;
+  const hasNonTemporalAlternative = Boolean(media.fallbackText);
   const identificationProof = [
     ...(media.accessibleName ? ['nom accessible observé'] : []),
     ...(media.alternativeSources.length > 0 ? [`alternative déclarée observée (${media.alternativeSources.join(', ')})`] : []),
@@ -572,28 +577,46 @@ function buildMediaEvidence(media: Pick<MediaData, 'kind' | 'sources' | 'accessi
     '4.5': hasDescriptions,
     '4.6': hasDescriptions,
     '4.7': hasIdentification,
+    '4.8': hasNonTemporalAlternative,
+    '4.9': hasNonTemporalAlternative,
     '4.11': hasNativeControls,
     '4.12': false,
     '4.13': hasAccessibleName,
   };
   const presenceCriteria = new Set(['4.1', '4.3', '4.5']);
+  const nonTemporalLimit = 'La collecte ne détermine pas si une alternative est nécessaire et ne juge pas sa pertinence ; une vérification humaine reste nécessaire.';
 
   return MEDIA_EVIDENCE_CRITERIA.map((criterionId) => {
     const applicable = mediaCriterionIds(media.kind).includes(criterionId);
     const humanChecks = mediaHumanChecks(criterionId);
     const signalObserved = candidateSignals[criterionId];
+    const isNonTemporalCriterion = NON_TEMPORAL_MEDIA_CRITERIA.includes(criterionId as typeof NON_TEMPORAL_MEDIA_CRITERIA[number]);
     const criterionProof = criterionId === '4.7' || criterionId === '4.13'
       ? identificationProof
       : criterionId === '4.11'
         ? controlsProof
-        : commonProof;
+        : isNonTemporalCriterion
+          ? (hasNonTemporalAlternative ? ['contenu de secours textuel candidat observé'] : [])
+          : commonProof;
+    const state: MediaEvidenceState = !applicable
+      ? 'not_applicable'
+      : criterionId === '4.8'
+        ? signalObserved ? 'observed' : 'missing'
+        : criterionId === '4.9'
+          ? signalObserved ? 'observed' : 'to_review'
+          : signalObserved ? 'observed' : presenceCriteria.has(criterionId) ? 'missing' : 'to_review';
     return {
       criterionId,
-      state: !applicable ? 'not_applicable' : signalObserved ? 'observed' : presenceCriteria.has(criterionId) ? 'missing' : 'to_review',
+      state,
       proof: !applicable
         ? [`Média de type ${media.kind}, hors périmètre de ce critère.`]
-        : signalObserved ? criterionProof : ['Aucun signal candidat observé pour ce critère.'],
-      limits: [getCriterion(criterionId)?.limits, genericLimit].filter((limit): limit is string => Boolean(limit)),
+        : signalObserved ? criterionProof : [
+          isNonTemporalCriterion && criterionId === '4.9'
+            ? 'Aucune alternative candidate observée ; son existence et sa pertinence restent à vérifier.'
+            : 'Aucun signal candidat observé pour ce critère.',
+        ],
+      limits: [getCriterion(criterionId)?.limits, isNonTemporalCriterion ? nonTemporalLimit : genericLimit]
+        .filter((limit): limit is string => Boolean(limit)),
       humanChecks,
     };
   });
