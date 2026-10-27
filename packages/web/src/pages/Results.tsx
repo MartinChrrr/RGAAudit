@@ -4,6 +4,7 @@ import { t } from '../locales';
 import AnnexeImages, { type ImageItem } from '../components/annexes/AnnexeImages';
 import AnnexeMedias, { type MediaItem } from '../components/annexes/AnnexeMedias';
 import AnnexeTableaux, { type TableItem } from '../components/annexes/AnnexeTableaux';
+import AnnexeStructure, { type StructurePageItem } from '../components/annexes/AnnexeStructure';
 import AnnexePresentation, { type PresentationSnapshotItem } from '../components/annexes/AnnexePresentation';
 import AnnexeContenusSpecialises, { type SpecializedContentItem } from '../components/annexes/AnnexeContenusSpecialises';
 import AnnexeCadres, { type FrameItem } from '../components/annexes/AnnexeCadres';
@@ -36,6 +37,8 @@ interface CriterionCoverageSummary {
   partial: number;
   manualShell: number;
 }
+
+type StructureDataItem = StructurePageItem & { tables: TableItem[] };
 
 interface PageComparison {
   before: { url: string; pageId?: string; observedAt: string | null; stepId?: string; comparisonKey?: string; available: boolean; selectors: string[] };
@@ -112,7 +115,7 @@ interface ReportData {
       frames: FrameItem[];
       links: LinkItem[];
       forms?: Omit<FormItem, 'pageUrl'>[];
-      structure?: { tables: TableItem[] };
+      structure?: StructureDataItem;
       presentation?: { snapshots: PresentationSnapshotItem[] };
       headings: {
         documentTitle: string;
@@ -181,7 +184,7 @@ export default function Results() {
   const tabRefs = useRef<Partial<Record<AnnexTab, HTMLButtonElement | null>>>({});
   const annexPanelRef = useRef<HTMLDivElement | null>(null);
   const hasMountedAnnexTabs = useRef(false);
-  const annexTabs: AnnexTab[] = ['images', 'media', 'tables', 'presentation', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'];
+  const annexTabs: AnnexTab[] = ['images', 'media', 'tables', 'structure', 'presentation', 'specialized', 'frames', 'links', 'forms', 'headings', 'heuristics'];
 
   useEffect(() => {
     if (!hasMountedAnnexTabs.current) {
@@ -321,6 +324,18 @@ export default function Results() {
   const allTables: TableItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.structure?.tables ?? []).map((table) => ({ ...table, pageUrl: entry.url, pageId: entry.pageId })),
   );
+  const allStructure: StructurePageItem[] = (report.allCollected ?? [])
+    .filter((entry) => entry.collectedData?.structure)
+    .map((entry) => ({
+      pageUrl: entry.url,
+      pageId: entry.pageId,
+      pageFlags: entry.collectedData!.structure!.pageFlags,
+      styles: entry.collectedData!.structure!.styles,
+      languages: entry.collectedData!.structure!.languages,
+      directions: entry.collectedData!.structure!.directions,
+      regions: entry.collectedData!.structure!.regions,
+      citations: entry.collectedData!.structure!.citations,
+    }));
   const allPresentation: PresentationSnapshotItem[] = (report.allCollected ?? []).flatMap((entry) =>
     (entry.collectedData?.presentation?.snapshots ?? []).map((snapshot) => ({ ...snapshot, pageUrl: entry.url, pageId: entry.pageId })),
   );
@@ -716,6 +731,7 @@ export default function Results() {
                 focusedCriterionId={annexTarget?.tab === 'tables' ? annexTarget.criterionId : undefined}
               />
             )}
+            {activeTab === 'structure' && <AnnexeStructure pages={allStructure} />}
             {activeTab === 'presentation' && (
               <AnnexePresentation
                 snapshots={allPresentation}

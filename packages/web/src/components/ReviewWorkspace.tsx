@@ -99,7 +99,7 @@ export interface ReviewData {
   }>;
 }
 
-export type AnnexTab = 'images' | 'media' | 'tables' | 'presentation' | 'specialized' | 'frames' | 'links' | 'forms' | 'headings' | 'heuristics';
+export type AnnexTab = 'images' | 'media' | 'tables' | 'structure' | 'presentation' | 'specialized' | 'frames' | 'links' | 'forms' | 'headings' | 'heuristics';
 
 export interface AnnexTarget {
   tab: AnnexTab;
@@ -187,6 +187,7 @@ function annexForCriterion(criterionId: string): AnnexTab | null {
   if (theme === '1') return 'images';
   if (theme === '4') return 'media';
   if (theme === '5') return 'tables';
+  if (['8.7', '8.10', '9.2', '9.4'].includes(criterionId)) return 'structure';
   if (theme === '10') return 'presentation';
   if (theme === '13') return 'specialized';
   if (theme === '2') return 'frames';
@@ -201,6 +202,7 @@ const annexLabels: Record<AnnexTab, string> = {
   images: 'Images',
   media: 'Médias',
   tables: 'Tableaux',
+  structure: 'Langue et structure',
   presentation: 'Présentation et focus',
   specialized: 'Contenus spécialisés',
   frames: 'Cadres',

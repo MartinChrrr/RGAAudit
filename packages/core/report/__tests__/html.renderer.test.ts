@@ -425,6 +425,35 @@ describe('renderReportHtml', () => {
     expect(html).toContain('role="region" tabindex="0" aria-label="Annexe Médias — faites défiler horizontalement pour consulter toutes les colonnes"');
   });
 
+  it('affiche l’annexe structurelle pour les critères langue, direction, régions et citations', () => {
+    const collected = makeCollectedData();
+    collected.structure = {
+      pageFlags: ['HTML_VALIDITY_REVIEW'],
+      tables: [],
+      styles: { stylesheetCount: 1, inlineStyleCount: 0, presentationMarkupCount: 0, flags: ['STYLESHEET_PRESENT'] },
+      colors: [],
+      fieldGroups: [],
+      landmarks: [],
+      languages: [{ selector: 'p[lang="en"]', tagName: 'p', text: 'Hello', declaredLanguage: 'en', effectiveLanguage: 'en', languageSource: 'attribute', flags: ['LANGUAGE_DECLARATION_PRESENT'] }],
+      directions: [{ selector: '#rtl', tagName: 'p', text: 'مرحبا', dirAttribute: 'rtl', effectiveDirection: 'rtl', cssDirection: 'rtl', unicodeBidi: 'normal', flags: ['DIRECTION_DECLARATION_PRESENT'] }],
+      regions: [{ selector: 'main', tagName: 'main', role: 'main', accessibleName: 'Contenu', parentSelector: null, depth: 0, childRegionCount: 0, flags: ['REGION_PRESENT'] }],
+      citations: [{ selector: 'blockquote', tagName: 'blockquote', kind: 'blockquote', text: 'Citation', citeAttribute: 'https://example.com/source', flags: ['CITATION_SEMANTIC_MARKUP'] }],
+    };
+
+    const html = renderReportHtml({
+      report: makeReport(),
+      allCollected: [{ url: 'https://example.com/', collectedData: collected }],
+    });
+
+    expect(html).toContain('data-testid="structure-section"');
+    expect(html).toContain('RGAA 8.7');
+    expect(html).toContain('LANGUAGE_DECLARATION_PRESENT');
+    expect(html).toContain('DIRECTION_DECLARATION_PRESENT');
+    expect(html).toContain('REGION_PRESENT');
+    expect(html).toContain('CITATION_SEMANTIC_MARKUP');
+    expect(html).toContain('aucun verdict automatique');
+  });
+
   it('affiche l’annexe des états de présentation', () => {
     const collected = makeCollectedData();
     collected.presentation = {

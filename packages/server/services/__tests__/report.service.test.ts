@@ -81,6 +81,22 @@ describe('buildReportFromSession', () => {
     expect(JSON.stringify(publicData)).not.toContain('secret');
   });
 
+  it('rédige les preuves structurelles dans la réponse publique', () => {
+    const publicData = redactCollectedData({
+      images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },
+      structure: {
+        pageFlags: [], tables: [], styles: { stylesheetCount: 0, inlineStyleCount: 0, presentationMarkupCount: 0, flags: [] },
+        colors: [], fieldGroups: [], landmarks: [],
+        languages: [{ selector: 'p', tagName: 'p', text: 'Hello https://example.com/text?token=secret', declaredLanguage: 'en', effectiveLanguage: 'en', languageSource: 'attribute', flags: [] }],
+        directions: [], regions: [], citations: [{ selector: 'blockquote', tagName: 'blockquote', kind: 'blockquote', text: 'Citation', citeAttribute: 'https://example.com/source?token=secret', flags: [] }],
+      },
+    });
+
+    expect(publicData?.structure?.languages?.[0]?.text).toBe('Hello https://example.com/text');
+    expect(publicData?.structure?.citations?.[0]?.citeAttribute).toBe('https://example.com/source');
+    expect(JSON.stringify(publicData)).not.toContain('secret');
+  });
+
   it('rédige les preuves de documents sans perdre leur statut d’analyse locale', () => {
     const publicData = redactCollectedData({
       images: [], frames: [], links: [], headings: { documentTitle: 'Test', headings: [], flags: [] },

@@ -16,6 +16,7 @@ import type {
   PresentationSnapshot,
   SpecializedContentData,
   StructureTableData,
+  StructureData,
 } from '../analyzer/data-collector';
 import { runReportExtractor, type ReportExtractor } from './extractors';
 
@@ -98,6 +99,7 @@ type PresentationCueAnnexItem = { url: string; pageId?: string; cue: Presentatio
 type NavigationAnnexItem = { url: string; pageId?: string; system: NavigationSystemData };
 type SpecializedAnnexItem = { url: string; pageId?: string; item: SpecializedContentData };
 type TableAnnexItem = { url: string; pageId?: string; table: StructureTableData };
+type StructureAnnexItem = { url: string; pageId?: string; structure: StructureData };
 type ComparisonItem = NonNullable<Report['comparisons']>[number];
 
 const IMAGE_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], ImageAnnexItem> = {
@@ -142,6 +144,15 @@ const TABLE_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], TableAnnexItem> = 
   maxItems: 2_000,
   extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
     (collectedData?.structure?.tables ?? []).map((table) => ({ url, pageId, table }))
+  )),
+};
+
+const STRUCTURE_ANNEX_EXTRACTOR: ReportExtractor<CollectedPage[], StructureAnnexItem> = {
+  id: 'annex-structure',
+  version: 1,
+  maxItems: 2_000,
+  extract: (pages) => pages.flatMap(({ url, pageId, collectedData }) => (
+    collectedData?.structure ? [{ url, pageId, structure: collectedData.structure }] : []
   )),
 };
 
@@ -330,6 +341,7 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
   const formsSection = buildFormsSection(runReportExtractor(FORM_ANNEX_EXTRACTOR, collectedPages).items);
   const mediaSection = buildMediaSection(runReportExtractor(MEDIA_ANNEX_EXTRACTOR, collectedPages).items);
   const tablesSection = buildTablesSection(runReportExtractor(TABLE_ANNEX_EXTRACTOR, collectedPages).items);
+  const structureSection = buildStructureSection(runReportExtractor(STRUCTURE_ANNEX_EXTRACTOR, collectedPages).items);
   const presentationSection = buildPresentationSection(
     runReportExtractor(PRESENTATION_ANNEX_EXTRACTOR, collectedPages).items,
     runReportExtractor(PRESENTATION_CUE_EXTRACTOR, collectedPages).items,
@@ -470,6 +482,8 @@ export function renderReportHtml({ report, allCollected, contrastViolations, jou
     ${mediaSection}
 
     ${tablesSection}
+
+    ${structureSection}
 
     ${presentationSection}
 
@@ -876,6 +890,52 @@ function buildTablesSection(items: TableAnnexItem[]): string {
           <tbody class="divide-y divide-gray-100">${rows}</tbody>
         </table>
       </div>
+    </section>`;
+}
+
+function buildStructureSection(items: StructureAnnexItem[]): string {
+  if (items.length === 0) return '';
+
+  const renderTable = (caption: string, headers: string[], rows: string[]): string => {
+    if (rows.length === 0) return '';
+    return `
+      <div class="mt-4 overflow-x-auto" role="region" tabindex="0" aria-label="${escapeHtml(`${caption} — faites défiler horizontalement pour consulter toutes les colonnes`)}">
+        <table class="w-full min-w-[900px] text-sm text-left">
+          <caption class="sr-only">${escapeHtml(caption)}</caption>
+          <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-200"><tr>${headers.map((header) => `<th scope="col" class="px-3 py-2">${escapeHtml(header)}</th>`).join('')}</tr></thead>
+          <tbody class="divide-y divide-gray-100">${rows.join('')}</tbody>
+        </table>
+      </div>`;
+  };
+
+  const pages = items.map(({ url, pageId, structure }) => {
+    const page = pageLabel(url, pageId);
+    const languageRows = (structure.languages ?? []).map((item) => `
+      <tr><td class="px-3 py-2 text-xs text-gray-700"><code>${escapeHtml(item.selector)}</code><br>${escapeHtml(item.tagName)}</td><td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.text || 'Texte direct absent')}</td><td class="px-3 py-2 text-xs text-gray-700">déclarée : ${escapeHtml(item.declaredLanguage ?? 'absente')}<br>effective : ${escapeHtml(item.effectiveLanguage ?? 'absente')}<br>source : ${escapeHtml(item.languageSource)}</td><td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(item.flags.join(', ') || 'aucun')}<br>Revue humaine requise</td></tr>`);
+    const directionRows = (structure.directions ?? []).map((item) => `
+      <tr><td class="px-3 py-2 text-xs text-gray-700"><code>${escapeHtml(item.selector)}</code><br>${escapeHtml(item.tagName)}</td><td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.text || 'Texte direct absent')}</td><td class="px-3 py-2 text-xs text-gray-700">dir : ${escapeHtml(item.dirAttribute ?? 'absent')}<br>effective : ${escapeHtml(item.effectiveDirection ?? 'absente')}<br>CSS : ${escapeHtml(item.cssDirection ?? 'absente')}<br>unicode-bidi : ${escapeHtml(item.unicodeBidi ?? 'absent')}</td><td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(item.flags.join(', ') || 'aucun')}<br>Revue humaine requise</td></tr>`);
+    const regionRows = (structure.regions ?? []).map((item) => `
+      <tr><td class="px-3 py-2 text-xs text-gray-700"><code>${escapeHtml(item.selector)}</code><br>${escapeHtml(item.tagName)}</td><td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.role ?? 'rôle implicite')}<br>Nom : ${escapeHtml(item.accessibleName ?? 'absent')}</td><td class="px-3 py-2 text-xs text-gray-700">Parent : ${escapeHtml(item.parentSelector ?? 'aucun')}<br>Profondeur : ${item.depth}<br>Régions enfants : ${item.childRegionCount}</td><td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(item.flags.join(', ') || 'aucun')}<br>Revue humaine requise</td></tr>`);
+    const citationRows = (structure.citations ?? []).map((item) => `
+      <tr><td class="px-3 py-2 text-xs text-gray-700"><code>${escapeHtml(item.selector)}</code><br>${escapeHtml(item.tagName)}</td><td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.kind)}</td><td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.text || 'Texte absent')}<br>cite : ${escapeHtml(item.citeAttribute ?? 'absent')}</td><td class="px-3 py-2 text-xs text-amber-900">${escapeHtml(item.flags.join(', ') || 'aucun')}<br>Revue humaine requise</td></tr>`);
+
+    return `
+      <article class="rounded-xl border border-gray-200 bg-white p-4">
+        <h3 class="text-sm font-semibold text-gray-900">${escapeHtml(page)}</h3>
+        <p class="mt-1 text-xs text-gray-600">Flags de page : ${escapeHtml(structure.pageFlags.join(', ') || 'aucun')}<br>Styles : ${structure.styles.stylesheetCount} feuille(s), ${structure.styles.inlineStyleCount} style(s) inline, ${structure.styles.presentationMarkupCount} élément(s) de présentation<br>Signaux de style : ${escapeHtml(structure.styles.flags.join(', ') || 'aucun')}</p>
+        ${renderTable('Langues — RGAA 8.7', ['Élément', 'Texte direct', 'Langue', 'Signaux'], languageRows)}
+        ${renderTable('Directions — RGAA 8.10', ['Élément', 'Texte direct', 'Déclarations', 'Signaux'], directionRows)}
+        ${renderTable('Régions — RGAA 9.2', ['Élément', 'Rôle et nom', 'Hiérarchie', 'Signaux'], regionRows)}
+        ${renderTable('Citations — RGAA 9.4', ['Élément', 'Type', 'Contenu', 'Signaux'], citationRows)}
+        <p class="mt-4 text-xs text-amber-900">Les observations sont des preuves candidates. La langue, la direction, la structure des régions et la nature des citations doivent être vérifiées humainement ; aucun verdict automatique n’est produit.</p>
+      </article>`;
+  }).join('');
+
+  return `
+    <section class="mb-8" data-testid="structure-section">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Annexe — Langue, direction, structure et citations</h2>
+      <p class="text-sm text-gray-600 mb-3">Preuves candidates pour les critères RGAA 8.7, 8.10, 9.2 et 9.4. Les titres et la structure DOM sont observés sans conclure à la conformité.</p>
+      <div class="space-y-4">${pages}</div>
     </section>`;
 }
 

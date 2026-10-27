@@ -648,6 +648,23 @@ describe('collectStructure — preuves manuelles des critères 8.7, 8.10, 9.2 et
       expect.objectContaining({ kind: 'text-quote', flags: expect.arrayContaining(['CITATION_TEXT_QUOTE_CANDIDATE']) }),
     ]));
   });
+
+  it('US-26 distingue les fixtures conformes, à vérifier et sans candidat', async () => {
+    const conform = await withPage(`${baseUrl}/structure/us-26-conform.html`, collectStructure);
+    expect(conform.languages?.some((item) => item.declaredLanguage === 'fr')).toBe(true);
+    expect(conform.regions?.some((item) => item.role === 'main' && item.accessibleName === 'Contenu principal')).toBe(true);
+    expect(conform.citations?.some((item) => item.kind === 'blockquote')).toBe(true);
+
+    const review = await withPage(`${baseUrl}/structure/us-26-review.html`, collectStructure);
+    expect(review.languages?.some((item) => item.flags.includes('LANGUAGE_DEFAULT_ABSENT'))).toBe(true);
+    expect(review.languages?.some((item) => item.flags.includes('LANGUAGE_DECLARATION_EMPTY'))).toBe(true);
+    expect(review.directions?.some((item) => item.flags.includes('DIRECTION_BIDI_TEXT_REVIEW'))).toBe(true);
+    expect(review.citations?.some((item) => item.kind === 'text-quote')).toBe(true);
+
+    const nonApplicable = await withPage(`${baseUrl}/structure/us-26-non-applicable.html`, collectStructure);
+    expect(nonApplicable.directions).toHaveLength(0);
+    expect(nonApplicable.citations).toHaveLength(0);
+  });
 });
 
 // ───────────────────────────────────────────────────────────────

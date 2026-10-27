@@ -229,6 +229,19 @@ décrit réellement la fonction du contenu embarqué. Comparer le titre avec le
 contenu et le rôle de la frame, puis enregistrer une décision humaine ; aucun
 signal n’est présenté comme une conformité automatique.
 
+### 5.12. Vérifier la langue, la direction, la structure et les citations (US-26)
+
+L’annexe **Langue et structure** regroupe, par page, les observations de langue
+déclarée ou héritée (RGAA 8.7), de direction et de texte bidirectionnel
+(RGAA 8.10), les régions sémantiques et leur hiérarchie (RGAA 9.2), ainsi que
+les citations sémantiques ou textuelles candidates (RGAA 9.4). Les flags
+indiquent les éléments à examiner et restent des preuves techniques.
+
+Une langue, une direction ou un rôle détecté dans le DOM ne suffit pas à juger
+la langue réellement utilisée, la lisibilité du texte, la hiérarchie attendue
+ou la nature éditoriale d’une citation. Vérifier le contenu et son contexte,
+puis enregistrer une décision humaine ; aucun verdict automatique n’est produit.
+
 ## 6. Comparer des observations
 
 Quand un groupe de comparaison est renseigné à la sélection des pages, le

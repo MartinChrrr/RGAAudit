@@ -1659,7 +1659,8 @@ export async function collectStructure(page: Page): Promise<StructureData> {
     };
 
     const languageElements = Array.from(document.querySelectorAll('*'))
-      .filter((element) => Boolean(element.getAttribute('lang'))
+      .filter((element) => element === document.documentElement
+        || Boolean(element.getAttribute('lang'))
         || element.hasAttribute('lang')
         || Boolean(directText(element)))
       .slice(0, MAX_ITEMS);
