@@ -63,6 +63,18 @@ observations, comparaisons, décisions et leur présence dans le rapport. Aucun
 nouveau choix métier n’est déduit de ce test ; la décision humaine reste
 nécessaire pour clôturer US-18.
 
+## 2026-11-01 — US-18 : rejeu local interrompu
+
+La revue manuelle a confirmé l’accès à l’annexe des parcours depuis Results et
+la création d’un parcours rattaché à une session. Le rejeu a toutefois gardé
+le statut **En cours** sans observation, puis l’API locale a cessé de répondre
+(`socket hang up`). L’audit de test a également exposé une erreur visible
+`page.evaluate: ReferenceError: __name is not defined`.
+
+Le défaut technique et le rejeu doivent être investigués avant de clore
+US-18. Aucune conclusion de conformité n’est tirée de cette revue et aucune
+décision produit supplémentaire n’est inventée.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte

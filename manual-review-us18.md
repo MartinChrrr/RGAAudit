@@ -9,6 +9,38 @@ Type : revue fonctionnelle en lecture seule côté application. Les audits ont u
 
 Le parcours principal et la comparaison avec groupe sont **PASS** sur un audit local contrôlé. Le scénario sans groupe est également **PASS**. JourneyRun est **BLOCKED** : aucun parcours de test n’est exposé dans l’interface consultée. Aucun code, backlog ou résultat n’a été supprimé ou corrigé.
 
+## Reprise de revue — 2026-11-01
+
+Environnement : application locale Vite (`http://localhost:3000/`) et API
+locale attendue sur `http://127.0.0.1:3001`.
+
+### M-06 — Accès au parcours depuis Results
+
+Statut : **PASS partiel**
+
+Après un audit local de test, Results affichait bien l’**Annexe — Parcours
+d’audit** et le lien **Créer un parcours pour cette session**. Le parcours a
+pu être créé depuis ce flux et a reçu un identifiant persistant.
+
+### M-07 — Création et lancement d’un JourneyRun
+
+Statut : **BLOCKED**
+
+La création du parcours a abouti après configuration d’une étape `click` sur
+`body`. Le rejeu a obtenu un identifiant d’exécution, mais est resté en état
+**En cours** sans observation d’étape. Après l’interruption de l’API locale,
+le navigateur a signalé des erreurs proxy `socket hang up` et la page est
+restée sur « Chargement des observations… ».
+
+L’audit préalable de `https://example.org/` s’est terminé avec l’erreur
+visible `page.evaluate: ReferenceError: __name is not defined`. Cette erreur
+est une anomalie technique à diagnostiquer séparément ; elle ne constitue pas
+une décision RGAA.
+
+Conclusion : l’exposition du parcours est vérifiée, mais le rejeu complet,
+les comparaisons d’étapes et la décision humaine sur preuve restent à valider
+avec une API locale stable.
+
 ## Scénarios
 
 ### M-01 — Audit avec groupe de comparaison
