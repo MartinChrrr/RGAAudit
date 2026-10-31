@@ -326,4 +326,37 @@ describe('Results', () => {
       expect(section.querySelector('[role="status"]')).toBeNull();
     });
   });
+
+  it('expose les exécutions JourneyRun rattachées à la session', async () => {
+    const reportWithJourney = {
+      ...mockReport,
+      journeyAnnex: {
+        schemaVersion: 1,
+        generatedAt: '2026-10-31T10:00:00.000Z',
+        sessionId: 'test-session',
+        runs: [{
+          runId: 'run-journey-001',
+          journeyId: 'journey-001',
+          status: 'completed' as const,
+          startedAt: '2026-10-31T09:59:00.000Z',
+          finishedAt: '2026-10-31T10:00:00.000Z',
+          run: { steps: [{ evidence: [] }], decisions: [] },
+        }],
+      },
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(reportWithJourney),
+    } as Response);
+
+    renderResults();
+
+    await waitFor(() => {
+      const section = screen.getByTestId('journey-annex');
+      expect(section).toHaveTextContent('run-journey-001');
+      expect(section).toHaveTextContent('journey-001');
+      expect(screen.getByRole('link', { name: 'Ouvrir l’exécution run-journey-001' }))
+        .toHaveAttribute('href', '/journey-runs/run-journey-001');
+    });
+  });
 });

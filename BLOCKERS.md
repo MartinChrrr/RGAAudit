@@ -51,6 +51,18 @@ typechecks passent. Refaire la revue lorsque le navigateur intégré et
 l’application locale seront disponibles, sans transformer cette absence de
 preuve en conclusion de conformité.
 
+## 2026-10-31 — US-18 : validation JourneyRun à reprendre
+
+Le code Results expose désormais les exécutions JourneyRun rattachées à une
+session et permet d’ouvrir `/journey-runs/:runId`. Un test web protège cette
+exposition.
+
+La validation de bout en bout reste à faire avec une session réelle : créer ou
+rejouer un parcours, vérifier l’accès depuis Results, puis contrôler les
+observations, comparaisons, décisions et leur présence dans le rapport. Aucun
+nouveau choix métier n’est déduit de ce test ; la décision humaine reste
+nécessaire pour clôturer US-18.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte
