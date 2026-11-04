@@ -10,6 +10,22 @@ le RGAA 4.1.2. Elle rassemble des signaux automatiques, des preuves et des
 décisions humaines. Elle ne déclare jamais à elle seule la conformité d’un
 site.
 
+## Couverture actuelle des critères
+
+Le registre contient 106 critères. Au 4 novembre 2026, le mapping runtime
+indique :
+
+- **33 critères intégrés** dans le périmètre de l’application ;
+- **26 critères avec un signal machine** (axe-core, collecteur ou preuve de
+  parcours) ;
+- **5 critères en couverture complète** et **21 en couverture partielle** ;
+- **80 critères encore en coque de revue manuelle** ;
+- **101 critères nécessitant toujours une validation humaine**.
+
+Ces compteurs se recouvrent volontairement : un critère intégré peut rester
+partiel et nécessiter une décision humaine. Ils décrivent le périmètre du
+moteur, pas le nombre de critères automatiquement conformes sur un site donné.
+
 ## Fonctionnalités disponibles
 
 | Fonctionnalité | Ce qu’elle apporte | État |
