@@ -41,6 +41,19 @@ Conclusion : l’exposition du parcours est vérifiée, mais le rejeu complet,
 les comparaisons d’étapes et la décision humaine sur preuve restent à valider
 avec une API locale stable.
 
+## Analyse technique — 2026-11-04
+
+L’erreur `__name is not defined` a été reproduite dans les callbacks DOM
+transpilés par `tsx`. Elle ne vient pas de la page auditée : `tsx` injectait
+son helper de conservation des noms de fonctions dans le code exécuté par
+Playwright, alors que ce helper n’était défini que côté Node.
+
+Un runtime page-local est désormais installé avant les collectes et les
+rejeux. Les tests automatisés du moteur de parcours (8) et des collecteurs et
+de l’audit (61) passent. Cette preuve technique ne remplace pas le rejeu
+manuel demandé en M-07 ; le statut reste **À rejouer** jusqu’à une validation
+avec l’interface et une API stable.
+
 ## Scénarios
 
 ### M-01 — Audit avec groupe de comparaison

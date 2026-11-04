@@ -11,6 +11,7 @@ import type { CollectedData } from './data-collector';
 import { runAllHeuristics } from './heuristics/runner';
 import type { HeuristicResult } from './heuristics/heuristic.interface';
 import type { AuditObservation } from '../report/observation';
+import { installPageEvaluateRuntime } from './page-runtime';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -132,6 +133,7 @@ export async function analyzeLoadedPage(
   options?: { timeout?: number; disableRules?: string[] },
 ): Promise<PageResult> {
   try {
+    await installPageEvaluateRuntime(page);
     const engine = getEngine({ timeout: options?.timeout, disableRules: options?.disableRules });
     // collectPresentation temporarily changes styles, viewport and CSS zoom.
     // Run the engine and heuristics before collection so those probes cannot

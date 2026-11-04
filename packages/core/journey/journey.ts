@@ -2,6 +2,7 @@ import { chromium, type BrowserContext, type Page } from 'playwright';
 import { randomUUID } from 'node:crypto';
 import { mkdir, stat, unlink } from 'node:fs/promises';
 import { analyzeLoadedPage, type PageResult } from '../analyzer/analyzer';
+import { installPageEvaluateRuntime } from '../analyzer/page-runtime';
 import { mapPageResults } from '../mapping/mapper';
 import type { PageComparison } from '../report/comparison';
 import type { HumanStatus } from '../domain/review';
@@ -288,6 +289,7 @@ export async function replayJourney(
     }
 
     const page = await context.newPage();
+    await installPageEvaluateRuntime(page);
     await installInteractionProbe(page);
     await page.goto(journey.startUrl, { waitUntil: 'networkidle', timeout: options.timeout ?? 30_000 });
     const steps: JourneyStepObservation[] = [];

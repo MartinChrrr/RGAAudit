@@ -75,6 +75,21 @@ Le défaut technique et le rejeu doivent être investigués avant de clore
 US-18. Aucune conclusion de conformité n’est tirée de cette revue et aucune
 décision produit supplémentaire n’est inventée.
 
+## 2026-11-04 — US-18 : correctif technique du contexte Playwright
+
+L’erreur `page.evaluate: ReferenceError: __name is not defined` provenait du
+transpileur `tsx` utilisé par le serveur de développement : il conserve les
+noms des fonctions en injectant un helper Node `__name` dans les callbacks
+envoyés au navigateur. Ce helper n’existait pas dans le contexte de la page.
+
+Le moteur installe maintenant un shim page-local avant les évaluations DOM et
+les rejeux. Les tests Playwright du rejeu (8) et ceux des collecteurs/audits
+(61) passent avec ce correctif.
+
+La correction retire le blocage technique identifié, mais ne vaut pas revue
+humaine : il reste à rejouer le parcours depuis l’interface et à vérifier les
+observations, comparaisons et décisions avant de clôturer US-18.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte
