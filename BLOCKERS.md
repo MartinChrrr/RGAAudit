@@ -51,6 +51,15 @@ typechecks passent. Refaire la revue lorsque le navigateur intégré et
 l’application locale seront disponibles, sans transformer cette absence de
 preuve en conclusion de conformité.
 
+### Résolution partielle — 2026-11-05
+
+Le navigateur intégré et l’application locale sont de nouveau disponibles.
+Les stories US-41 et US-52 ont été rejouées sur leurs fixtures dédiées ; les
+annexes Images et Contenus spécialisés exposent les preuves attendues et les
+contrôles humains. Le compte-rendu est `manual-review-us41-us52.md`.
+
+La revue ne décide pas de la conformité et ne ferme pas les issues GitHub.
+
 ## 2026-10-31 — US-18 : validation JourneyRun à reprendre
 
 Le code Results expose désormais les exécutions JourneyRun rattachées à une
