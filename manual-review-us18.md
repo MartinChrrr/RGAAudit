@@ -7,7 +7,34 @@ Type : revue fonctionnelle en lecture seule côté application. Les audits ont u
 
 ## Résumé
 
-Le parcours principal et la comparaison avec groupe sont **PASS** sur un audit local contrôlé. Le scénario sans groupe est également **PASS**. JourneyRun est **BLOCKED** : aucun parcours de test n’est exposé dans l’interface consultée. Aucun code, backlog ou résultat n’a été supprimé ou corrigé.
+Le parcours principal et la comparaison avec groupe sont **PASS** sur un audit local contrôlé. Le scénario sans groupe est également **PASS**. JourneyRun est désormais **PASS partiel** : le parcours peut être créé depuis Results, rejoué jusqu’à une exécution terminée et rattaché à l’annexe du rapport. La décision RGAA sur les preuves reste volontairement à faire par un humain.
+
+## Reprise de revue — 2026-11-05
+
+Environnement : application locale Vite (`http://localhost:3002/`) et API
+locale (`http://127.0.0.1:3001`). Cible de test : `https://example.org/`.
+
+### M-08 — Rejeu JourneyRun de bout en bout
+
+Statut : **PASS partiel**
+
+Depuis Results, le lien **Créer un parcours pour cette session** a ouvert le
+constructeur. Le parcours `US18 manual replay 2026-11-05` a été enregistré avec
+une étape `click` ciblant `body`, puis lancé avec la session de test.
+
+Preuves observées :
+
+- exécution `66f764af-59a8-45d9-bd0d-5d6b194a075a` affichée avec le statut
+  **Terminée** ;
+- une observation d’étape avec l’URL `https://example.org/` et une capture
+  visuelle disponible ;
+- signaux de contexte exposés, dont une interaction pointer et une alternative
+  de script associées aux critères 7.2 et 13.11 ;
+- Results affiche l’exécution dans **Annexe — Parcours d’audit** avec `1`
+  preuve et `0` décision.
+
+Aucune décision humaine n’a été enregistrée pendant cette revue. Les signaux
+restent donc des preuves candidates et ne constituent pas un verdict RGAA.
 
 ## Reprise de revue — 2026-11-01
 
@@ -24,22 +51,16 @@ pu être créé depuis ce flux et a reçu un identifiant persistant.
 
 ### M-07 — Création et lancement d’un JourneyRun
 
-Statut : **BLOCKED**
+Statut : **PASS partiel**
 
 La création du parcours a abouti après configuration d’une étape `click` sur
-`body`. Le rejeu a obtenu un identifiant d’exécution, mais est resté en état
-**En cours** sans observation d’étape. Après l’interruption de l’API locale,
-le navigateur a signalé des erreurs proxy `socket hang up` et la page est
-restée sur « Chargement des observations… ».
+`body`. Après le correctif du runtime Playwright, le rejeu a atteint le statut
+**Terminée**, a produit une observation et a été exposé dans Results. La
+validation humaine de la preuve reste hors de cette revue.
 
-L’audit préalable de `https://example.org/` s’est terminé avec l’erreur
-visible `page.evaluate: ReferenceError: __name is not defined`. Cette erreur
-est une anomalie technique à diagnostiquer séparément ; elle ne constitue pas
-une décision RGAA.
-
-Conclusion : l’exposition du parcours est vérifiée, mais le rejeu complet,
-les comparaisons d’étapes et la décision humaine sur preuve restent à valider
-avec une API locale stable.
+Conclusion : l’exposition et le rejeu simple du parcours sont vérifiés. Les
+comparaisons d’étapes multi-étapes et la décision humaine sur preuve restent à
+valider séparément avec un scénario adapté.
 
 ## Analyse technique — 2026-11-04
 
@@ -108,4 +129,4 @@ Consulté le 22 octobre 2026 dans `RGAAudit — Développement` (Project 5) :
 
 ## Limites
 
-Les audits ont créé des sessions et résultats locaux dans le serveur de développement ; rien n’a été supprimé. La cible distante a répondu en erreur, donc la comparaison n’a pas permis de vérifier des changements de données sémantiques. JourneyRun doit être rejoué avec une donnée de parcours existante. Aucune correction n’est proposée ni appliquée dans ce rapport.
+Les audits ont créé des sessions et résultats locaux dans le serveur de développement ; rien n’a été supprimé. La cible distante a été utilisée uniquement comme donnée de test publique. La décision humaine sur les preuves et la clôture de l’issue GitHub restent à faire ; aucune conclusion de conformité n’est tirée de cette revue.

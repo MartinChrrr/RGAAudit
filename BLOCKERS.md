@@ -90,6 +90,19 @@ La correction retire le blocage technique identifié, mais ne vaut pas revue
 humaine : il reste à rejouer le parcours depuis l’interface et à vérifier les
 observations, comparaisons et décisions avant de clôturer US-18.
 
+## 2026-11-05 — US-18 : rejeu JourneyRun validé, décision humaine restante
+
+La reprise manuelle locale a créé puis rejoué un parcours depuis Results avec
+une étape `click` sur `body`. L’exécution
+`66f764af-59a8-45d9-bd0d-5d6b194a075a` est terminée, contient une observation
+et une capture, et apparaît dans l’annexe du rapport avec une preuve et zéro
+décision.
+
+Le blocage technique `__name`/`socket hang up` n’est plus reproduit. Il reste
+une validation humaine de la preuve (et la synchronisation de l’issue et du
+Project GitHub) avant de déclarer US-18 terminée. Aucun verdict RGAA n’est
+déduit automatiquement.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte
