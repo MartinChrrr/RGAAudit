@@ -36,6 +36,29 @@ Preuves observées :
 Aucune décision humaine n’a été enregistrée pendant cette revue. Les signaux
 restent donc des preuves candidates et ne constituent pas un verdict RGAA.
 
+### M-09 — Comparaison multi-étapes et révision d’une décision
+
+Statut : **PASS**
+
+Le même parcours a été enrichi d’une seconde étape `click` sur `#pause`, puis
+rejoué avec la session `2cd2cb9f-8b17-42b2-9dcc-3a637f89d76f`. L’exécution
+`3cdd6145-3080-4ea4-8cff-756fe9efed33` est terminée et l’interface affiche la
+section **Comparaison des observations** avec :
+
+- les étapes `step-1` et `step-2` ;
+- les deux horodatages d’observation ;
+- les identifiants de page avant/après et le résultat de comparaison, présenté
+  avec la mention de revue humaine.
+
+Une première décision **Conforme** sur le critère 6.1 a ensuite été remplacée
+par **Non conforme** avec un commentaire révisé. La réponse API conserve la
+première décision dans `decisionHistory` et expose la nouvelle dans
+`decisions`. L’annexe du rapport rattachée à la session continue d’afficher
+la preuve et la décision courante.
+
+Cette validation confirme la persistance de l’historique sans produire de
+verdict automatique.
+
 ## Reprise de revue — 2026-11-01
 
 Environnement : application locale Vite (`http://localhost:3000/`) et API

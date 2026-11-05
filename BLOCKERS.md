@@ -103,6 +103,20 @@ une validation humaine de la preuve (et la synchronisation de l’issue et du
 Project GitHub) avant de déclarer US-18 terminée. Aucun verdict RGAA n’est
 déduit automatiquement.
 
+## 2026-11-05 — US-18 : comparaison et historique vérifiés
+
+La revue complémentaire a rejoué un parcours à deux étapes avec la session
+`2cd2cb9f-8b17-42b2-9dcc-3a637f89d76f`. L’exécution
+`3cdd6145-3080-4ea4-8cff-756fe9efed33` affiche les deux observations, leurs
+horodatages et la comparaison `step-1` → `step-2`. Une décision humaine a été
+modifiée ; la valeur précédente est conservée dans `decisionHistory` et la
+nouvelle dans `decisions`. Results affiche la preuve et la décision courante
+dans l’annexe rattachée à la session.
+
+Le blocage fonctionnel de validation US-18 est donc levé. Il reste uniquement
+à synchroniser le statut de l’issue et de la carte GitHub avec le suivi humain ;
+aucun verdict RGAA automatique n’est déduit.
+
 ## 2026-10-25 — Fraîcheur du PDF après ajout d’un parcours ou d’une décision
 
 ### Contexte
